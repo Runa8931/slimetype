@@ -8,7 +8,14 @@
 const DIFF_POOLS = { easy: ['easy'], normal: ['easy', 'normal', 'normal'], hard: ['normal', 'hard', 'hard'] };
 
 Screens.battle = {
+  // 前のバトルで飛んでいた攻撃が 次のバトルに届かないよう、バトルごとに番号をつける
+  bid: 0,
+  guard(fn) { const bid = this.bid; return (...a) => { if (bid === this.bid) fn(...a); }; },
+  after(fn, ms) { return setTimeout(this.guard(fn), ms); },
+  proj(from, to, opts) { return FX.projectile(from, to, { ...opts, onHit: opts.onHit && this.guard(opts.onHit) }); },
+
   enter(idx) {
+    this.bid++;
     this.idx = idx;
     this.ed = ENEMIES[idx];
     const ch = charInfo(Save.data.active);
@@ -19,6 +26,10 @@ Screens.battle = {
     this.e = { hp: Math.round(es.hp * ENEMY_HP_SCALE), max: Math.round(es.hp * ENEMY_HP_SCALE), stats: es, gauge: 0, attacks: 0, angry: false };
     this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0;
     this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
+    // 新しい敵の特殊能力で使う状態
+    this.shellUntil = 0; this.nextShell = 4000; this.nextRegen = 8000;
+    this.inkUntil = 0; this.nextInk = 5000; this.blizzUntil = 0; this.nextBlizz = 5000;
+    this.frozenUntil = 0; this.demonPhase = 0; this.e2 = { double: false };
     this.missMap = {};
     this.state = 'ready';
     this.elapsed = 0;
@@ -40,6 +51,9 @@ Screens.battle = {
     $('#b-skill').style.setProperty('--cc', ch.def.colors.main);
     $('#b-log').innerHTML = '';
     $('#b-tp .tp-roma').classList.remove('hidden-guide');
+    $('#b-tp').classList.remove('fog', 'inked', 'blizzard', 'frozen');
+    $('#b-ink').innerHTML = '';
+    this._fog = false;
 
     this.nextWord();
     this.updateBars(true);
@@ -51,7 +65,7 @@ Screens.battle = {
       <div class="ov-key"><kbd>Space</kbd> でバトル開始</div></div>`);
   },
 
-  leave() { this.state = 'off'; cancelAnimationFrame(this.raf); },
+  leave() { this.state = 'off'; this.bid++; cancelAnimationFrame(this.raf); },
 
   overlay(html) {
     const o = $('#b-overlay');
@@ -66,7 +80,7 @@ Screens.battle = {
     const box = $('#b-log');
     box.appendChild(el);
     while (box.children.length > 3) box.firstChild.remove();
-    setTimeout(() => el.classList.add('fade'), 2600);
+    this.after(() => el.classList.add('fade'), 2600);
   },
 
   async countdown() {
@@ -80,7 +94,7 @@ Screens.battle = {
     if (this.state !== 'count') return;
     this.overlay('<div class="count go">FIGHT!</div>');
     SFX.go();
-    setTimeout(() => { if (this.state === 'run') this.overlay(''); }, 450);
+    this.after(() => { if (this.state === 'run') this.overlay(''); }, 450);
     this.state = 'run';
     this.last = performance.now();
     this.nextFog = 6000;
@@ -114,17 +128,21 @@ Screens.battle = {
       }
     }
     $('#b-pstatus').innerHTML = [
-      this.p.poisonUntil > this.elapsed ? '<i class="st poison">どく</i>' : '',
+      this.p.poisonUntil > this.elapsed ? `<i class="st poison">${this.ed.statusName || 'どく'}</i>` : '',
+      this.frozenUntil > this.elapsed ? '<i class="st frozen">こおり</i>' : '',
       this.p.shield > 0 ? `<i class="st shield">シールド×${this.p.shield}</i>` : '',
       this.p.boost > 1 ? '<i class="st boost">こうげきUP</i>' : '',
     ].join('');
 
-    // ゆうれいのきり
-    if (this.ed.ability === 'fade') {
+    this.tickAbilities();
+
+    // ゆうれいのきり / かげろう / まおうのやみ
+    if (this.ed.ability === 'fade' || (this.ed.ability === 'demon' && this.demonPhase >= 1)) {
       if (this.elapsed >= this.nextFog) {
         this.fogUntil = this.elapsed + 3500;
         this.nextFog = this.elapsed + 9000 + Math.random() * 3000;
-        this.log(`${this.ed.name} はきりをだした！`, 'enemy');
+        const fogMsg = { salamander: 'かげろうで ガイドが ゆらめいた！', demon: 'やみで ガイドを かくした！' }[this.ed.id] || 'きりをだした！';
+        this.log(`${this.ed.name} は ${fogMsg}`, 'enemy');
         replayAnim($('#b-esprite'), 'cast', 600);
         this.render();
       }
@@ -133,6 +151,66 @@ Screens.battle = {
     }
 
     this.raf = requestAnimationFrame(t => this.tick(t));
+  },
+
+  // 新しい敵の特殊能力 (毎フレーム)
+  tickAbilities() {
+    const ab = this.ed.ability;
+    const now = this.elapsed;
+    const ec = () => FX.center($('#b-esprite'));
+    // からにこもる / こおりのたて
+    if (ab === 'shell' && now >= this.nextShell) {
+      this.shellUntil = now + 3000;
+      this.nextShell = now + 9000 + Math.random() * 2000;
+      SFX.guard();
+      this.log(`${this.ed.name} は みをまもっている！ (3秒間 ダメージ大はばダウン)`, 'enemy');
+      const c = ec(); FX.ring(c.x, c.y, '#74c0fc', 120, 30, 8);
+    }
+    $('#b-enemy').classList.toggle('shelled', this.shellUntil > now);
+    // ゆきだまり: 回復
+    if (ab === 'regen' && now >= this.nextRegen) {
+      this.nextRegen = now + 8000;
+      const heal = Math.round(this.e.max * 0.06);
+      this.e.hp = Math.min(this.e.max, this.e.hp + heal);
+      const c = ec();
+      floatText(c.x, c.y - 60, `+${heal}`, 'heal');
+      FX.ring(c.x, c.y, '#a5d8ff', 100, 26, 6);
+      this.log(`${this.ed.name} は ゆきを あつめて 回復した！`, 'enemy');
+      this.updateBars();
+    }
+    // すみはき
+    if (ab === 'ink' && now >= this.nextInk) {
+      this.inkUntil = now + 4000;
+      this.nextInk = now + 10000 + Math.random() * 2000;
+      this.splashInk();
+    }
+    const inked = this.inkUntil > now;
+    if (inked !== this._inked) { this._inked = inked; $('#b-tp').classList.toggle('inked', inked); if (!inked) $('#b-ink').innerHTML = ''; }
+    // ふぶき
+    if (ab === 'blizzard' && now >= this.nextBlizz) {
+      this.blizzUntil = now + 4000;
+      this.nextBlizz = now + 11000 + Math.random() * 2000;
+      this.log('ふぶきで 漢字と かなが 見えない！ ローマ字を たよりに打とう', 'enemy');
+      replayAnim($('#b-esprite'), 'cast', 600);
+      SFX.noise(0.8, { vol: 0.1, filter: 2500 });
+    }
+    const bl = this.blizzUntil > now;
+    $('#b-tp').classList.toggle('blizzard', bl);
+    $('#arena').classList.toggle('snowing', bl);
+    $('#b-tp').classList.toggle('frozen', this.frozenUntil > now);
+  },
+
+  // お題の上に すみを とばす
+  splashInk() {
+    const box = $('#b-ink');
+    box.innerHTML = Array.from({ length: 6 }, () => {
+      const x = 8 + Math.random() * 84, y = 35 + Math.random() * 55, r = 80 + Math.random() * 70;
+      return `<i style="left:${x}%;top:${y}%;width:${r}px;height:${r * (0.7 + Math.random() * 0.4)}px"></i>`;
+    }).join('');
+    this.log('クラーケンが すみを はいた！', 'enemy');
+    SFX.noise(0.3, { vol: 0.12, filter: 600 });
+    const c = FX.center($('#b-tp'));
+    FX.burst(c.x, c.y, { colors: ['#10002b', '#3c096c'], count: 30, speed: 8, size: 7 });
   },
 
   nextWord() {
@@ -170,7 +248,7 @@ Screens.battle = {
     if (instant) { lagP.style.width = pp + '%'; lagE.style.width = ep + '%'; }
     else {
       clearTimeout(this._lagT);
-      this._lagT = setTimeout(() => { lagP.style.width = pp + '%'; lagE.style.width = ep + '%'; }, 450);
+      this._lagT = this.after(() => { lagP.style.width = pp + '%'; lagE.style.width = ep + '%'; }, 450);
     }
     const sk = clamp(this.p.skill, 0, 100);
     $('#b-skillfill').style.width = sk + '%';
@@ -198,6 +276,12 @@ Screens.battle = {
       return;
     }
     if (e.key.length !== 1) return;
+    // こおっている間は入力できない
+    if (this.frozenUntil > this.elapsed) {
+      SFX.tone(2000, 0.04, { type: 'sine', vol: 0.03 });
+      replayAnim($('#b-tp'), 'miss-shake', 200);
+      return;
+    }
 
     const key = e.key.toLowerCase();
     if (!this.wordStart) this.wordStart = this.elapsed;
@@ -214,6 +298,12 @@ Screens.battle = {
       this.p.skill = Math.max(0, this.p.skill - 3);
       SFX.miss();
       replayAnim($('#b-tp'), 'miss-shake', 300);
+      // しびれ: ミスすると自分にダメージ
+      if (this.ed.ability === 'shock') {
+        const pc = FX.center($('#b-psprite'));
+        FX.bolt(pc.x - 20, pc.y - 90, pc.x, pc.y, '#e0aaff', 10);
+        this.damagePlayer(Math.max(1, Math.round(this.p.max * 0.03)), 'shock');
+      }
     } else {
       this.correct++;
       this.combo++;
@@ -256,6 +346,7 @@ Screens.battle = {
     if (this.ed.ability === 'armor') {
       if (this.combo < 30) { dmg *= 0.5; armorMsg = 'block'; } else armorMsg = 'break';
     }
+    if (this.shellUntil > this.elapsed) { dmg *= 0.3; armorMsg = 'shell'; }
     dmg = Math.max(1, Math.round(dmg * (0.9 + Math.random() * 0.1)));
 
     // うるおいボディ
@@ -288,7 +379,7 @@ Screens.battle = {
       piriri: { color: '#fff27a', size: 9, arc: -20, frames: 12 },
       gotsun: { color: col.dark, size: 14, arc: -100, frames: 26 },
     };
-    FX.projectile({ x: from.x + 30, y: from.y }, to, {
+    this.proj({ x: from.x + 30, y: from.y }, to, {
       frames: 20, ...kinds[this.ch.id],
       onHit: () => {
         this.pending--;
@@ -298,6 +389,7 @@ Screens.battle = {
         if (boosted) this.log('アクアパワーで こうげきが 1.5ばい！', 'good');
         if (armorMsg === 'block') this.log('いしのよろいで ダメージがへった… (コンボ30で貫通)', 'enemy');
         if (armorMsg === 'break' && Math.random() < 0.4) this.log('コンボの力で よろいを つらぬいた！', 'good');
+        if (armorMsg === 'shell' && Math.random() < 0.5) this.log('はじかれた！ ガードがとけるまで まとう', 'enemy');
       },
     });
   },
@@ -319,6 +411,33 @@ Screens.battle = {
   },
 
   checkPhase() {
+    const ab = this.ed.ability;
+    // まおう: 3 段階
+    if (ab === 'demon') {
+      if (this.demonPhase === 0 && this.e.hp <= this.e.max * 2 / 3) {
+        this.demonPhase = 1;
+        this.nextFog = this.elapsed + 600;
+        $('#arena').classList.add('dark');
+        this.log('まおうが やみの ちからを つかった！', 'enemy');
+        cutin('やみの ちから', this.ed.name, '#7b2cbf', enemySVG(this.ed.id));
+        SFX.thunder();
+      }
+      if (this.demonPhase === 1 && this.e.hp <= this.e.max / 3) {
+        this.demonPhase = 2;
+        this.e.angry = true;
+        $('#b-enemy').classList.add('angry');
+        this.log('まおうが ほんきを だした！ ひっさつゲージが うばわれる！', 'enemy');
+        cutin('まおう ほんきモード', this.ed.name, '#ff006e', enemySVG(this.ed.id));
+        SFX.thunder();
+      }
+      return;
+    }
+    if (ab === 'ink' && !this.e2.double && this.e.hp <= this.e.max / 2) {
+      this.e2.double = true;
+      $('#b-enemy').classList.add('angry');
+      this.log('クラーケンが あばれだした！ 2 れんぞくで 攻撃してくる！', 'enemy');
+      cutin('あばれる', this.ed.name, '#c9184a', enemySVG(this.ed.id));
+    }
     if (this.e.angry || this.e.hp > this.e.max / 2) return;
     if (this.ed.ability === 'rage') {
       this.e.angry = true;
@@ -346,12 +465,12 @@ Screens.battle = {
 
     if (ch.id === 'purun') {
       const heal = Math.round(this.p.max * 0.4);
-      setTimeout(() => {
+      this.after(() => {
         this.p.hp = Math.min(this.p.max, this.p.hp + heal);
         this.p.poisonUntil = 0;
         this.p.boost = 1.5;
         SFX.heal();
-        for (let i = 0; i < 3; i++) setTimeout(() => FX.ring(pc.x, pc.y, col.accent, 90 + i * 20, 30), i * 150);
+        for (let i = 0; i < 3; i++) this.after(() => FX.ring(pc.x, pc.y, col.accent, 90 + i * 20, 30), i * 150);
         for (let i = 0; i < 24; i++) {
           FX.add({ kind: 'dot', shape: 'circle', x: pc.x + (Math.random() - .5) * 100, y: pc.y + 40, vx: 0, vy: -1.5 - Math.random() * 2, g: -0.02, size: 3 + Math.random() * 5, life: 60, max: 60, color: i % 2 ? col.accent : '#fff', rot: 0, vr: 0 });
         }
@@ -363,15 +482,15 @@ Screens.battle = {
     }
 
     if (ch.id === 'piriri') {
-      setTimeout(() => {
+      this.after(() => {
         const ec = FX.center($('#b-esprite'));
         replayAnim(document.body, 'flash-white', 400);
         SFX.thunder();
         for (let i = 0; i < 4; i++) {
-          setTimeout(() => FX.bolt(ec.x + (Math.random() - .5) * 80, -20, ec.x + (Math.random() - .5) * 30, ec.y, '#fff27a', 16), i * 90);
+          this.after(() => FX.bolt(ec.x + (Math.random() - .5) * 80, -20, ec.x + (Math.random() - .5) * 30, ec.y, '#fff27a', 16), i * 90);
         }
         const dmg = Math.round(calcDamage(ch.L, 280, ch.stats.atk, this.e.stats.def) * (0.92 + Math.random() * 0.08));
-        setTimeout(() => {
+        this.after(() => {
           if (this.state !== 'run') return;
           FX.burst(ec.x, ec.y, { colors: ['#fff27a', '#ffd23f', '#fff'], count: 60, speed: 10, shape: 'star', size: 7 });
           this.hitEnemy(dmg, { big: true, colors: ['#fff27a', '#fff'] });
@@ -381,7 +500,7 @@ Screens.battle = {
     }
 
     if (ch.id === 'gotsun') {
-      setTimeout(() => {
+      this.after(() => {
         this.p.shield = 2;
         SFX.guard();
         $('#b-player').classList.add('shielded');
@@ -415,19 +534,49 @@ Screens.battle = {
       goblin: { color: '#8a5a2b', size: 12, arc: -90, frames: 20 },
       golem: { color: '#8b8f99', size: 16, arc: -110, frames: 26 },
       dragon: { color: '#ff7a1a', size: 14, arc: 0, frames: 18 },
+      crab: { color: '#e8452c', size: 12, arc: -60, frames: 20 },
+      jelly: { color: '#e0aaff', size: 11, arc: 30, frames: 22 },
+      shark: { color: '#5c85c4', size: 12, arc: -20, frames: 14 },
+      kraken: { color: '#3c096c', size: 14, arc: -70, frames: 22 },
+      penguin: { color: '#74c0fc', size: 10, arc: -10, frames: 14 },
+      snowman: { color: '#ffffff', size: 13, arc: -90, frames: 24 },
+      wolf: { color: '#a5d8ff', size: 11, arc: 0, frames: 14 },
+      yeti: { color: '#d0ebff', size: 16, arc: -100, frames: 24 },
+      imp: { color: '#ff7a1a', size: 11, arc: -40, frames: 18 },
+      mgolem: { color: '#ff5400', size: 17, arc: -110, frames: 26 },
+      salamander: { color: '#ffba08', size: 12, arc: -20, frames: 16 },
+      demon: { color: '#9d4edd', size: 15, arc: -40, frames: 20 },
     };
     const s = styles[ed.id];
+
+    // ボスは たくさんの弾を いっせいに とばす (はで)
+    if (ed.boss && ed.id !== 'dragon') {
+      const n = 12;
+      for (let i = 0; i < n; i++) {
+        this.after(() => this.proj({ x: from.x - 40, y: from.y - 20 + (Math.random() - .5) * 60 },
+          { x: to.x + (Math.random() - .5) * 70, y: to.y + (Math.random() - .5) * 70 },
+          { color: i % 3 ? s.color : '#fff', size: 6 + Math.random() * 8, frames: 18, arc: (Math.random() - .5) * 120, trail: i % 2 === 0 }), i * 25);
+      }
+      this.after(() => this.resolveEnemyHit(dmg, true), 18 * 17 + 25 * n);
+      if (this.e2.double) {
+        this.after(() => {
+          if (this.state !== 'run') return;
+          this.proj({ x: from.x - 30, y: from.y }, to, { ...s, frames: 14, onHit: () => this.resolveEnemyHit(Math.round(dmg * 0.6), false) });
+        }, 700);
+      }
+      return;
+    }
 
     if (breath) {
       this.log('ドラゴンの ほのおのブレス！', 'enemy');
       for (let i = 0; i < 26; i++) {
-        setTimeout(() => FX.projectile({ x: from.x - 60, y: from.y - 30 }, { x: to.x + (Math.random() - .5) * 60, y: to.y + (Math.random() - .5) * 60 },
+        this.after(() => this.proj({ x: from.x - 60, y: from.y - 30 }, { x: to.x + (Math.random() - .5) * 60, y: to.y + (Math.random() - .5) * 60 },
           { color: i % 3 ? '#ff7a1a' : '#ffd23f', size: 6 + Math.random() * 8, frames: 16, arc: (Math.random() - .5) * 40, trail: false }), i * 18);
       }
-      setTimeout(() => this.resolveEnemyHit(dmg, true), 16 * 18 + 260);
+      this.after(() => this.resolveEnemyHit(dmg, true), 16 * 18 + 260);
       return;
     }
-    FX.projectile({ x: from.x - 30, y: from.y }, to, { ...s, onHit: () => this.resolveEnemyHit(dmg, false) });
+    this.proj({ x: from.x - 30, y: from.y }, to, { ...s, onHit: () => this.resolveEnemyHit(dmg, false) });
   },
 
   resolveEnemyHit(dmg, big) {
@@ -442,25 +591,39 @@ Screens.battle = {
       // 反撃: ふせいだダメージの 1.5 倍 + 威力 120 の岩
       const back = Math.round(dmg * 1.5 + calcDamage(this.ch.L, 120, this.ch.stats.atk, this.e.stats.def));
       const ec = FX.center($('#b-esprite'));
-      FX.projectile(pc, ec, {
+      this.proj(pc, ec, {
         color: this.ch.def.colors.dark, size: 14, frames: 18, arc: -60,
         onHit: () => { if (this.state === 'run') { this.hitEnemy(back, { colors: ['#b08a64', '#9be7a0', '#fff'] }); this.log(`はんげき！ ${back} ダメージ！`, 'good'); } },
       });
       return;
     }
     this.damagePlayer(dmg, big ? 'big' : 'normal');
-    if (this.ed.ability === 'poison' && this.p.poisonUntil <= this.elapsed) {
+    const ab = this.ed.ability;
+    if (ab === 'poison' && this.p.poisonUntil <= this.elapsed) {
       this.p.poisonUntil = this.elapsed + 5000;
       this.p.nextPoison = this.elapsed + 1000;
-      this.log('どくを うけてしまった！', 'enemy');
+      this.log(`${this.ed.statusName || 'どく'}を うけてしまった！`, 'enemy');
+    }
+    // こおりのいき / ふぶき: しばらく入力できない
+    if (ab === 'freeze' || ab === 'blizzard') {
+      this.frozenUntil = this.elapsed + (ab === 'freeze' ? 1000 : 700);
+      this.log('こおってしまった！ すこし まってね', 'enemy');
+      FX.burst(pc.x, pc.y, { colors: ['#d0ebff', '#fff', '#74c0fc'], count: 24, speed: 6, shape: 'star', size: 6 });
+      SFX.tone(1800, 0.3, { type: 'sine', vol: 0.05, slide: 600 });
+    }
+    // まおう (ほんき): ひっさつゲージを うばう
+    if (ab === 'demon' && this.demonPhase >= 2 && this.p.skill > 0) {
+      this.p.skill = Math.max(0, this.p.skill - 25);
+      this.log('ひっさつゲージを うばわれた！', 'enemy');
+      this.updateBars();
     }
   },
 
   damagePlayer(dmg, kind) {
     const pc = FX.center($('#b-psprite'));
     this.p.hp -= dmg;
-    if (kind === 'poison') {
-      floatText(pc.x + 20, pc.y - 30, dmg, 'dmg poison');
+    if (kind === 'poison' || kind === 'shock') {
+      floatText(pc.x + 20, pc.y - 30, dmg, kind === 'shock' ? 'dmg shock' : 'dmg poison');
       replayAnim($('#b-psprite'), 'poisoned', 400);
     } else {
       SFX.hurt();
@@ -484,9 +647,9 @@ Screens.battle = {
     FX.burst(ec.x, ec.y, { colors: ['#fff', '#ffd23f', '#ff5d8f', '#4fb3ff'], count: 80, speed: 10, shape: 'star', size: 7 });
     FX.ring(ec.x, ec.y, '#fff', 160, 40, 8);
     SFX.win();
-    setTimeout(() => FX.confetti(), 400);
+    this.after(() => FX.confetti(), 400);
     this.overlay('<div class="count go win">WIN!</div>');
-    setTimeout(() => this.finish(true), 1900);
+    this.after(() => this.finish(true), 1900);
   },
 
   lose() {
@@ -496,7 +659,7 @@ Screens.battle = {
     $('#b-player').classList.add('defeated');
     SFX.lose();
     this.overlay('<div class="count lose">LOSE…</div>');
-    setTimeout(() => this.finish(false), 1900);
+    this.after(() => this.finish(false), 1900);
   },
 
   finish(won) {

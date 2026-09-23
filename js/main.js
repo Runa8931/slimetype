@@ -99,6 +99,16 @@ function renderTyping(root, word, target, { hideRoma = false } = {}) {
   roma.classList.toggle('hidden-guide', hideRoma);
 }
 
+// サバイバルの記録: クリアした一番むずかしい難易度 (なければ 一番長く生きのこった時間)
+function svRecord(best) {
+  const keys = ['oni', 'hard', 'normal', 'easy'];
+  const names = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい', oni: 'おに' };
+  const c = keys.find(k => best['sv-' + k] && best['sv-' + k].cleared);
+  if (c) return `<small>${names[c]}</small>クリア`;
+  const t = keys.map(k => best['sv-' + k]).filter(Boolean).sort((a, b) => b.time - a.time)[0];
+  return t ? fmtTime(t.time) : '—';
+}
+
 function fmtTime(sec) {
   sec = Math.max(0, Math.floor(sec));
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
@@ -295,7 +305,7 @@ Screens.home = {
       <div class="rec-grid">
         ${Object.keys(diffName).map(k => `<div><span>${diffName[k]}</span><b>${best[lang + '-' + k] ?? '—'}</b></div>`).join('')}
         <div><span>バトル突破</span><b>${Save.data.cleared}/${ENEMIES.length}</b></div>
-        <div><span>サバイバル</span><b>${best.survival ? (best.survival.cleared ? 'クリア' : fmtTime(best.survival.time)) : '—'}</b></div>
+        <div><span>サバイバル</span><b>${svRecord(best)}</b></div>
       </div>
       <div class="weak"><span>苦手なキー</span>${wk.length ? wk.map(([k, n]) => `<kbd>${k === ';' ? ';' : k.toUpperCase()}</kbd><small>${n}</small>`).join('') : '<small>まだデータがありません</small>'}</div>`;
   },

@@ -89,42 +89,141 @@ const CHARACTERS = {
 // 敵キャラクター (ステージ順)
 const ENEMIES = [
   {
-    id: 'bat', name: 'コウモリン', lv: 3, base: { hp: 45, atk: 45, def: 40 },
+    id: 'bat', world: 0, name: 'コウモリン', lv: 3, base: { hp: 45, atk: 45, def: 40 },
     power: 36, interval: 4200, exp: 280, diff: 'easy', bg: 'cave',
     desc: 'どうくつにすむ小さなコウモリ。最初の相手にぴったり。',
     ability: null, abilityDesc: 'とくになし',
   },
   {
-    id: 'mush', name: 'ドクキノコ', lv: 6, base: { hp: 60, atk: 50, def: 55 },
+    id: 'mush', world: 0, name: 'ドクキノコ', lv: 6, base: { hp: 60, atk: 50, def: 55 },
     power: 40, interval: 4400, exp: 320, diff: 'easy', bg: 'forest',
     desc: 'もりのどくキノコ。攻撃をうけると、どくになってしまう。',
     ability: 'poison', abilityDesc: 'どく: 攻撃をうけると 5 秒間 HP がへりつづける',
   },
   {
-    id: 'ghost', name: 'ユウレイン', lv: 10, base: { hp: 60, atk: 65, def: 50 },
+    id: 'ghost', world: 0, name: 'ユウレイン', lv: 10, base: { hp: 60, atk: 65, def: 50 },
     power: 44, interval: 4200, exp: 360, diff: 'normal', bg: 'grave',
     desc: 'ぼちをさまようおばけ。ローマ字のガイドをかくしてくる。',
     ability: 'fade', abilityDesc: 'ゆうれいのきり: ときどきローマ字ガイドが見えなくなる',
   },
   {
-    id: 'goblin', name: 'ゴブリン', lv: 15, base: { hp: 80, atk: 80, def: 60 },
+    id: 'goblin', world: 0, name: 'ゴブリン', lv: 15, base: { hp: 80, atk: 80, def: 60 },
     power: 40, interval: 4600, exp: 400, diff: 'normal', bg: 'plain',
     desc: 'こんぼうをふりまわす らんぼうもの。追いつめるとおこりだす。',
     ability: 'rage', abilityDesc: 'げきど: HP が半分をきると攻撃が速くなる',
   },
   {
-    id: 'golem', name: 'ストーンゴーレム', lv: 21, base: { hp: 95, atk: 85, def: 95 },
+    id: 'golem', world: 0, name: 'ストーンゴーレム', lv: 21, base: { hp: 95, atk: 85, def: 95 },
     power: 44, interval: 5600, exp: 460, diff: 'hard', bg: 'ruins',
     desc: 'いせきを守るいしのきょじん。とてもかたい。',
     ability: 'armor', abilityDesc: 'いしのよろい: コンボ 30 未満だとダメージ半減',
   },
   {
-    id: 'dragon', name: 'ドラゴン', lv: 28, base: { hp: 125, atk: 100, def: 90 },
+    id: 'dragon', world: 0, name: 'ドラゴン', lv: 28, base: { hp: 125, atk: 100, def: 90 },
     power: 46, interval: 5400, exp: 600, diff: 'hard', bg: 'volcano', boss: true,
     desc: 'かざんのおうじゃ。HP が半分をきると本気をだす。',
     ability: 'dragon', abilityDesc: 'ほんき: HP 半分で攻撃が速くなり、3 回に 1 回ほのおのブレス',
   },
+
+  // ---------- ワールド 2: うみ ----------
+  {
+    id: 'crab', world: 1, name: 'カニッパ', lv: 31, base: { hp: 80, atk: 95, def: 105 },
+    power: 46, interval: 5200, exp: 480, diff: 'normal', bg: 'sea',
+    desc: 'かたいこうらの大きなカニ。ときどき からに とじこもる。',
+    ability: 'shell', abilityDesc: 'からにこもる: ときどき 3 秒間 うけるダメージが大きくへる',
+  },
+  {
+    id: 'jelly', world: 1, name: 'クラゲール', lv: 33, base: { hp: 85, atk: 100, def: 80 },
+    power: 46, interval: 5000, exp: 500, diff: 'hard', bg: 'sea',
+    desc: 'ビリビリするクラゲ。まちがえて さわると しびれる。',
+    ability: 'shock', abilityDesc: 'しびれ: ミスすると 自分が ダメージをうける',
+  },
+  {
+    id: 'shark', world: 1, name: 'サメキバ', lv: 35, base: { hp: 100, atk: 115, def: 85 },
+    power: 48, interval: 4600, exp: 520, diff: 'hard', bg: 'sea',
+    desc: 'うみのハンター。弱ってくると どうもうになる。',
+    ability: 'rage', abilityDesc: 'ちのにおい: HP が半分をきると 攻撃が速くなる',
+  },
+  {
+    id: 'kraken', world: 1, name: 'クラーケン', lv: 38, base: { hp: 130, atk: 110, def: 100 },
+    power: 48, interval: 5400, exp: 700, diff: 'hard', bg: 'sea', boss: true,
+    desc: 'しんかいの ぬし。すみを はいて じゃまをしてくる。',
+    ability: 'ink', abilityDesc: 'すみはき: ときどき お題が すみで見えにくくなる。HP 半分から 2 れんぞく攻撃',
+  },
+
+  // ---------- ワールド 3: ゆきやま ----------
+  {
+    id: 'penguin', world: 2, name: 'ペンギナイト', lv: 40, base: { hp: 90, atk: 105, def: 100 },
+    power: 46, interval: 4800, exp: 540, diff: 'hard', bg: 'snow',
+    desc: 'たてと やりを もったペンギンの きし。',
+    ability: 'shell', abilityDesc: 'こおりのたて: ときどき 3 秒間 うけるダメージが大きくへる',
+  },
+  {
+    id: 'snowman', world: 2, name: 'ユキダルマン', lv: 42, base: { hp: 100, atk: 100, def: 100 },
+    power: 46, interval: 5000, exp: 560, diff: 'hard', bg: 'snow',
+    desc: 'うごく ゆきだるま。ゆきを あつめて 回復する。',
+    ability: 'regen', abilityDesc: 'ゆきだまり: ときどき HP を回復する',
+  },
+  {
+    id: 'wolf', world: 2, name: 'アイスウルフ', lv: 44, base: { hp: 100, atk: 115, def: 90 },
+    power: 46, interval: 4400, exp: 580, diff: 'hard', bg: 'snow',
+    desc: 'こおりの いきを はく オオカミ。',
+    ability: 'freeze', abilityDesc: 'こおりのいき: 攻撃をうけると 1 秒間 こおって 入力できない',
+  },
+  {
+    id: 'yeti', world: 2, name: 'イエティ', lv: 47, base: { hp: 130, atk: 115, def: 105 },
+    power: 48, interval: 5400, exp: 760, diff: 'hard', bg: 'snow', boss: true,
+    desc: 'ゆきやまの ぬし。ふぶきを よびおこす。',
+    ability: 'blizzard', abilityDesc: 'ふぶき: ときどき 漢字とかなが見えなくなる。攻撃で こおらせてくる',
+  },
+
+  // ---------- ワールド 4: マグマのしろ ----------
+  {
+    id: 'imp', world: 3, name: 'ファイアインプ', lv: 48, base: { hp: 100, atk: 115, def: 95 },
+    power: 46, interval: 4600, exp: 600, diff: 'hard', bg: 'magma',
+    desc: 'しろを まもる ほのおの こあくま。',
+    ability: 'poison', statusName: 'やけど', abilityDesc: 'やけど: 攻撃をうけると 5 秒間 HP がへりつづける',
+  },
+  {
+    id: 'mgolem', world: 3, name: 'マグマゴーレム', lv: 50, base: { hp: 105, atk: 115, def: 115 },
+    power: 46, interval: 5600, exp: 620, diff: 'hard', bg: 'magma',
+    desc: 'ようがんで できた きょじん。とても かたい。',
+    ability: 'armor', abilityDesc: 'マグマのよろい: コンボ 30 未満だと ダメージ半減',
+  },
+  {
+    id: 'salamander', world: 3, name: 'サラマンダー', lv: 51, base: { hp: 100, atk: 120, def: 100 },
+    power: 48, interval: 4600, exp: 640, diff: 'hard', bg: 'magma',
+    desc: 'ほのおを まとう トカゲ。かげろうで 目をくらます。',
+    ability: 'fade', abilityDesc: 'かげろう: ときどき ローマ字ガイドが ゆらめいて見えなくなる',
+  },
+  {
+    id: 'demon', world: 3, name: 'まおう', lv: 54, base: { hp: 140, atk: 120, def: 110 },
+    power: 50, interval: 5600, exp: 1000, diff: 'hard', bg: 'magma', boss: true, final: true,
+    desc: 'マグマのしろの あるじ。さいごの てき。',
+    ability: 'demon', abilityDesc: 'まおうのちから: HP 2/3 で やみ (ガイドが消える)、1/3 で 攻撃が速くなり ひっさつゲージをうばう',
+  },
 ];
+
+// ワールド (マップ) の一覧
+const WORLDS = [
+  { id: 'grass', name: 'そうげん' },
+  { id: 'sea', name: 'うみ' },
+  { id: 'snow', name: 'ゆきやま' },
+  { id: 'magma', name: 'マグマのしろ' },
+];
+
+// ワールド w のステージ番号 (ENEMIES の添字) の一覧
+function worldStages(w) {
+  const list = [];
+  ENEMIES.forEach((e, i) => { if (e.world === w) list.push(i); });
+  return list;
+}
+
+// 「1-3」のようなステージ番号
+function stageLabel(i) {
+  const e = ENEMIES[i];
+  return `${e.world + 1}-${worldStages(e.world).indexOf(i) + 1}`;
+}
 
 // タイピングの成績評価 (e-typing のスコア式「WPM × 正確率^3」を参考に、ここでは WPM = 1 分あたりの打鍵数)
 const RANKS = [
@@ -145,5 +244,5 @@ function rankFor(score) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { expForLevel, levelFromExp, calcStats, calcDamage, wordPower, CHARACTERS, ENEMIES, BATTLE_HP_SCALE };
+  module.exports = { expForLevel, levelFromExp, calcStats, calcDamage, wordPower, CHARACTERS, ENEMIES, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS };
 }

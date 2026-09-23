@@ -22,7 +22,8 @@ Screens.result = {
       </div>`;
     } else if (r.mode === 'survival') {
       head = `<div class="res-head ${r.won ? 'won' : 'lost'}">
-        <div class="res-title">${r.won ? 'サバイバル クリア！ ドラゴンをたおした！' : `${ch.name} は たおれてしまった…`}</div>
+        <div class="res-title">${r.won ? `サバイバル クリア！ ${SV_BOSS[r.boss].name}を たおした！` : `${ch.name} は たおれてしまった…`}</div>
+        <div class="res-diff" style="color:${r.diffColor}">難易度: ${r.diffName}</div>
         <div class="score">生きのこった時間 <b>${fmtTime(r.time)}</b>${r.newBest ? '<span class="new">NEW RECORD!</span>' : ''}</div>
         <div class="sv-res-weapons">${r.weapons.map(w => `<div class="sv-w" style="--wc:${SV_WEAPONS[w.id].color}">${SV_WEAPONS[w.id].icon}<small>${w.lv >= SV_MAX_LV ? 'MAX' : 'Lv' + w.lv}</small></div>`).join('')}</div>
         ${!r.won ? '<div class="tip">ヒント: 宝箱をたくさん拾って武器をそろえよう。タイピングでレベルを上げると HP と攻撃力も上がるよ</div>' : ''}
@@ -32,8 +33,10 @@ Screens.result = {
       head = `<div class="res-head ${r.won ? 'won' : 'lost'}">
         <div class="res-title">${r.won ? `${e.name} をたおした！` : `${ch.name} はたおれてしまった…`}</div>
         <div class="res-enemy ${r.won ? '' : 'gray'}">${enemySVG(e.id)}</div>
-        ${r.firstClear && r.enemyIdx + 1 < ENEMIES.length ? `<div class="unlock">あたらしいあいて「${ENEMIES[r.enemyIdx + 1].name}」があらわれた！</div>` : ''}
-        ${r.firstClear && r.enemyIdx + 1 >= ENEMIES.length ? '<div class="unlock">ぜんぶのあいてをたおした！ おめでとう！</div>' : ''}
+        ${r.firstClear && r.enemyIdx + 1 < ENEMIES.length ? (ENEMIES[r.enemyIdx + 1].world !== e.world
+          ? `<div class="unlock">ワールド ${e.world + 2}「${WORLDS[e.world + 1].name}」への ゲートが ひらいた！</div>`
+          : `<div class="unlock">あたらしいあいて「${ENEMIES[r.enemyIdx + 1].name}」があらわれた！</div>`) : ''}
+        ${r.firstClear && r.enemyIdx + 1 >= ENEMIES.length ? '<div class="unlock">まおうを たおした！ ぜんぶのワールドを クリア！ おめでとう！</div>' : ''}
         ${!r.won ? '<div class="tip">ヒント: れんしゅうでレベルを上げたり、コンボを切らさないように打つと有利だよ</div>' : ''}
       </div>`;
     }
