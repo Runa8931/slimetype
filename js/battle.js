@@ -2,7 +2,7 @@
 //  バトルモード
 //  ・お題を打ち切るとスライムが攻撃 (長いお題ほど強い、コンボで倍率アップ)
 //  ・敵は攻撃ゲージがたまるたびに攻撃してくる
-//  ・正しく打つと必殺技ゲージがたまり、Enter で発動
+//  ・正しく打つと必殺技ゲージがたまり、満タンになると自動で発動
 // ============================================================
 
 const DIFF_POOLS = { easy: ['easy'], normal: ['easy', 'normal', 'normal'], hard: ['normal', 'hard', 'hard'] };
@@ -176,7 +176,7 @@ Screens.battle = {
     $('#b-skillfill').style.width = sk + '%';
     const ready = sk >= 100;
     $('#b-skill').classList.toggle('ready', ready);
-    $('#b-skillhint').innerHTML = ready ? '<kbd>Enter</kbd> で発動！' : `ためています… ${Math.floor(sk)}%`;
+    $('#b-skillhint').innerHTML = ready ? '発動！' : `ためています… ${Math.floor(sk)}%`;
   },
 
   onKey(e) {
@@ -197,7 +197,6 @@ Screens.battle = {
       this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Space</kbd> で再開　<kbd>Esc</kbd> でにげる</div></div>');
       return;
     }
-    if (e.key === 'Enter') { this.useSkill(); return; }
     if (e.key.length !== 1) return;
 
     const key = e.key.toLowerCase();
@@ -221,7 +220,7 @@ Screens.battle = {
       this.maxCombo = Math.max(this.maxCombo, this.combo);
       const before = this.p.skill;
       this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200));
-      if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.log('ひっさつわざの じゅんびOK！ Enter で発動', 'good'); }
+      if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.useSkill(); }
       SFX.key();
       if (r === 'done') { this.wordDone(); }
     }
@@ -338,7 +337,7 @@ Screens.battle = {
 
   // ---------------- ひっさつわざ ----------------
   useSkill() {
-    if (this.p.skill < 100) { toast('ひっさつわざゲージがまだたまっていません', 1200); return; }
+    if (this.p.skill < 100) return;
     this.p.skill = 0;
     const ch = this.ch;
     const col = ch.def.colors;
