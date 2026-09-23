@@ -492,3 +492,137 @@ kbd {
   .fighter.player { left: 4%; } .fighter.enemy { right: 4%; }
   .f-info { width: 200px; }
 }
+
+/* ============================================================
+   ワールドマップ
+   ============================================================ */
+#scr-stages { padding: 12px 20px; justify-content: flex-start; overflow: hidden; }
+.map-top { width: 100%; max-width: 1200px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.map-world { font-family: var(--pixel); font-size: 24px; background: rgba(0,0,0,.35); padding: 4px 16px; border-radius: 12px; }
+.map-world b { color: var(--gold); font-size: 30px; }
+.map-char { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.35); padding: 2px 14px 2px 4px; border-radius: 12px; }
+.map-char .sprite { width: 44px; height: 44px; }
+.map-char b { display: block; } .map-char small { color: var(--gold); font-family: var(--pixel); }
+.map-outer {
+  position: relative; border-radius: 22px; overflow: hidden; flex: none;
+  box-shadow: 0 0 0 8px #f59f00, 0 0 0 12px #b86a00, 0 16px 40px rgba(0,0,0,.5);
+}
+.map { position: absolute; left: 0; top: 0; width: 1200px; height: 680px; transform-origin: 0 0; }
+.map-svg { position: absolute; inset: 0; width: 1200px; height: 680px; }
+.road path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.road .road-edge { stroke: #b08a52; stroke-width: 34; }
+.road .road-fill { stroke: #f1d9a4; stroke-width: 24; }
+.road .road-dots { stroke: #e0bf7c; stroke-width: 4; stroke-dasharray: 2 16; }
+.road.locked .road-edge { stroke: rgba(0,0,0,.12); stroke-width: 26; }
+.road.locked .road-fill { stroke: rgba(255,255,255,.18); stroke-width: 14; stroke-dasharray: 4 18; }
+.road.locked .road-dots { display: none; }
+
+.node { position: absolute; width: 0; height: 0; }
+.node-pad {
+  position: absolute; left: -30px; top: -16px; width: 60px; height: 32px; border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 35%, #74c0fc, #1c7ed6); border: 4px solid #ffd43b; box-shadow: 0 4px 0 #b8860b, 0 6px 10px rgba(0,0,0,.3);
+}
+.node.cleared .node-pad { background: radial-gradient(ellipse at 50% 35%, #ff8787, #e03131); }
+.node.locked .node-pad { background: #495057; border-color: #868e96; box-shadow: 0 4px 0 #343a40; }
+.node.start .node-pad { background: radial-gradient(ellipse at 50% 35%, #fff, #adb5bd); border-color: #fff; }
+.node-flag { position: absolute; left: -26px; top: -58px; font-family: var(--pixel); font-size: 14px; background: #fff; color: #e03131; padding: 2px 6px; border-radius: 6px; border: 2px solid #e03131; }
+.node-icon { position: absolute; left: -42px; top: -96px; width: 84px; height: 80px; animation: floaty 2s ease-in-out infinite; pointer-events: none; }
+.node-icon svg { width: 100%; height: 100%; overflow: visible; }
+.node.boss .node-icon { left: -60px; top: -128px; width: 120px; height: 110px; animation: none; }
+.node.cleared .node-icon { filter: grayscale(.6) brightness(.9); }
+.node-q { width: 100%; height: 100%; display: grid; place-items: center; font-family: var(--pixel); font-size: 44px; color: #fff; text-shadow: 0 3px 0 #495057; }
+.node-star { position: absolute; left: 14px; top: -40px; font-size: 26px; color: var(--gold); text-shadow: 0 2px 0 #b86a00; }
+.node-label {
+  position: absolute; left: 50%; top: 24px; transform: translateX(-50%); white-space: nowrap; font-weight: 800; font-size: 15px;
+  background: rgba(0,0,0,.55); padding: 2px 10px; border-radius: 99px;
+}
+.node[data-i] { cursor: pointer; }
+.node.locked { cursor: default; }
+
+.map-player { position: absolute; width: 0; height: 0; z-index: 5; }
+.map-player .sprite { position: absolute; left: -38px; top: -70px; width: 76px; height: 76px; animation: bounce 1.4s ease-in-out infinite; }
+.map-player.running .sprite { animation: run-bob .22s ease-in-out infinite; }
+.map-player.flip .sprite svg { transform: scaleX(-1); }
+@keyframes run-bob { 50% { transform: translateY(-9px) rotate(-4deg); } }
+.land { animation: land .3s !important; }
+@keyframes land { 40% { transform: scale(1.2, .8); } }
+.nope { animation: nope .3s !important; }
+@keyframes nope { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.mp-arrows { position: absolute; left: 0; top: -30px; }
+.mp-arrow { position: absolute; width: 30px; height: 30px; display: grid; place-items: center; animation: arrow-pulse 1s ease-in-out infinite; }
+.mp-arrow span { font-family: var(--pixel); font-size: 14px; color: #3a2200; background: var(--gold); border-radius: 8px; width: 26px; height: 26px; display: grid; place-items: center; box-shadow: 0 3px 0 #b86a00; }
+.mp-arrow.right { left: 42px; top: -15px; } .mp-arrow.left { left: -72px; top: -15px; }
+.mp-arrow.up { left: -15px; top: -78px; } .mp-arrow.down { left: -15px; top: 44px; }
+@keyframes arrow-pulse { 50% { opacity: .5; transform: scale(.9); } }
+
+.map-info {
+  position: absolute; right: 18px; bottom: 18px; display: flex; gap: 10px; align-items: center; max-width: 420px;
+  background: rgba(20,20,50,.85); border: 2px solid rgba(255,255,255,.25); border-radius: 16px; padding: 10px 16px; z-index: 6;
+}
+.mi-sprite { width: 70px; height: 64px; flex: none; }
+.mi-sprite svg { width: 100%; height: 100%; }
+.mi-name { font-size: 18px; font-weight: 800; }
+.mi-name small { color: var(--gold); font-family: var(--pixel); }
+.mi-clear { font-family: var(--pixel); font-size: 12px; color: var(--green); border: 2px solid var(--green); border-radius: 6px; padding: 0 5px; margin-left: 4px; }
+.mi-desc { font-size: 12.5px; color: var(--sub); }
+.mi-warn { font-size: 12px; color: var(--red); }
+.mi-go { margin-top: 4px; font-weight: 700; animation: pulse 1.4s infinite; transform-origin: left; }
+.pop-in { animation: pop .3s ease-out; }
+.map-help { margin-top: 16px; color: var(--sub); font-size: 14px; display: flex; gap: 4px; align-items: center; }
+.map-help kbd { margin-left: 4px; }
+
+/* Tab で出るステージ一覧 */
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 520px; max-width: 92vw; z-index: 30; padding: 20px 18px; overflow-y: auto;
+  background: rgba(22,22,56,.96); border-left: 2px solid var(--panel-bd); box-shadow: -20px 0 40px rgba(0,0,0,.5);
+  transform: translateX(105%); transition: transform .3s cubic-bezier(.2,.9,.3,1.1);
+}
+.drawer.open { transform: translateX(0); }
+.drawer-head { font-family: var(--pixel); font-size: 22px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+.drawer-head small { font-family: var(--font); font-size: 12px; color: var(--sub); }
+.drawer .stage-list { grid-template-columns: 1fr; }
+
+/* ホームに 4 つ目のボタン */
+.menu-card.survival { background: linear-gradient(120deg, rgba(195,139,255,.4), rgba(195,139,255,.08)); }
+.home-menu .menu-card { padding-top: 13px; padding-bottom: 13px; }
+.rec-grid { grid-template-columns: repeat(5, 1fr); }
+
+/* ============================================================
+   サバイバル
+   ============================================================ */
+#scr-survival { padding: 0; }
+#sv-canvas { position: absolute; inset: 0; display: block; }
+.sv-hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 18px; pointer-events: none; z-index: 3; }
+.sv-left { width: 300px; background: rgba(10,10,30,.6); border-radius: 14px; padding: 10px 12px; }
+.sv-name { font-weight: 800; } .sv-name small { color: var(--gold); font-family: var(--pixel); }
+.sv-weapons, .sv-res-weapons { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.sv-w { width: 44px; height: 44px; border-radius: 10px; background: rgba(0,0,0,.4); border: 2px solid var(--wc); display: grid; place-items: center; font-size: 20px; position: relative; line-height: 1; }
+.sv-w small { position: absolute; bottom: -8px; font-size: 10px; font-family: var(--pixel); background: var(--wc); color: #111; border-radius: 5px; padding: 0 3px; }
+.sv-res-weapons { justify-content: center; }
+.sv-center { text-align: center; }
+.sv-time { font-family: var(--pixel); font-size: 40px; text-shadow: 0 3px 0 rgba(0,0,0,.5); }
+.sv-timebar { position: relative; width: 320px; height: 10px; border-radius: 99px; background: rgba(0,0,0,.5); overflow: visible; }
+.sv-timefill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #6dff8a, #ffd23f, #ff5d5d); }
+.sv-bossmark { position: absolute; left: calc(150 / 180 * 100%); top: -5px; width: 4px; height: 20px; background: var(--red); border-radius: 2px; }
+.sv-bossmark::after { content: '👑'; position: absolute; top: 18px; left: -8px; font-size: 14px; }
+.sv-right { background: rgba(10,10,30,.6); border-radius: 14px; padding: 10px 16px; text-align: right; }
+.sv-right b { font-family: var(--pixel); font-size: 22px; color: var(--gold); }
+.sv-boss { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 480px; text-align: center; font-weight: 800; z-index: 3; display: none; }
+.sv-boss.show { display: block; animation: pop .4s; }
+.sv-boss .hpbar { height: 16px; border: 2px solid rgba(255,255,255,.4); }
+.sv-rules { text-align: left; display: grid; gap: 6px; background: rgba(0,0,0,.25); border-radius: 12px; padding: 12px 16px; font-size: 14px; }
+.sv-choices { display: flex; gap: 14px; }
+.sv-choice {
+  position: relative; width: 190px; padding: 22px 14px 16px; border-radius: 16px; border: 2px solid var(--wc, #ff5d8f);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wc, #ff5d8f) 30%, transparent), rgba(255,255,255,.04)); display: grid; gap: 6px; justify-items: center;
+  transition: transform .15s; animation: pop .3s ease-out backwards;
+}
+.sv-choice:nth-child(2) { animation-delay: .08s; } .sv-choice:nth-child(3) { animation-delay: .16s; }
+.sv-choice:hover { transform: translateY(-6px); }
+.svc-icon { font-size: 44px; }
+.svc-name { font-size: 18px; font-weight: 800; }
+.svc-tag { font-family: var(--pixel); font-size: 14px; } .svc-tag b { color: var(--gold); } .svc-tag .new { color: var(--pink); }
+.svc-desc { font-size: 12px; color: var(--sub); }
+.float-text.sv-banner { font-size: 40px; color: #fff; -webkit-text-stroke: 2px rgba(0,0,0,.5); paint-order: stroke fill; animation-duration: 1.6s; }
+.node.here .node-icon { opacity: .35; margin-top: -24px; }
+.node.here.boss .node-icon { opacity: 1; margin-top: -40px; }

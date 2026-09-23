@@ -99,6 +99,11 @@ function renderTyping(root, word, target, { hideRoma = false } = {}) {
   roma.classList.toggle('hidden-guide', hideRoma);
 }
 
+function fmtTime(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+}
+
 function esc(s) {
   return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
@@ -157,10 +162,21 @@ const App = {
         return;
       }
       const s = Screens[this.current];
+      if (e.key === 'Tab') e.preventDefault();
       if (s && s.onKey) {
         const handled = s.onKey(e);
         if (handled !== false && (e.key === ' ' || e.key === 'Tab' || e.key === "'" || e.key === '/')) e.preventDefault();
       }
+    });
+
+    // キーを離したとき (移動の操作で使う)
+    document.addEventListener('keyup', e => {
+      const s = Screens[this.current];
+      if (s && s.onKeyUp) s.onKeyUp(e);
+    });
+    addEventListener('blur', () => {
+      const s = Screens[this.current];
+      if (s && s.onBlur) s.onBlur();
     });
 
     this.show('title');
@@ -234,6 +250,7 @@ Screens.home = {
     $('#go-practice').onclick = () => { SFX.select(); App.show('psetup'); };
     $('#go-battle').onclick = () => { SFX.select(); App.show('stages'); };
     $('#go-select').onclick = () => { SFX.select(); App.show('select'); };
+    $('#go-survival').onclick = () => { SFX.select(); App.show('survival'); };
     document.querySelectorAll('#set-lang button').forEach(b => {
       b.onclick = () => { Save.data.settings.lang = b.dataset.v; Save.save(); SFX.select(); this.render(); };
     });
@@ -278,6 +295,7 @@ Screens.home = {
       <div class="rec-grid">
         ${Object.keys(diffName).map(k => `<div><span>${diffName[k]}</span><b>${best[lang + '-' + k] ?? '—'}</b></div>`).join('')}
         <div><span>バトル突破</span><b>${Save.data.cleared}/${ENEMIES.length}</b></div>
+        <div><span>サバイバル</span><b>${best.survival ? (best.survival.cleared ? 'クリア' : fmtTime(best.survival.time)) : '—'}</b></div>
       </div>
       <div class="weak"><span>苦手なキー</span>${wk.length ? wk.map(([k, n]) => `<kbd>${k === ';' ? ';' : k.toUpperCase()}</kbd><small>${n}</small>`).join('') : '<small>まだデータがありません</small>'}</div>`;
   },
@@ -285,41 +303,8 @@ Screens.home = {
   onKey(e) {
     if (e.key === '1') $('#go-practice').click();
     if (e.key === '2') $('#go-battle').click();
-    if (e.key === '3') $('#go-select').click();
+    if (e.key === '3') $('#go-survival').click();
+    if (e.key === '4') $('#go-select').click();
     if (e.key === 'Escape') App.show('title');
-  },
-};
-
-// ---------------- ステージ選択 ----------------
-Screens.stages = {
-  enter() {
-    const c = charInfo(Save.data.active);
-    $('#stages-desc').innerHTML = `${c.name} (Lv.${c.L}) でたたかいます。たおすと次のあいてが出てきます。`;
-    const diffStars = { easy: '★', normal: '★★', hard: '★★★' };
-    $('#stage-list').innerHTML = ENEMIES.map((e, i) => {
-      const locked = i > Save.data.cleared;
-      const cleared = i < Save.data.cleared;
-      const warn = !locked && c.L < e.lv - 2 ? '<span class="warn">レベル不足かも</span>' : '';
-      return `<button class="stage-card ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''}" data-i="${i}" ${locked ? 'disabled' : ''}>
-        <span class="mc-key">${i + 1}</span>
-        <div class="st-sprite">${locked ? '<div class="lock">?</div>' : enemySVG(e.id)}</div>
-        <div class="st-body">
-          <div class="st-name">${locked ? '？？？' : e.name}${e.boss && !locked ? ' <span class="badge boss">BOSS</span>' : ''}</div>
-          <div class="st-meta">Lv.${e.lv} ・ お題 ${diffStars[e.diff]} ${warn}</div>
-          <div class="st-desc">${locked ? 'まえのあいてをたおすと あらわれる' : e.desc}</div>
-          ${locked ? '' : `<div class="st-ability">${e.abilityDesc}</div>`}
-        </div>
-        ${cleared ? '<div class="st-clear">CLEAR</div>' : ''}
-      </button>`;
-    }).join('');
-    $('#stage-list').querySelectorAll('.stage-card:not(.locked)').forEach(b => {
-      b.onclick = () => { SFX.select(); App.show('battle', +b.dataset.i); };
-    });
-    $('#btn-stages-back').onclick = () => App.show('home');
-  },
-  onKey(e) {
-    const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= ENEMIES.length && n - 1 <= Save.data.cleared) { SFX.select(); App.show('battle', n - 1); }
-    if (e.key === 'Escape') App.show('home');
   },
 };

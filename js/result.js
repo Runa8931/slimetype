@@ -20,6 +20,13 @@ Screens.result = {
         <div class="score">スコア <b>${r.score}</b>${r.newBest ? '<span class="new">NEW RECORD!</span>' : ''}</div>
         <div class="score-note">スコア = 打鍵/分 × 正確率³</div>
       </div>`;
+    } else if (r.mode === 'survival') {
+      head = `<div class="res-head ${r.won ? 'won' : 'lost'}">
+        <div class="res-title">${r.won ? 'サバイバル クリア！ ドラゴンをたおした！' : `${ch.name} は たおれてしまった…`}</div>
+        <div class="score">生きのこった時間 <b>${fmtTime(r.time)}</b>${r.newBest ? '<span class="new">NEW RECORD!</span>' : ''}</div>
+        <div class="sv-res-weapons">${r.weapons.map(w => `<div class="sv-w" style="--wc:${SV_WEAPONS[w.id].color}">${SV_WEAPONS[w.id].icon}<small>${w.lv >= SV_MAX_LV ? 'MAX' : 'Lv' + w.lv}</small></div>`).join('')}</div>
+        ${!r.won ? '<div class="tip">ヒント: 宝箱をたくさん拾って武器をそろえよう。タイピングでレベルを上げると HP と攻撃力も上がるよ</div>' : ''}
+      </div>`;
     } else {
       const e = ENEMIES[r.enemyIdx];
       head = `<div class="res-head ${r.won ? 'won' : 'lost'}">
@@ -31,8 +38,12 @@ Screens.result = {
       </div>`;
     }
 
-    const misses = Object.entries(r.missMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const statsHtml = `<div class="res-stats">
+    const misses = Object.entries(r.missMap || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const statsHtml = r.mode === 'survival' ? `<div class="res-stats">
+      <div><span>じかん</span><b>${fmtTime(r.time)}</b></div>
+      <div><span>たおした数</span><b>${r.kills}</b></div>
+      <div><span>ジェム</span><b>${r.gems}</b></div>
+    </div>` : `<div class="res-stats">
       <div><span>打鍵/分</span><b>${r.kpm}</b></div>
       <div><span>正確率</span><b>${(r.acc * 100).toFixed(1)}%</b></div>
       <div><span>正しく打った数</span><b>${r.correct}</b></div>
@@ -56,7 +67,7 @@ Screens.result = {
     $('#result-wrap').innerHTML = head + `<div class="res-cols"><div class="panel">${statsHtml}</div>${expHtml}</div>
       <div class="bottom-bar">
         <button class="btn ghost" id="res-home">ホームへ <kbd>Esc</kbd></button>
-        <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もういちど' : r.won ? 'つぎへ' : 'リベンジ'} <kbd>Space</kbd></button>
+        <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もういちど' : r.mode === 'survival' ? 'もういちど' : r.won ? 'マップへ' : 'リベンジ'} <kbd>Space</kbd></button>
       </div>`;
     $('#res-home').onclick = () => this.home();
     $('#res-again').onclick = () => this.again();
@@ -145,7 +156,8 @@ Screens.result = {
   again() {
     const r = this.r;
     if (r.mode === 'practice') App.show('practice');
-    else if (r.won) App.show('stages');
+    else if (r.mode === 'survival') App.show('survival');
+    else if (r.won) App.show('stages', { justCleared: r.firstClear ? r.enemyIdx : null });
     else App.show('battle', r.enemyIdx);
   },
 

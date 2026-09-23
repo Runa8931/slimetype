@@ -53,10 +53,15 @@
         <button class="menu-card battle" id="go-battle">
           <span class="mc-key">2</span>
           <span class="mc-title">バトル</span>
-          <span class="mc-desc">育てたスライムでモンスターとたたかう</span>
+          <span class="mc-desc">マップを走って、ステージの敵とタイピングでたたかう</span>
+        </button>
+        <button class="menu-card survival" id="go-survival">
+          <span class="mc-key">3</span>
+          <span class="mc-title">サバイバル</span>
+          <span class="mc-desc">WASD で動いて、せまる敵の大群を 3 分しのげ！</span>
         </button>
         <button class="menu-card change" id="go-select">
-          <span class="mc-key">3</span>
+          <span class="mc-key">4</span>
           <span class="mc-title">スライムをかえる</span>
           <span class="mc-desc">ほかのスライムも育ててみよう</span>
         </button>
@@ -101,12 +106,48 @@
     <div class="overlay" id="p-overlay"></div>
   </section>
 
-  <!-- ステージ選択 -->
+  <!-- ワールドマップ (バトルの入り口) -->
   <section class="screen" id="scr-stages">
-    <h2 class="screen-title">バトル — あいてをえらぼう</h2>
-    <p class="screen-desc" id="stages-desc"></p>
-    <div class="stage-list" id="stage-list"></div>
-    <div class="bottom-bar"><button class="btn ghost" id="btn-stages-back">もどる <kbd>Esc</kbd></button></div>
+    <div class="map-top">
+      <div class="map-world" id="map-world"></div>
+      <div class="map-char" id="map-char"></div>
+    </div>
+    <div class="map-outer" id="map-outer">
+      <div class="map" id="map">
+        <svg class="map-svg" id="map-svg" viewBox="0 0 1200 680" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="map-nodes" id="map-nodes"></div>
+        <div class="map-player" id="map-player"><div class="mp-arrows" id="map-arrows"></div><div class="sprite"></div></div>
+      </div>
+      <div class="map-info" id="map-info"></div>
+    </div>
+    <div class="map-help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> いどう　<kbd>Space</kbd> たたかう　<kbd>Tab</kbd> ステージいちらん　<kbd>Esc</kbd> ホーム</div>
+    <aside class="drawer" id="drawer">
+      <div class="drawer-head">ステージいちらん <small><kbd>Tab</kbd> でとじる</small></div>
+      <div class="stage-list" id="stage-list"></div>
+    </aside>
+  </section>
+
+  <!-- サバイバル -->
+  <section class="screen" id="scr-survival">
+    <canvas id="sv-canvas"></canvas>
+    <div class="sv-hud">
+      <div class="sv-left">
+        <div class="sv-name" id="sv-name"></div>
+        <div class="hpbar"><div class="hp-fill" id="sv-hp"></div></div>
+        <div class="sv-weapons" id="sv-weapons"></div>
+      </div>
+      <div class="sv-center">
+        <div class="sv-time" id="sv-time">0:00</div>
+        <div class="sv-timebar"><div class="sv-timefill" id="sv-timefill"></div><div class="sv-bossmark" title="ボス"></div></div>
+      </div>
+      <div class="sv-right">
+        <div>たおした <b id="sv-kills">0</b></div>
+        <div>ジェム <b id="sv-gems">0</b></div>
+      </div>
+    </div>
+    <div class="sv-boss" id="sv-boss"><span>ドラゴン</span><div class="hpbar"><div class="hp-fill enemy-hp" id="sv-bosshp"></div></div></div>
+    <div class="hint">WASD: いどう　Esc: ポーズ</div>
+    <div class="overlay" id="sv-overlay"></div>
   </section>
 
   <!-- バトル -->
@@ -159,7 +200,9 @@
   <script src="js/audio.js"></script>
   <script src="js/main.js"></script>
   <script src="js/practice.js"></script>
+  <script src="js/map.js"></script>
   <script src="js/battle.js"></script>
+  <script src="js/survival.js"></script>
   <script src="js/result.js"></script>
   <script>App.boot();</script>
 </body>

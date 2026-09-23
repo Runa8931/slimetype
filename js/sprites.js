@@ -6,23 +6,41 @@
 let _svgUid = 0;
 
 function slimeSVG(id, stage = 0) {
-  const c = CHARACTERS[id].colors;
+  const def = CHARACTERS[id];
+  const c = (def.stageColors && def.stageColors[stage]) || def.colors;
   const u = 's' + (++_svgUid);
 
-  // 体の形
+  // 体の形 (進化すると少し形も変わる)
   const bodies = {
-    purun: 'M60,22 C66,34 84,44 96,62 C108,78 108,100 88,104 L32,104 C12,100 12,78 24,62 C36,44 54,34 60,22 Z',
-    piriri: 'M60,30 C88,30 104,56 106,80 C108,98 96,104 84,104 L36,104 C24,104 12,98 14,80 C16,56 32,30 60,30 Z',
-    gotsun: 'M30,44 L50,32 L74,34 L94,48 L104,74 L100,100 L86,104 L34,104 L18,100 L16,72 Z',
+    purun: [
+      'M60,22 C66,34 84,44 96,62 C108,78 108,100 88,104 L32,104 C12,100 12,78 24,62 C36,44 54,34 60,22 Z',
+      'M60,16 C70,30 92,40 104,60 C116,80 114,102 90,105 L30,105 C6,102 4,80 16,60 C28,40 50,30 60,16 Z',
+      'M60,16 C70,30 92,40 104,60 C116,80 114,102 90,105 L30,105 C6,102 4,80 16,60 C28,40 50,30 60,16 Z',
+    ],
+    piriri: [
+      'M60,30 C88,30 104,56 106,80 C108,98 96,104 84,104 L36,104 C24,104 12,98 14,80 C16,56 32,30 60,30 Z',
+      'M60,28 C90,28 108,54 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C12,54 30,28 60,28 Z',
+      'M60,28 C90,28 108,54 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C12,54 30,28 60,28 Z',
+    ],
+    gotsun: [
+      'M30,44 L50,32 L74,34 L94,48 L104,74 L100,100 L86,104 L34,104 L18,100 L16,72 Z',
+      'M26,42 L48,28 L76,30 L98,46 L110,74 L104,102 L88,106 L32,106 L14,102 L10,72 Z',
+      'M26,42 L48,28 L76,30 L98,46 L110,74 L104,102 L88,106 L32,106 L14,102 L10,72 Z',
+    ],
   };
 
-  // 種類ごとの飾り
   let behind = '';
   let front = '';
+
+  // ---- 種類ごとの基本の飾り ----
+  if (id === 'purun') {
+    front += `<circle cx="38" cy="84" r="5" fill="#ff9ab0" opacity=".6"/><circle cx="82" cy="84" r="5" fill="#ff9ab0" opacity=".6"/>`;
+  }
   if (id === 'piriri') {
-    // かみなりのツノ
-    behind += `<path d="M44,36 L34,10 L46,18 L42,4" fill="none" stroke="${c.dark}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-               <path d="M76,36 L86,10 L74,18 L78,4" fill="none" stroke="${c.dark}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const horn = stage >= 1
+      ? ['M44,34 L28,4 L44,14 L36,-8', 'M76,34 L92,4 L76,14 L84,-8']
+      : ['M44,36 L34,10 L46,18 L42,4', 'M76,36 L86,10 L74,18 L78,4'];
+    behind += horn.map(d => `<path d="${d}" fill="none" stroke="${c.dark}" stroke-width="${stage >= 1 ? 6 : 5}" stroke-linejoin="round" stroke-linecap="round"/>`).join('');
     front += `<path d="M16,84 L6,90 L14,92 L4,100" fill="none" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
               <circle cx="36" cy="80" r="6" fill="#ff8a7a" opacity=".7"/><circle cx="84" cy="80" r="6" fill="#ff8a7a" opacity=".7"/>`;
   }
@@ -32,49 +50,65 @@ function slimeSVG(id, stage = 0) {
               <path d="M22,88 L34,84 L30,96 Z" fill="${c.dark}" opacity=".35"/>
               <path d="M70,92 L84,88 L80,100 Z" fill="${c.dark}" opacity=".35"/>`;
   }
-  if (id === 'purun') {
-    front += `<circle cx="38" cy="84" r="5" fill="#ff9ab0" opacity=".6"/><circle cx="82" cy="84" r="5" fill="#ff9ab0" opacity=".6"/>`;
-  }
 
-  // 進化段階ごとの飾り
+  // ---- 1 段階目の進化: 見た目がはっきり変わる飾り ----
   if (stage >= 1) {
     if (id === 'purun') {
-      front += `<g class="orbit"><circle cx="16" cy="44" r="5" fill="${c.accent}" stroke="${c.dark}" stroke-width="1.5"/>
-                <circle cx="104" cy="40" r="4" fill="${c.accent}" stroke="${c.dark}" stroke-width="1.5"/>
-                <circle cx="108" cy="58" r="3" fill="${c.accent}" stroke="${c.dark}" stroke-width="1.5"/></g>`;
+      // 頭のしずくがくるんと巻き、体に波もよう、しずくが周りを回る
+      behind += `<path d="M60,18 C54,6 66,-2 72,6 C76,12 70,18 64,14" fill="none" stroke="${c.dark}" stroke-width="4" stroke-linecap="round"/>`;
+      front += `<path d="M14,78 C26,70 36,86 48,78 C60,70 70,86 82,78 C92,72 100,80 106,78" fill="none" stroke="#fff" stroke-width="4" opacity=".45" stroke-linecap="round"/>
+        <g class="orbit"><circle cx="10" cy="44" r="7" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>
+        <circle cx="110" cy="38" r="6" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>
+        <circle cx="114" cy="62" r="4.5" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/></g>`;
     }
     if (id === 'piriri') {
-      front += `<path d="M98,40 L108,30 L104,42 L114,36" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" class="spark"/>
-                <path d="M22,40 L12,30 L16,42 L6,36" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" class="spark"/>`;
+      // 体にいなずまのしまもよう + 火花
+      front += `<path d="M20,64 L34,58 L30,70 L46,64" fill="none" stroke="${c.dark}" stroke-width="4" stroke-linejoin="round" opacity=".7"/>
+        <path d="M100,64 L86,58 L90,70 L74,64" fill="none" stroke="${c.dark}" stroke-width="4" stroke-linejoin="round" opacity=".7"/>
+        <path d="M104,36 L114,26 L110,38 L120,32" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" class="spark"/>
+        <path d="M16,36 L6,26 L10,38 L0,32" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" class="spark"/>`;
     }
-    if (id === 'gotsun' && stage === 1) {
-      front += `<path d="M44,34 C48,26 58,24 62,30 C66,24 76,26 78,34 Z" fill="${c.accent}"/>
-                <circle cx="56" cy="28" r="3" fill="#fff8b0"/>`;
+    if (id === 'gotsun') {
+      // 背中に水晶が生え、頭にこけ
+      behind += `<path d="M34,34 L28,8 L44,28 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>
+        <path d="M86,36 L96,10 L98,40 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>
+        <path d="M58,30 L62,2 L70,30 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>`;
+      if (stage === 1) {
+        front += `<path d="M40,34 C46,24 58,22 62,30 C68,22 80,26 82,36 C70,32 52,32 40,34 Z" fill="#6fcf6a"/>`;
+      }
     }
   }
+
+  // ---- 最終進化: 王冠 + オーラ ----
   if (stage >= 2) {
-    const crownY = id === 'purun' ? 2 : id === 'piriri' ? 12 : 12;
+    const crownY = id === 'purun' ? -6 : id === 'piriri' ? 6 : 8;
     front += `<g transform="translate(60,${crownY})">
-      <path d="M-18,18 L-20,0 L-10,9 L0,-4 L10,9 L20,0 L18,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
-      <circle cx="0" cy="10" r="3.5" fill="#ff4d6d"/><circle cx="-11" cy="12" r="2.5" fill="#4dd2ff"/><circle cx="11" cy="12" r="2.5" fill="#6dff8a"/>
+      <path d="M-20,18 L-22,0 L-11,9 L0,-6 L11,9 L22,0 L20,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="0" cy="10" r="3.8" fill="#ff4d6d"/><circle cx="-12" cy="12" r="2.6" fill="#4dd2ff"/><circle cx="12" cy="12" r="2.6" fill="#6dff8a"/>
     </g>`;
+    if (id === 'piriri') {
+      behind += `<ellipse cx="60" cy="68" rx="62" ry="50" fill="none" stroke="${c.accent}" stroke-width="3" stroke-dasharray="10 8" class="orbit" opacity=".8"/>`;
+    }
+    if (id === 'gotsun') {
+      front += `<circle cx="36" cy="16" r="3" fill="#fff" class="spark"/><circle cx="92" cy="20" r="3" fill="#fff" class="spark"/>`;
+    }
   }
 
   const aura = stage >= 2
-    ? `<ellipse class="aura" cx="60" cy="72" rx="56" ry="46" fill="url(#${u}-aura)"/>` : '';
+    ? `<ellipse class="aura" cx="60" cy="72" rx="58" ry="48" fill="url(#${u}-aura)"/>` : '';
 
-  return `<svg viewBox="-6 -8 132 128" class="slime slime-${id} stage-${stage}" xmlns="http://www.w3.org/2000/svg">
+  return `<svg viewBox="-6 -14 132 134" class="slime slime-${id} stage-${stage}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="${u}-g" cx="40%" cy="35%" r="75%">
         <stop offset="0%" stop-color="${c.light}"/><stop offset="55%" stop-color="${c.main}"/><stop offset="100%" stop-color="${c.dark}"/>
       </radialGradient>
-      <radialGradient id="${u}-aura"><stop offset="0%" stop-color="${c.accent}" stop-opacity=".55"/><stop offset="100%" stop-color="${c.accent}" stop-opacity="0"/></radialGradient>
+      <radialGradient id="${u}-aura"><stop offset="0%" stop-color="${c.accent}" stop-opacity=".6"/><stop offset="100%" stop-color="${c.accent}" stop-opacity="0"/></radialGradient>
     </defs>
     ${aura}
-    <ellipse cx="60" cy="108" rx="44" ry="7" fill="#000" opacity=".25"/>
+    <ellipse cx="60" cy="109" rx="46" ry="7" fill="#000" opacity=".25"/>
     <g class="body">
       ${behind}
-      <path d="${bodies[id]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="${bodies[id][stage]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
       <ellipse cx="40" cy="56" rx="9" ry="5" fill="#fff" opacity=".7" transform="rotate(-30 40 56)"/>
       <circle cx="30" cy="66" r="3" fill="#fff" opacity=".6"/>
       <g class="eyes">
@@ -85,6 +119,14 @@ function slimeSVG(id, stage = 0) {
       ${front}
     </g>
   </svg>`;
+}
+
+// SVG 文字列をキャンバスで描ける画像に変換する
+function svgToImage(svg) {
+  const img = new Image();
+  const s = svg.includes('xmlns=') ? svg : svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+  return img;
 }
 
 // ---------------- 敵 ----------------

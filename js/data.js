@@ -41,6 +41,12 @@ const CHARACTERS = {
     type: 'みず',
     role: 'バランス型',
     colors: { main: '#4fb3ff', light: '#b5e3ff', dark: '#1f6fc4', accent: '#7cf0ff' },
+    // 進化段階ごとの体の色 (ぷるん → ぷるるん → キングぷるん)
+    stageColors: [
+      { main: '#4fb3ff', light: '#b5e3ff', dark: '#1f6fc4', accent: '#7cf0ff' },
+      { main: '#2fd0c8', light: '#c2fff6', dark: '#0f8a8f', accent: '#9bfff0' },
+      { main: '#5a6dff', light: '#cfd6ff', dark: '#2a2fa8', accent: '#ffe27a' },
+    ],
     base: { hp: 75, atk: 65, def: 65, spd: 65 },
     desc: 'どこにでもいる、ぷるぷるのみずスライム。なんでもそつなくこなす。',
     trait: { name: 'うるおいボディ', desc: 'ノーミスでお題を打ち切ると HP が 4% 回復する' },
@@ -52,6 +58,11 @@ const CHARACTERS = {
     type: 'でんき',
     role: 'スピード型',
     colors: { main: '#ffd23f', light: '#fff2a8', dark: '#d99a00', accent: '#fff' },
+    stageColors: [
+      { main: '#ffd23f', light: '#fff2a8', dark: '#d99a00', accent: '#fff' },
+      { main: '#ffa62b', light: '#ffe2a8', dark: '#c45f00', accent: '#fff6a0' },
+      { main: '#fff27a', light: '#ffffff', dark: '#d9a800', accent: '#7cf0ff' },
+    ],
     base: { hp: 55, atk: 85, def: 45, spd: 95 },
     desc: 'いつもビリビリしているかみなりスライム。打つのが速いほど強くなる。',
     trait: { name: 'でんこうせっか', desc: 'お題を速く打ち切るほど会心率アップ (最大 55%)' },
@@ -63,6 +74,11 @@ const CHARACTERS = {
     type: 'いわ',
     role: 'ぼうぎょ型',
     colors: { main: '#b08a64', light: '#dcc3a3', dark: '#6e5238', accent: '#9be7a0' },
+    stageColors: [
+      { main: '#b08a64', light: '#dcc3a3', dark: '#6e5238', accent: '#9be7a0' },
+      { main: '#8f959e', light: '#d6dae0', dark: '#50565e', accent: '#8fe08a' },
+      { main: '#5b5f78', light: '#a4aac6', dark: '#2b2e42', accent: '#c58bff' },
+    ],
     base: { hp: 95, atk: 60, def: 90, spd: 45 },
     desc: 'かたくて重たいいわスライム。のんびりやだけど、とにかくタフ。',
     trait: { name: 'かたいからだ', desc: '受けるダメージ 20% カット。ミスしてもコンボが半分残る' },
