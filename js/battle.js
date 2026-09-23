@@ -1,0 +1,521 @@
+// ============================================================
+//  バトルモード
+//  ・お題を打ち切るとスライムが攻撃 (長いお題ほど強い、コンボで倍率アップ)
+//  ・敵は攻撃ゲージがたまるたびに攻撃してくる
+//  ・正しく打つと必殺技ゲージがたまり、Enter で発動
+// ============================================================
+
+const DIFF_POOLS = { easy: ['easy'], normal: ['easy', 'normal', 'normal'], hard: ['normal', 'hard', 'hard'] };
+
+Screens.battle = {
+  enter(idx) {
+    this.idx = idx;
+    this.ed = ENEMIES[idx];
+    const ch = charInfo(Save.data.active);
+    this.ch = ch;
+    const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
+
+    this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
+    this.e = { hp: Math.round(es.hp * ENEMY_HP_SCALE), max: Math.round(es.hp * ENEMY_HP_SCALE), stats: es, gauge: 0, attacks: 0, angry: false };
+    this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0;
+    this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
+    this.missMap = {};
+    this.state = 'ready';
+    this.elapsed = 0;
+    this.pending = 0; // 飛んでいる途中の攻撃
+
+    this.deck = new WordDeck(Save.data.settings.lang, DIFF_POOLS[this.ed.diff]);
+
+    const arena = $('#arena');
+    arena.className = 'arena bg-' + this.ed.bg;
+    $('#b-player').className = 'fighter player';
+    $('#b-enemy').className = 'fighter enemy' + (this.ed.boss ? ' boss' : '');
+    $('#b-psprite').innerHTML = slimeSVG(ch.id, ch.stage);
+    $('#b-esprite').innerHTML = enemySVG(this.ed.id);
+    $('#b-pname').textContent = ch.name;
+    $('#b-plv').textContent = ` Lv.${ch.L}`;
+    $('#b-ename').textContent = this.ed.name;
+    $('#b-elv').textContent = ` Lv.${this.ed.lv}`;
+    $('#b-skillname').textContent = ch.def.skill.name;
+    $('#b-skill').style.setProperty('--cc', ch.def.colors.main);
+    $('#b-log').innerHTML = '';
+    $('#b-tp .tp-roma').classList.remove('hidden-guide');
+
+    this.nextWord();
+    this.updateBars(true);
+    this.updateCombo();
+    this.overlay(`<div class="ov-box vs">
+      <div class="vs-row"><div class="sprite">${slimeSVG(ch.id, ch.stage)}</div><div class="vs-text">VS</div><div class="sprite enemy-mini">${enemySVG(this.ed.id)}</div></div>
+      <div class="ov-title">${this.ed.name} があらわれた！</div>
+      <div class="ov-sub">${this.ed.abilityDesc}</div>
+      <div class="ov-key"><kbd>Space</kbd> でバトル開始</div></div>`);
+  },
+
+  leave() { this.state = 'off'; cancelAnimationFrame(this.raf); },
+
+  overlay(html) {
+    const o = $('#b-overlay');
+    o.innerHTML = html || '';
+    o.classList.toggle('show', !!html);
+  },
+
+  log(msg, cls = '') {
+    const el = document.createElement('div');
+    el.className = 'log-line ' + cls;
+    el.textContent = msg;
+    const box = $('#b-log');
+    box.appendChild(el);
+    while (box.children.length > 3) box.firstChild.remove();
+    setTimeout(() => el.classList.add('fade'), 2600);
+  },
+
+  async countdown() {
+    this.state = 'count';
+    for (const n of ['3', '2', '1']) {
+      if (this.state !== 'count') return;
+      this.overlay(`<div class="count">${n}</div>`);
+      SFX.count();
+      await sleep(600);
+    }
+    if (this.state !== 'count') return;
+    this.overlay('<div class="count go">FIGHT!</div>');
+    SFX.go();
+    setTimeout(() => { if (this.state === 'run') this.overlay(''); }, 450);
+    this.state = 'run';
+    this.last = performance.now();
+    this.nextFog = 6000;
+    this.raf = requestAnimationFrame(t => this.tick(t));
+  },
+
+  interval() {
+    let iv = this.ed.interval;
+    if (this.e.angry) iv *= this.ed.ability === 'dragon' ? 0.72 : 0.7;
+    return iv;
+  },
+
+  // 毎フレームの処理: 敵の攻撃ゲージ・どく・きり
+  tick(now) {
+    if (this.state !== 'run') return;
+    const dt = Math.min(50, now - this.last);
+    this.last = now;
+    this.elapsed += dt;
+
+    this.e.gauge += dt / this.interval();
+    if (this.e.gauge >= 1) { this.e.gauge = 0; this.enemyAttack(); }
+    $('#b-atk').style.width = (this.e.gauge * 100) + '%';
+    $('#b-atk').classList.toggle('danger', this.e.gauge > 0.8);
+
+    // どく
+    if (this.p.poisonUntil > this.elapsed) {
+      if (this.elapsed >= this.p.nextPoison) {
+        this.p.nextPoison = this.elapsed + 1000;
+        const d = Math.max(1, Math.round(this.p.max * 0.025));
+        this.damagePlayer(d, 'poison');
+      }
+    }
+    $('#b-pstatus').innerHTML = [
+      this.p.poisonUntil > this.elapsed ? '<i class="st poison">どく</i>' : '',
+      this.p.shield > 0 ? `<i class="st shield">シールド×${this.p.shield}</i>` : '',
+      this.p.boost > 1 ? '<i class="st boost">こうげきUP</i>' : '',
+    ].join('');
+
+    // ゆうれいのきり
+    if (this.ed.ability === 'fade') {
+      if (this.elapsed >= this.nextFog) {
+        this.fogUntil = this.elapsed + 3500;
+        this.nextFog = this.elapsed + 9000 + Math.random() * 3000;
+        this.log(`${this.ed.name} はきりをだした！`, 'enemy');
+        replayAnim($('#b-esprite'), 'cast', 600);
+        this.render();
+      }
+      const fog = this.fogUntil > this.elapsed;
+      if (fog !== this._fog) { this._fog = fog; this.render(); $('#b-tp').classList.toggle('fog', fog); }
+    }
+
+    this.raf = requestAnimationFrame(t => this.tick(t));
+  },
+
+  nextWord() {
+    this.word = this.deck.next();
+    this.target = new TypingTarget(this.word.k);
+    this.wordMiss = false;
+    this.wordStart = 0;
+    replayAnim($('#b-tp'), 'word-in', 300);
+    this.render();
+  },
+
+  render() {
+    renderTyping($('#b-tp'), this.word, this.target, { hideRoma: this.fogUntil > this.elapsed });
+  },
+
+  comboMult() { return 1 + Math.min(this.combo, 100) / 200; },
+
+  updateCombo() {
+    $('#b-combo').textContent = this.combo;
+    $('#b-mult').textContent = '×' + this.comboMult().toFixed(2);
+    const box = $('#b-combo').parentElement;
+    box.classList.toggle('hot', this.combo >= 30);
+    box.classList.toggle('max', this.combo >= 100);
+  },
+
+  updateBars(instant) {
+    const pp = clamp(this.p.hp / this.p.max, 0, 1) * 100;
+    const ep = clamp(this.e.hp / this.e.max, 0, 1) * 100;
+    $('#b-php').style.width = pp + '%';
+    $('#b-ehp').style.width = ep + '%';
+    $('#b-php').classList.toggle('low', pp < 30);
+    $('#b-phpnum').textContent = `${Math.max(0, Math.ceil(this.p.hp))} / ${this.p.max}`;
+    // 少し遅れてへる「ダメージ跡」
+    const lagP = $('#b-php-lag'), lagE = $('#b-ehp-lag');
+    if (instant) { lagP.style.width = pp + '%'; lagE.style.width = ep + '%'; }
+    else {
+      clearTimeout(this._lagT);
+      this._lagT = setTimeout(() => { lagP.style.width = pp + '%'; lagE.style.width = ep + '%'; }, 450);
+    }
+    const sk = clamp(this.p.skill, 0, 100);
+    $('#b-skillfill').style.width = sk + '%';
+    const ready = sk >= 100;
+    $('#b-skill').classList.toggle('ready', ready);
+    $('#b-skillhint').innerHTML = ready ? '<kbd>Enter</kbd> で発動！' : `ためています… ${Math.floor(sk)}%`;
+  },
+
+  onKey(e) {
+    if (this.state === 'ready') {
+      if (e.key === ' ') this.countdown();
+      if (e.key === 'Escape') App.show('stages');
+      return;
+    }
+    if (this.state === 'pause') {
+      if (e.key === ' ') { this.state = 'run'; this.overlay(''); this.last = performance.now(); this.raf = requestAnimationFrame(t => this.tick(t)); }
+      if (e.key === 'Escape') App.show('stages');
+      return;
+    }
+    if (this.state !== 'run') return;
+    if (e.key === 'Escape') {
+      this.state = 'pause';
+      cancelAnimationFrame(this.raf);
+      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Space</kbd> で再開　<kbd>Esc</kbd> でにげる</div></div>');
+      return;
+    }
+    if (e.key === 'Enter') { this.useSkill(); return; }
+    if (e.key.length !== 1) return;
+
+    const key = e.key.toLowerCase();
+    if (!this.wordStart) this.wordStart = this.elapsed;
+    const expected = this.target.nextKey();
+    const r = this.target.input(key);
+    if (r === 'miss') {
+      this.miss++;
+      this.wordMiss = true;
+      this.missMap[expected] = (this.missMap[expected] || 0) + 1;
+      recordMiss(expected);
+      // ごつん: ミスしてもコンボが半分残る
+      this.combo = this.ch.id === 'gotsun' ? Math.floor(this.combo / 2) : 0;
+      this.e.gauge = Math.min(0.99, this.e.gauge + 0.04);
+      this.p.skill = Math.max(0, this.p.skill - 3);
+      SFX.miss();
+      replayAnim($('#b-tp'), 'miss-shake', 300);
+    } else {
+      this.correct++;
+      this.combo++;
+      this.maxCombo = Math.max(this.maxCombo, this.combo);
+      const before = this.p.skill;
+      this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200));
+      if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.log('ひっさつわざの じゅんびOK！ Enter で発動', 'good'); }
+      SFX.key();
+      if (r === 'done') { this.wordDone(); }
+    }
+    this.updateCombo();
+    this.updateBars();
+    if (r !== 'done') this.render();
+  },
+
+  // ---------------- プレイヤーの攻撃 ----------------
+  wordDone() {
+    this.words++;
+    const keys = this.target.totalKeys();
+    const secs = Math.max(0.2, (this.elapsed - this.wordStart) / 1000);
+    const kps = keys / secs;
+    const perfect = !this.wordMiss;
+    SFX.word();
+
+    const st = this.ch.stats;
+    let dmg = calcDamage(this.ch.L, wordPower(keys), st.atk, this.e.stats.def);
+    dmg *= this.comboMult();
+    dmg *= this.p.boost;
+    const boosted = this.p.boost > 1;
+    this.p.boost = 1;
+
+    // 会心: ぴりりは速く打つほど出やすい
+    let critRate = 0.06;
+    if (this.ch.id === 'piriri') critRate = 0.1 + clamp((kps - 2.5) * 0.15, 0, 0.45);
+    const crit = Math.random() < critRate;
+    if (crit) dmg *= 1.5;
+
+    // ゴーレムのよろい
+    let armorMsg = '';
+    if (this.ed.ability === 'armor') {
+      if (this.combo < 30) { dmg *= 0.5; armorMsg = 'block'; } else armorMsg = 'break';
+    }
+    dmg = Math.max(1, Math.round(dmg * (0.9 + Math.random() * 0.1)));
+
+    // うるおいボディ
+    if (this.ch.id === 'purun' && perfect) {
+      const heal = Math.max(1, Math.round(this.p.max * 0.04));
+      if (this.p.hp < this.p.max) {
+        this.p.hp = Math.min(this.p.max, this.p.hp + heal);
+        const pc = FX.center($('#b-psprite'));
+        floatText(pc.x + 30, pc.y - 20, `+${heal}`, 'heal');
+      }
+    }
+
+    this.playerAttackFx(dmg, { crit, boosted, armorMsg, perfect });
+    this.nextWord();
+  },
+
+  playerAttackFx(dmg, { crit, boosted, armorMsg, perfect }) {
+    const col = this.ch.def.colors;
+    const ps = $('#b-psprite');
+    replayAnim(ps, 'lunge-r', 350);
+    const from = FX.center(ps);
+    const to = FX.center($('#b-esprite'));
+    if (perfect) {
+      const tp = FX.center($('#b-tp .tp-roma'));
+      floatText(tp.x + 200, tp.y - 60, 'PERFECT!', 'perfect');
+    }
+    this.pending++;
+    const kinds = {
+      purun: { color: col.main, size: 11, arc: -70 },
+      piriri: { color: '#fff27a', size: 9, arc: -20, frames: 12 },
+      gotsun: { color: col.dark, size: 14, arc: -100, frames: 26 },
+    };
+    FX.projectile({ x: from.x + 30, y: from.y }, to, {
+      frames: 20, ...kinds[this.ch.id],
+      onHit: () => {
+        this.pending--;
+        if (this.state !== 'run' && this.state !== 'pause') return;
+        if (this.ch.id === 'piriri') FX.bolt(to.x - 60, to.y - 40, to.x, to.y, '#fff27a', 10);
+        this.hitEnemy(dmg, { crit, colors: [col.main, col.light, '#fff'] });
+        if (boosted) this.log('アクアパワーで こうげきが 1.5ばい！', 'good');
+        if (armorMsg === 'block') this.log('いしのよろいで ダメージがへった… (コンボ30で貫通)', 'enemy');
+        if (armorMsg === 'break' && Math.random() < 0.4) this.log('コンボの力で よろいを つらぬいた！', 'good');
+      },
+    });
+  },
+
+  hitEnemy(dmg, { crit = false, colors = ['#fff'], big = false } = {}) {
+    const es = $('#b-esprite');
+    const c = FX.center(es);
+    this.e.hp -= dmg;
+    replayAnim(es, 'hit', 400);
+    FX.burst(c.x, c.y, { colors, count: crit || big ? 40 : 18, speed: crit || big ? 8 : 5, size: crit ? 6 : 4 });
+    FX.ring(c.x, c.y, crit ? '#ffd23f' : '#fff', crit ? 110 : 70);
+    floatText(c.x + (Math.random() - 0.5) * 40, c.y - 40, dmg, crit ? 'dmg crit' : big ? 'dmg big' : 'dmg');
+    if (crit) { floatText(c.x, c.y - 90, 'かいしん！', 'crit-label'); SFX.crit(); shake($('#arena')); }
+    else SFX.hit();
+    if (big) shake($('#arena'), true);
+    this.updateBars();
+    this.checkPhase();
+    if (this.e.hp <= 0) this.win();
+  },
+
+  checkPhase() {
+    if (this.e.angry || this.e.hp > this.e.max / 2) return;
+    if (this.ed.ability === 'rage') {
+      this.e.angry = true;
+      $('#b-enemy').classList.add('angry');
+      this.log(`${this.ed.name} はおこりだした！ 攻撃が速くなった！`, 'enemy');
+      cutin('げきど！', this.ed.name, '#e0443e', enemySVG(this.ed.id));
+    }
+    if (this.ed.ability === 'dragon') {
+      this.e.angry = true;
+      $('#b-enemy').classList.add('angry');
+      this.log('ドラゴンが ほんきを だした！', 'enemy');
+      cutin('ほんき モード', this.ed.name, '#ff6a00', enemySVG(this.ed.id));
+      SFX.thunder();
+    }
+  },
+
+  // ---------------- ひっさつわざ ----------------
+  useSkill() {
+    if (this.p.skill < 100) { toast('ひっさつわざゲージがまだたまっていません', 1200); return; }
+    this.p.skill = 0;
+    const ch = this.ch;
+    const col = ch.def.colors;
+    cutin(ch.def.skill.name, ch.name, col.main, slimeSVG(ch.id, ch.stage));
+    const pc = FX.center($('#b-psprite'));
+
+    if (ch.id === 'purun') {
+      const heal = Math.round(this.p.max * 0.4);
+      setTimeout(() => {
+        this.p.hp = Math.min(this.p.max, this.p.hp + heal);
+        this.p.poisonUntil = 0;
+        this.p.boost = 1.5;
+        SFX.heal();
+        for (let i = 0; i < 3; i++) setTimeout(() => FX.ring(pc.x, pc.y, col.accent, 90 + i * 20, 30), i * 150);
+        for (let i = 0; i < 24; i++) {
+          FX.add({ kind: 'dot', shape: 'circle', x: pc.x + (Math.random() - .5) * 100, y: pc.y + 40, vx: 0, vy: -1.5 - Math.random() * 2, g: -0.02, size: 3 + Math.random() * 5, life: 60, max: 60, color: i % 2 ? col.accent : '#fff', rot: 0, vr: 0 });
+        }
+        floatText(pc.x, pc.y - 60, `+${heal}`, 'heal big');
+        replayAnim($('#b-psprite'), 'glow', 900);
+        this.log(`${ch.name} のアクアヒール！ HP が ${heal} 回復した！`, 'good');
+        this.updateBars();
+      }, 700);
+    }
+
+    if (ch.id === 'piriri') {
+      setTimeout(() => {
+        const ec = FX.center($('#b-esprite'));
+        replayAnim(document.body, 'flash-white', 400);
+        SFX.thunder();
+        for (let i = 0; i < 4; i++) {
+          setTimeout(() => FX.bolt(ec.x + (Math.random() - .5) * 80, -20, ec.x + (Math.random() - .5) * 30, ec.y, '#fff27a', 16), i * 90);
+        }
+        const dmg = Math.round(calcDamage(ch.L, 280, ch.stats.atk, this.e.stats.def) * (0.92 + Math.random() * 0.08));
+        setTimeout(() => {
+          if (this.state !== 'run') return;
+          FX.burst(ec.x, ec.y, { colors: ['#fff27a', '#ffd23f', '#fff'], count: 60, speed: 10, shape: 'star', size: 7 });
+          this.hitEnemy(dmg, { big: true, colors: ['#fff27a', '#fff'] });
+          this.log(`サンダーボルト！ ${dmg} のダメージ！`, 'good');
+        }, 250);
+      }, 700);
+    }
+
+    if (ch.id === 'gotsun') {
+      setTimeout(() => {
+        this.p.shield = 2;
+        SFX.guard();
+        $('#b-player').classList.add('shielded');
+        FX.burst(pc.x, pc.y, { colors: [col.dark, col.main, col.accent], count: 30, speed: 6, shape: 'rect', size: 8 });
+        FX.ring(pc.x, pc.y, col.accent, 100, 30, 8);
+        this.log(`${ch.name} はロックシールドをはった！`, 'good');
+      }, 700);
+    }
+    this.updateBars();
+  },
+
+  // ---------------- 敵の攻撃 ----------------
+  enemyAttack() {
+    this.e.attacks++;
+    const ed = this.ed;
+    const breath = ed.ability === 'dragon' && this.e.angry && this.e.attacks % 3 === 0;
+    let dmg = calcDamage(ed.lv, ed.power, this.e.stats.atk, this.ch.stats.def) * (0.85 + Math.random() * 0.15);
+    if (breath) dmg *= 1.5;
+    if (this.ch.id === 'gotsun') dmg *= 0.8;
+    dmg = Math.max(1, Math.round(dmg));
+
+    const esEl = $('#b-esprite');
+    replayAnim(esEl, 'lunge-l', 400);
+    const from = FX.center(esEl);
+    const to = FX.center($('#b-psprite'));
+
+    const styles = {
+      bat: { color: '#b48cff', size: 8, arc: 30, frames: 16 },
+      mush: { color: '#a4e06a', size: 10, arc: -80, frames: 24 },
+      ghost: { color: '#c9b8ff', size: 12, arc: 40, frames: 26 },
+      goblin: { color: '#8a5a2b', size: 12, arc: -90, frames: 20 },
+      golem: { color: '#8b8f99', size: 16, arc: -110, frames: 26 },
+      dragon: { color: '#ff7a1a', size: 14, arc: 0, frames: 18 },
+    };
+    const s = styles[ed.id];
+
+    if (breath) {
+      this.log('ドラゴンの ほのおのブレス！', 'enemy');
+      for (let i = 0; i < 26; i++) {
+        setTimeout(() => FX.projectile({ x: from.x - 60, y: from.y - 30 }, { x: to.x + (Math.random() - .5) * 60, y: to.y + (Math.random() - .5) * 60 },
+          { color: i % 3 ? '#ff7a1a' : '#ffd23f', size: 6 + Math.random() * 8, frames: 16, arc: (Math.random() - .5) * 40, trail: false }), i * 18);
+      }
+      setTimeout(() => this.resolveEnemyHit(dmg, true), 16 * 18 + 260);
+      return;
+    }
+    FX.projectile({ x: from.x - 30, y: from.y }, to, { ...s, onHit: () => this.resolveEnemyHit(dmg, false) });
+  },
+
+  resolveEnemyHit(dmg, big) {
+    if (this.state !== 'run' && this.state !== 'pause') return;
+    const pc = FX.center($('#b-psprite'));
+    if (this.p.shield > 0) {
+      this.p.shield--;
+      if (this.p.shield === 0) $('#b-player').classList.remove('shielded');
+      SFX.guard();
+      FX.ring(pc.x, pc.y, '#9be7a0', 90, 20, 8);
+      floatText(pc.x, pc.y - 50, 'ガード！', 'guard');
+      // 反撃: ふせいだダメージの 1.5 倍 + 威力 120 の岩
+      const back = Math.round(dmg * 1.5 + calcDamage(this.ch.L, 120, this.ch.stats.atk, this.e.stats.def));
+      const ec = FX.center($('#b-esprite'));
+      FX.projectile(pc, ec, {
+        color: this.ch.def.colors.dark, size: 14, frames: 18, arc: -60,
+        onHit: () => { if (this.state === 'run') { this.hitEnemy(back, { colors: ['#b08a64', '#9be7a0', '#fff'] }); this.log(`はんげき！ ${back} ダメージ！`, 'good'); } },
+      });
+      return;
+    }
+    this.damagePlayer(dmg, big ? 'big' : 'normal');
+    if (this.ed.ability === 'poison' && this.p.poisonUntil <= this.elapsed) {
+      this.p.poisonUntil = this.elapsed + 5000;
+      this.p.nextPoison = this.elapsed + 1000;
+      this.log('どくを うけてしまった！', 'enemy');
+    }
+  },
+
+  damagePlayer(dmg, kind) {
+    const pc = FX.center($('#b-psprite'));
+    this.p.hp -= dmg;
+    if (kind === 'poison') {
+      floatText(pc.x + 20, pc.y - 30, dmg, 'dmg poison');
+      replayAnim($('#b-psprite'), 'poisoned', 400);
+    } else {
+      SFX.hurt();
+      replayAnim($('#b-psprite'), 'hurt', 450);
+      replayAnim($('#scr-battle'), 'vignette', 500);
+      shake($('#arena'), kind === 'big');
+      FX.burst(pc.x, pc.y, { colors: ['#ff5d5d', '#fff'], count: kind === 'big' ? 36 : 16, speed: 5 });
+      floatText(pc.x, pc.y - 40, dmg, 'dmg taken');
+    }
+    this.updateBars();
+    if (this.p.hp <= 0) this.lose();
+  },
+
+  // ---------------- 決着 ----------------
+  win() {
+    if (this.state === 'end') return;
+    this.state = 'end';
+    cancelAnimationFrame(this.raf);
+    const ec = FX.center($('#b-esprite'));
+    $('#b-enemy').classList.add('defeated');
+    FX.burst(ec.x, ec.y, { colors: ['#fff', '#ffd23f', '#ff5d8f', '#4fb3ff'], count: 80, speed: 10, shape: 'star', size: 7 });
+    FX.ring(ec.x, ec.y, '#fff', 160, 40, 8);
+    SFX.win();
+    setTimeout(() => FX.confetti(), 400);
+    this.overlay('<div class="count go win">WIN!</div>');
+    setTimeout(() => this.finish(true), 1900);
+  },
+
+  lose() {
+    if (this.state === 'end') return;
+    this.state = 'end';
+    cancelAnimationFrame(this.raf);
+    $('#b-player').classList.add('defeated');
+    SFX.lose();
+    this.overlay('<div class="count lose">LOSE…</div>');
+    setTimeout(() => this.finish(false), 1900);
+  },
+
+  finish(won) {
+    const secs = Math.max(1, this.elapsed / 1000);
+    const typing = Math.round(typingExp(this.correct, this.miss, secs) * 0.5);
+    const bonus = won ? Math.floor(this.ed.exp * this.ed.lv / 7) : 0;
+    const firstClear = won && this.idx === Save.data.cleared;
+    if (firstClear) Save.data.cleared = Math.min(ENEMIES.length, this.idx + 1);
+    if (won) Save.data.totals.wins++;
+    Save.data.totals.keys += this.correct;
+    const expRes = grantExp(this.ch.id, typing + bonus);
+    const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
+    App.show('result', {
+      mode: 'battle', won, enemyIdx: this.idx, firstClear,
+      correct: this.correct, miss: this.miss, acc,
+      kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs),
+      maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
+      expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (敵の基礎EXP ${this.ed.exp} × Lv.${this.ed.lv} ÷ 7)` : '勝利ボーナスなし'],
+    });
+  },
+};

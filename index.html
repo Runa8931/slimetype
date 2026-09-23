@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>スライムタイピング</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="sky"></div>
+  <canvas id="fx"></canvas>
+
+  <!-- タイトル -->
+  <section class="screen" id="scr-title">
+    <div class="title-wrap">
+      <div class="title-slimes" id="title-slimes"></div>
+      <h1 class="logo"><span class="logo-sub">うって そだてて たたかう</span>スライム<br>タイピング</h1>
+      <button class="btn big pulse" id="btn-start">はじめる <kbd>Space</kbd></button>
+      <p class="note">※ 入力は「半角英数」モードで行ってください</p>
+    </div>
+  </section>
+
+  <!-- キャラクター選択 -->
+  <section class="screen" id="scr-select">
+    <h2 class="screen-title">いっしょに冒険するスライムをえらぼう</h2>
+    <p class="screen-desc">スライムごとにレベルは別々に記録されます。あとから何度でも変えられます。</p>
+    <div class="select-grid" id="select-grid"></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-select-back">もどる <kbd>Esc</kbd></button></div>
+  </section>
+
+  <!-- ホーム -->
+  <section class="screen" id="scr-home">
+    <header class="topbar">
+      <div class="brand">スライムタイピング</div>
+      <div class="settings">
+        <div class="seg" id="set-lang">
+          <button data-v="ja">日本語</button><button data-v="en">English</button>
+        </div>
+        <button class="icon-btn" id="set-sound" title="効果音"></button>
+      </div>
+    </header>
+    <div class="home-grid">
+      <div class="panel home-char" id="home-char"></div>
+      <div class="home-menu">
+        <button class="menu-card practice" id="go-practice">
+          <span class="mc-key">1</span>
+          <span class="mc-title">れんしゅう</span>
+          <span class="mc-desc">タイピングして経験値をためよう</span>
+        </button>
+        <button class="menu-card battle" id="go-battle">
+          <span class="mc-key">2</span>
+          <span class="mc-title">バトル</span>
+          <span class="mc-desc">育てたスライムでモンスターとたたかう</span>
+        </button>
+        <button class="menu-card change" id="go-select">
+          <span class="mc-key">3</span>
+          <span class="mc-title">スライムをかえる</span>
+          <span class="mc-desc">ほかのスライムも育ててみよう</span>
+        </button>
+        <div class="panel records" id="home-records"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- れんしゅう設定 -->
+  <section class="screen" id="scr-psetup">
+    <h2 class="screen-title">れんしゅうモード</h2>
+    <p class="screen-desc">制限時間内にたくさん正しく打つほど、経験値がもらえます。</p>
+    <div class="diff-grid" id="diff-grid"></div>
+    <div class="time-row">
+      <span>制限時間</span>
+      <div class="seg" id="time-seg"><button data-v="30">30秒</button><button data-v="60">60秒</button><button data-v="90">90秒</button></div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn ghost" id="btn-psetup-back">もどる <kbd>Esc</kbd></button>
+      <button class="btn big" id="btn-psetup-start">スタート <kbd>Space</kbd></button>
+    </div>
+  </section>
+
+  <!-- れんしゅう本番 -->
+  <section class="screen" id="scr-practice">
+    <div class="timebar"><div class="timebar-fill" id="p-timebar"></div></div>
+    <div class="hud">
+      <div class="hud-item"><span>のこり</span><b id="p-time">60</b></div>
+      <div class="hud-item"><span>打鍵/分</span><b id="p-kpm">0</b></div>
+      <div class="hud-item"><span>正確率</span><b id="p-acc">100%</b></div>
+      <div class="hud-item"><span>コンボ</span><b id="p-combo">0</b></div>
+      <div class="hud-item exp"><span>獲得EXP</span><b id="p-exp">0</b></div>
+    </div>
+    <div class="practice-main">
+      <div class="p-char"><div class="sprite" id="p-sprite"></div><div class="p-name" id="p-name"></div></div>
+      <div class="tp" id="p-tp">
+        <div class="tp-display"></div><div class="tp-kana"></div><div class="tp-roma"></div>
+      </div>
+    </div>
+    <div class="kb" id="p-kb"></div>
+    <div class="hint">Esc でやめる</div>
+    <div class="overlay" id="p-overlay"></div>
+  </section>
+
+  <!-- ステージ選択 -->
+  <section class="screen" id="scr-stages">
+    <h2 class="screen-title">バトル — あいてをえらぼう</h2>
+    <p class="screen-desc" id="stages-desc"></p>
+    <div class="stage-list" id="stage-list"></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-stages-back">もどる <kbd>Esc</kbd></button></div>
+  </section>
+
+  <!-- バトル -->
+  <section class="screen" id="scr-battle">
+    <div class="arena" id="arena">
+      <div class="arena-bg"></div>
+      <div class="fighter player" id="b-player">
+        <div class="f-info">
+          <div class="f-name"><span id="b-pname"></span><small id="b-plv"></small><span class="status" id="b-pstatus"></span></div>
+          <div class="hpbar"><div class="hp-lag" id="b-php-lag"></div><div class="hp-fill" id="b-php"></div></div>
+          <div class="hp-num" id="b-phpnum"></div>
+        </div>
+        <div class="sprite" id="b-psprite"></div>
+      </div>
+      <div class="fighter enemy" id="b-enemy">
+        <div class="f-info">
+          <div class="f-name"><span id="b-ename"></span><small id="b-elv"></small><span class="status" id="b-estatus"></span></div>
+          <div class="hpbar"><div class="hp-lag" id="b-ehp-lag"></div><div class="hp-fill enemy-hp" id="b-ehp"></div></div>
+          <div class="atk-gauge"><span>こうげき</span><div class="atk-bar"><div class="atk-fill" id="b-atk"></div></div></div>
+        </div>
+        <div class="sprite" id="b-esprite"></div>
+      </div>
+      <div class="battle-log" id="b-log"></div>
+    </div>
+    <div class="battle-bottom">
+      <div class="combo-box"><div class="combo-num" id="b-combo">0</div><div class="combo-label">COMBO</div><div class="combo-mult" id="b-mult">×1.00</div></div>
+      <div class="tp" id="b-tp">
+        <div class="tp-display"></div><div class="tp-kana"></div><div class="tp-roma"></div>
+      </div>
+      <div class="skill-box" id="b-skill">
+        <div class="skill-name" id="b-skillname"></div>
+        <div class="skill-bar"><div class="skill-fill" id="b-skillfill"></div></div>
+        <div class="skill-hint" id="b-skillhint">ためています…</div>
+      </div>
+    </div>
+    <div class="hint">Enter: ひっさつわざ　Esc: ポーズ</div>
+    <div class="overlay" id="b-overlay"></div>
+  </section>
+
+  <!-- 結果 -->
+  <section class="screen" id="scr-result">
+    <div class="result-wrap" id="result-wrap"></div>
+  </section>
+
+  <script src="js/romaji.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/words.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/practice.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/result.js"></script>
+  <script>App.boot();</script>
+</body>
+</html>
