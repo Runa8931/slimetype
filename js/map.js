@@ -1,6 +1,6 @@
 // ============================================================
 //  ワールドマップ (バトルの入り口)
-//  ・そうげん → うみ → ゆきやま → マグマのしろ の 4 ワールド
+//  ・そうげん → どくぬま → … → マグマのしろ の 11 ワールド (各 6 ステージ)
 //  ・WASD / 矢印キーで道を走ってステージからステージへ移動
 //  ・ステージの上で Space / Enter を押すとバトル開始
 //  ・ボスをたおすと「つぎのワールドへ」のゲートがひらく
@@ -13,35 +13,24 @@ const KEY_DIR = { w: 'up', arrowup: 'up', s: 'down', arrowdown: 'down', a: 'left
 const DIR_KEY = { up: 'W', down: 'S', left: 'A', right: 'D' };
 const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
-// ワールドごとの地図 (nodes は ENEMIES の出てくる順番と同じ)
+// 地図の道の形 (4 つの型を ワールドごとに使い回す。nodes は ENEMIES の順番と同じ)
 const P = (x, y) => ({ x, y });
-const WORLD_MAPS = [
-  { // そうげん
-    start: P(100, 590),
-    nodes: [P(270, 590), P(270, 390), P(520, 270), P(760, 450), P(1000, 450), P(1000, 180)],
-    via: [[], [], [P(390, 390), P(390, 270)], [P(640, 270), P(640, 450)], [], []],
-    gate: P(1135, 180),
-  },
-  { // うみ
-    start: P(90, 560),
-    nodes: [P(300, 560), P(300, 300), P(640, 300), P(980, 520)],
-    via: [[], [], [], [P(800, 300), P(800, 520)]],
-    gate: P(1130, 520),
-  },
-  { // ゆきやま
-    start: P(90, 210),
-    nodes: [P(300, 210), P(300, 470), P(620, 470), P(900, 210)],
-    via: [[], [], [], [P(900, 470)]],
-    gate: P(1120, 210),
-  },
-  { // マグマのしろ
-    start: P(90, 600),
-    nodes: [P(280, 600), P(280, 360), P(560, 360), P(950, 190)],
-    via: [[], [], [], [P(560, 190)]],
-    gate: null,
-  },
-];
-// paths[k] = ひとつ前の地点 → ステージ k までの道
+const MAP_LAYOUTS = {
+  A: { start: P(100, 590), nodes: [P(270, 590), P(270, 390), P(520, 270), P(760, 450), P(1000, 450), P(1000, 180)],
+    via: [[], [], [P(390, 390), P(390, 270)], [P(640, 270), P(640, 450)], [], []], gate: P(1135, 180) },
+  B: { start: P(90, 200), nodes: [P(260, 200), P(260, 450), P(500, 450), P(500, 220), P(780, 220), P(1000, 450)],
+    via: [[], [], [], [], [], [P(1000, 220)]], gate: P(1130, 450) },
+  C: { start: P(90, 560), nodes: [P(280, 560), P(280, 330), P(520, 330), P(760, 560), P(1000, 560), P(1000, 250)],
+    via: [[], [], [], [P(640, 330), P(640, 560)], [], []], gate: P(1130, 250) },
+  D: { start: P(90, 340), nodes: [P(260, 340), P(260, 140), P(560, 140), P(560, 460), P(860, 460), P(860, 200)],
+    via: [[], [], [], [], [], []], gate: P(1100, 200) },
+};
+const WORLD_LAYOUT = { grass: 'A', poison: 'C', desert: 'B', sea: 'D', candy: 'A', rain: 'C', factory: 'B', snow: 'B', sky: 'A', space: 'C', magma: 'D' };
+const WORLD_MAPS = WORLDS.map((w, i) => {
+  const L = MAP_LAYOUTS[WORLD_LAYOUT[w.id]];
+  // さいごのワールドには ゲートがない
+  return { theme: w.id, start: L.start, nodes: L.nodes, via: L.via, gate: i < WORLDS.length - 1 ? L.gate : null };
+});
 WORLD_MAPS.forEach(m => {
   m.paths = m.nodes.map((n, k) => [k === 0 ? m.start : m.nodes[k - 1], ...m.via[k], n]);
   m.gatePath = m.gate ? [m.nodes[m.nodes.length - 1], m.gate] : null;
@@ -128,10 +117,98 @@ const DECO = {
     <path d="M0,-30 C-10,-18 -8,-10 0,-8 C8,-10 10,-18 0,-30 Z" fill="#ff7a1a" class="flame"/><path d="M0,-20 C-4,-14 -3,-10 0,-9 C3,-10 4,-14 0,-20 Z" fill="#ffe14d"/></g>`,
 };
 
+// ---------------- 新しいワールドの背景 ----------------
+const NEW_WORLD_BG = {
+  // どくぬま: むらさきの沼の上に 泥の道
+  poison(m, land) {
+    const bubbles = scatter(m, 30, 60, 81).map(p => `<circle cx="${p.x}" cy="${p.y}" r="${3 + p.r * 6}" fill="none" stroke="#d0bfff" stroke-width="2" opacity=".5"/>`).join('');
+    const trees = scatter(m, 10, 90, 83).map(p => `<g transform="translate(${p.x},${p.y}) scale(${0.8 + p.r * 0.4})">
+      <path d="M0,30 L0,-10 M0,0 L-16,-18 M0,-6 L14,-22 M-8,-10 L-14,-26" stroke="#3b2f2f" stroke-width="5" stroke-linecap="round" fill="none"/></g>`).join('');
+    const mush = scatter(m, 12, 60, 85).map(p => `<g transform="translate(${p.x},${p.y})"><rect x="-3" y="0" width="6" height="9" fill="#e5dbff"/>
+      <path d="M-10,2 C-10,-8 10,-8 10,2 Z" fill="#9d4edd"/><circle cx="-3" cy="-3" r="2" fill="#d0bfff"/></g>`).join('');
+    return `<defs><radialGradient id="mg-swamp" cx="50%" cy="50%" r="80%"><stop offset="0%" stop-color="#4a3b5c"/><stop offset="100%" stop-color="#1f2a1f"/></radialGradient></defs>
+      <rect width="${MAP_W}" height="${MAP_H}" fill="url(#mg-swamp)"/>
+      ${[[200, 120, 140, 50], [980, 600, 180, 60], [640, 60, 120, 40]].map(([x, y, rx, ry]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#6a4c93" opacity=".6"/>`).join('')}
+      ${bubbles}${land('#3d5a2f', 150, 'opacity=".8"')}${land('#6b5b3a', 110)}${trees}${mush}`;
+  },
+  // さばく: すなの丘・サボテン・ピラミッド
+  desert(m) {
+    const cacti = scatter(m, 12, 70, 91).map(p => `<g transform="translate(${p.x},${p.y}) scale(${0.7 + p.r * 0.5})"><ellipse cx="0" cy="26" rx="16" ry="4" fill="#000" opacity=".15"/>
+      <rect x="-6" y="-20" width="12" height="46" rx="6" fill="#40c057" stroke="#2b8a3e" stroke-width="2"/>
+      <path d="M-6,0 L-14,0 L-14,-12 M6,-6 L14,-6 L14,-18" stroke="#40c057" stroke-width="7" fill="none" stroke-linecap="round"/></g>`).join('');
+    const bones = scatter(m, 6, 80, 93).map(p => `<path d="M${p.x - 10},${p.y} L${p.x + 10},${p.y}" stroke="#f8f9fa" stroke-width="4" stroke-linecap="round"/>`).join('');
+    const pyr = (x, y, s) => `<g transform="translate(${x},${y}) scale(${s})"><path d="M-70,0 L0,-80 L70,0 Z" fill="#e0b56a"/><path d="M0,-80 L70,0 L20,0 Z" fill="#c9974a"/></g>`;
+    return `<defs><linearGradient id="mg-sand" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f6d98f"/><stop offset="100%" stop-color="#e2b766"/></linearGradient></defs>
+      <rect width="${MAP_W}" height="${MAP_H}" fill="url(#mg-sand)"/>
+      ${[[180, 640, 260, 60], [900, 90, 300, 60], [620, 660, 220, 40]].map(([x, y, rx, ry]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#f9e3a8" opacity=".8"/>`).join('')}
+      ${pyr(700, 110, 1)}${pyr(820, 120, 0.7)}${pyr(160, 640, 0.8)}
+      <g><ellipse cx="880" cy="600" rx="70" ry="26" fill="#4dabf7" stroke="#f9e3a8" stroke-width="6"/>${DECO.palm(930, 560, 0.7)}</g>
+      ${cacti}${bones}`;
+  },
+  // おかしのくに: ピンクの地面・キャンディ・ドーナツ
+  candy(m) {
+    const sprinkles = scatter(m, 60, 30, 101).map((p, i) => `<rect x="${p.x}" y="${p.y}" width="10" height="3" rx="1.5" fill="${['#ff6b6b', '#ffd43b', '#4dabf7', '#69db7c', '#fff'][i % 5]}" transform="rotate(${p.r * 180} ${p.x} ${p.y})"/>`).join('');
+    const items = scatter(m, 14, 80, 103).map((p, i) => {
+      if (i % 3 === 0) return `<g transform="translate(${p.x},${p.y})"><rect x="-3" y="0" width="6" height="34" fill="#fff"/><circle cx="0" cy="-6" r="16" fill="#ff8fab"/><path d="M0,-6 m0,-12 a12,12 0 1,1 -1,0" fill="none" stroke="#fff" stroke-width="4"/></g>`;
+      if (i % 3 === 1) return `<g transform="translate(${p.x},${p.y})"><circle r="20" fill="#e8a87c"/><circle r="20" fill="none" stroke="#ff8fab" stroke-width="10" stroke-dasharray="6 3"/><circle r="7" fill="#fff0f6"/></g>`;
+      return `<g transform="translate(${p.x},${p.y})"><path d="M-6,30 L-6,-10 C-6,-24 14,-24 14,-10" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+        <path d="M-6,30 L-6,-10 C-6,-24 14,-24 14,-10" fill="none" stroke="#fa5252" stroke-width="8" stroke-dasharray="6 6" stroke-linecap="round"/></g>`;
+    }).join('');
+    return `<rect width="${MAP_W}" height="${MAP_H}" fill="#ffd6e7"/>
+      ${[[200, 150, 180, 70], [900, 560, 220, 80]].map(([x, y, rx, ry]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#ffc2dc"/>`).join('')}
+      <path d="M0,40 C200,0 400,80 600,40 C800,0 1000,80 1200,40 L1200,0 L0,0 Z" fill="#7a3e0a" opacity=".85"/>
+      ${sprinkles}${items}`;
+  },
+  // あめのもり: くらい森・水たまり・雨
+  rain(m) {
+    const trees = scatter(m, 22, 70, 111).map(p => DECO.tree(p.x, p.y, 0.8 + p.r * 0.4).replace(/#2f9e44/g, '#1e5e2e').replace(/#40c057/g, '#2b7a3e').replace(/#8ce99a/g, '#69db7c')).join('');
+    const puddles = scatter(m, 8, 70, 113).map(p => `<ellipse cx="${p.x}" cy="${p.y}" rx="${24 + p.r * 20}" ry="${9 + p.r * 6}" fill="#74c0fc" opacity=".6" stroke="#a5d8ff" stroke-width="2"/>`).join('');
+    return `<defs><pattern id="mg-rain" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M30,0 L22,24" stroke="#d0ebff" stroke-width="2" opacity=".4"/><path d="M10,18 L4,36" stroke="#d0ebff" stroke-width="1.5" opacity=".3"/></pattern></defs>
+      <rect width="${MAP_W}" height="${MAP_H}" fill="#2f5d3a"/>
+      ${puddles}${trees}
+      <rect width="${MAP_W}" height="${MAP_H}" fill="url(#mg-rain)"/>`;
+  },
+  // きかいのこうじょう: 金属のゆか・はぐるま・パイプ
+  factory(m) {
+    const gear = (x, y, r, c) => `<g transform="translate(${x},${y})">${Array.from({ length: 8 }, (_, i) => `<rect x="${-r * 0.18}" y="${-r * 1.25}" width="${r * 0.36}" height="${r * 0.5}" fill="${c}" transform="rotate(${i * 45})"/>`).join('')}
+      <circle r="${r}" fill="${c}"/><circle r="${r * 0.35}" fill="#343a40"/></g>`;
+    const gears = scatter(m, 10, 90, 121).map((p, i) => gear(p.x, p.y, 16 + p.r * 16, i % 2 ? '#868e96' : '#adb5bd')).join('');
+    const lamps = scatter(m, 10, 60, 123).map(p => `<circle cx="${p.x}" cy="${p.y}" r="5" fill="#ffd43b" opacity=".8"/>`).join('');
+    return `<defs><pattern id="mg-metal" width="60" height="60" patternUnits="userSpaceOnUse"><rect width="60" height="60" fill="#5c636a"/><rect x="1" y="1" width="58" height="58" fill="#646b73"/>
+      <circle cx="6" cy="6" r="2" fill="#495057"/><circle cx="54" cy="54" r="2" fill="#495057"/></pattern>
+      <pattern id="mg-warn" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="15" height="30" fill="#ffd43b"/><rect x="15" width="15" height="30" fill="#212529"/></pattern></defs>
+      <rect width="${MAP_W}" height="${MAP_H}" fill="url(#mg-metal)"/>
+      <rect x="0" y="0" width="${MAP_W}" height="16" fill="url(#mg-warn)"/><rect x="0" y="${MAP_H - 16}" width="${MAP_W}" height="16" fill="url(#mg-warn)"/>
+      <path d="M40,80 L40,640 M1160,60 L1160,620" stroke="#868e96" stroke-width="18"/><path d="M40,80 L40,640 M1160,60 L1160,620" stroke="#adb5bd" stroke-width="6"/>
+      ${gears}${lamps}`;
+  },
+  // てんくう: 空と くもの道
+  sky(m, land) {
+    const clouds = scatter(m, 14, 90, 131).map(p => `<g transform="translate(${p.x},${p.y}) scale(${0.6 + p.r * 0.7})" opacity=".85"><circle cx="-20" cy="0" r="18" fill="#fff"/><circle cx="4" cy="-8" r="24" fill="#fff"/><circle cx="28" cy="2" r="16" fill="#fff"/></g>`).join('');
+    const birds = scatter(m, 6, 80, 133).map(p => `<path d="M${p.x - 10},${p.y} q5,-6 10,0 q5,-6 10,0" fill="none" stroke="#1c3d5a" stroke-width="2"/>`).join('');
+    return `<defs><linearGradient id="mg-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4dabf7"/><stop offset="100%" stop-color="#d0ebff"/></linearGradient></defs>
+      <rect width="${MAP_W}" height="${MAP_H}" fill="url(#mg-sky)"/>
+      <circle cx="1080" cy="90" r="50" fill="#fff3bf"/><circle cx="1080" cy="90" r="70" fill="#fff3bf" opacity=".3"/>
+      ${clouds}${land('#e7f5ff', 150, 'opacity=".9"')}${land('#ffffff', 110)}${birds}`;
+  },
+  // うちゅう: 星空と いんせきの道
+  space(m, land) {
+    const stars = scatter(m, 90, 18, 141).map(p => `<circle cx="${p.x}" cy="${p.y}" r="${0.8 + p.r * 1.8}" fill="#fff" opacity="${0.4 + p.r * 0.6}"/>`).join('');
+    const craters = [m.start, ...m.nodes].map((p, i) => `<ellipse cx="${p.x + (i % 2 ? 44 : -44)}" cy="${p.y + 30}" rx="12" ry="6" fill="#868e96"/>`).join('');
+    return `<rect width="${MAP_W}" height="${MAP_H}" fill="#0b0b24"/>
+      <ellipse cx="600" cy="340" rx="500" ry="160" fill="#3b1f6b" opacity=".35"/>
+      ${stars}
+      <g><circle cx="1070" cy="110" r="56" fill="#ff922b"/><ellipse cx="1070" cy="110" rx="92" ry="18" fill="none" stroke="#ffd8a8" stroke-width="6" transform="rotate(-18 1070 110)"/></g>
+      <circle cx="140" cy="600" r="40" fill="#4dabf7"/><path d="M110,590 C130,580 150,600 170,592" stroke="#69db7c" stroke-width="10" fill="none"/>
+      ${land('#495057', 130, 'opacity=".9"')}${land('#adb5bd', 100)}${craters}`;
+  },
+};
+
 // ---------------- ワールドごとの背景 ----------------
 function mapBackgroundSVG(w) {
   const m = WORLD_MAPS[w];
-  if (w === 0) {
+  const theme = m.theme;
+  if (theme === 'grass') {
     const flowers = scatter(m, 46, 40, 7).map((p, i) => DECO.flower(p.x, p.y, ['#ff8fab', '#fff', '#ffa94d', '#b197fc'][i % 4]));
     return `
       <defs>
@@ -158,7 +235,9 @@ function mapBackgroundSVG(w) {
       + [m.start, ...m.nodes, ...(m.gate ? [m.gate] : [])].map(p => `<circle cx="${p.x}" cy="${p.y}" r="${width * 0.75}" fill="${color}" ${extra}/>`).join('');
   };
 
-  if (w === 1) {
+  if (NEW_WORLD_BG[theme]) return NEW_WORLD_BG[theme](m, land);
+
+  if (theme === 'sea') {
     const waves = scatter(m, 40, 90, 11).map(p => DECO.wave(p.x, p.y)).join('');
     const rocks = scatter(m, 6, 120, 23).map(p => p.r > 0.5 ? DECO.seaRock(p.x, p.y) : DECO.boat(p.x, p.y)).join('');
     const palms = [m.start, ...m.nodes].map((p, i) => DECO.palm(p.x + (i % 2 ? 58 : -58), p.y - 20, 0.8)).join('');
@@ -176,7 +255,7 @@ function mapBackgroundSVG(w) {
       ${rocks}${palms}${shells}`;
   }
 
-  if (w === 2) {
+  if (theme === 'snow') {
     const pines = scatter(m, 26, 70, 31).map(p => DECO.pine(p.x, p.y, 0.8 + p.r * 0.5)).join('');
     const bits = scatter(m, 10, 60, 41).map(p => p.r > 0.6 ? DECO.snowman(p.x, p.y) : DECO.iceRock(p.x, p.y)).join('');
     const flakes = scatter(m, 40, 20, 53).map(p => DECO.flake(p.x, p.y, 0.6 + p.r)).join('');
@@ -196,7 +275,7 @@ function mapBackgroundSVG(w) {
   const rocks = scatter(m, 14, 70, 61).map(p => DECO.darkRock(p.x, p.y)).join('');
   const pools = scatter(m, 6, 110, 71).map(p => DECO.lava(p.x, p.y, 40 + p.r * 30, 18 + p.r * 10)).join('');
   const braz = m.nodes.map((p, i) => DECO.brazier(p.x + (i % 2 ? 54 : -54), p.y - 6)).join('');
-  const river = 'M760,660 C800,560 900,600 960,540 C1020,480 1120,520 1200,470';
+  const river = 'M0,660 C260,580 560,690 820,600 C960,560 1080,640 1200,600';
   return `
     <defs>
       <radialGradient id="mg-magma" cx="50%" cy="60%" r="80%"><stop offset="0%" stop-color="#4a2a22"/><stop offset="100%" stop-color="#1a0d0a"/></radialGradient>
@@ -347,7 +426,7 @@ Screens.stages = {
       const locked = g > this.cleared;
       const cleared = g < this.cleared;
       let icon;
-      if (e.boss && (this.world === 0 || this.world === 3)) icon = castleSVG(this.world === 3);
+      if (e.boss && (m.theme === 'grass' || m.theme === 'magma')) icon = castleSVG(m.theme === 'magma');
       else icon = locked ? '<div class="node-q">?</div>' : enemySVG(e.id);
       return `<div class="node ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''}" id="node-${i}" data-g="${g}" data-i="${i}" style="left:${p.x}px;top:${p.y}px">
         <div class="node-pad"></div>
@@ -496,7 +575,9 @@ Screens.stages = {
     const speed = 340;
     let seg = 0, t = 0, dustT = 0;
     let last = performance.now();
-    const dust = [['#e9d8a6', '#fff'], ['#f4dfa6', '#fff'], ['#fff', '#d0ebff'], ['#ff7a1a', '#ffba08']][this.world];
+    const dust = { sea: ['#f4dfa6', '#fff'], snow: ['#fff', '#d0ebff'], magma: ['#ff7a1a', '#ffba08'], poison: ['#b197fc', '#8ce99a'],
+      desert: ['#f1d7a0', '#fff'], candy: ['#ffc9de', '#fff'], rain: ['#a5d8ff', '#fff'], factory: ['#adb5bd', '#ffd43b'],
+      sky: ['#fff', '#e7f5ff'], space: ['#b197fc', '#fff'] }[this.map().theme] || ['#e9d8a6', '#fff'];
     const step = now => {
       if (!this.moving) return;
       const dt = Math.min(0.05, (now - last) / 1000);

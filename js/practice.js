@@ -119,7 +119,7 @@ Screens.practice = {
     $('#p-kpm').textContent = this.elapsed() > 0 ? kpm : 0;
     $('#p-acc').textContent = Math.floor(acc * 100) + '%';
     $('#p-combo').textContent = this.combo;
-    $('#p-exp').textContent = typingExp(this.correct, this.miss, Math.max(this.elapsed(), 5), DIFFS[this.diff].mult);
+    $('#p-exp').textContent = typingExp(this.correct, this.miss, Math.max(this.elapsed(), 5), DIFFS[this.diff].mult, this.char.L);
   },
 
   onKey(e) {
@@ -186,7 +186,7 @@ Screens.practice = {
     const acc = correct + miss ? correct / (correct + miss) : 0;
     const kpm = Math.round(correct / (secs / 60));
     const score = Math.round(kpm * acc ** 3);
-    const exp = typingExp(correct, miss, secs, DIFFS[this.diff].mult);
+    const exp = typingExp(correct, miss, secs, DIFFS[this.diff].mult, this.char.L);
 
     const lang = Save.data.settings.lang;
     const bestKey = lang + '-' + this.diff;
@@ -202,7 +202,7 @@ Screens.practice = {
     setTimeout(() => App.show('result', {
       mode: 'practice', diff: this.diff, correct, miss, acc, kpm, score, newBest,
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
-      expBreakdown: [`打鍵 ${correct} × 正確率² × (1 + ${kpm}/300) × 難易度 ${DIFFS[this.diff].mult}`],
+      expBreakdown: [`打鍵 ${correct} × 正確率² × (1 + ${kpm}/300) × 難易度 ${DIFFS[this.diff].mult} × レベル補正 ${(1 + this.char.L / 15).toFixed(1)}`],
     }), 1100);
   },
 };

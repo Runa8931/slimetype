@@ -17,6 +17,8 @@ const SV_LIMITS = {
   normal: { enemies: 90, parts: 260, texts: 40, dpr: 1.5 },
   lite: { enemies: 60, parts: 120, texts: 24, dpr: 1 },
 };
+const SV_LV_HP = 75;   // レベルによる 敵の HP の上がり方 (小さいほど強くなる)
+const SV_LV_DMG = 120;  // レベルによる 敵の攻撃の上がり方
 const SV_ENEMY_HP_BOOST = 1.0; // 敵1体のかたさの調整用 (1 = そのまま)
 
 // 難易度: 敵の HP・攻撃・出現数・ボスの HP・もらえる経験値の倍率
@@ -27,17 +29,17 @@ const SV_DIFFS = {
     tiers: [['bat', 'mush'], ['bat', 'mush', 'ghost'], ['mush', 'ghost', 'goblin'], ['ghost', 'goblin', 'golem']],
   },
   normal: {
-    name: 'ふつう', color: '#4fb3ff', rec: 'Lv.10〜', hp: 1.5, dmg: 1.35, spawn: 1.1, bossHp: 1.4, exp: 1, boss: 'kraken',
+    name: 'ふつう', color: '#4fb3ff', rec: 'Lv.20〜', hp: 1.5, dmg: 1.35, spawn: 1.1, bossHp: 1.4, exp: 1, boss: 'kraken',
     desc: 'うみの 敵も まざる。ボスは クラーケン',
     tiers: [['bat', 'mush'], ['bat', 'ghost', 'crab'], ['ghost', 'goblin', 'jelly', 'crab'], ['goblin', 'golem', 'shark', 'jelly']],
   },
   hard: {
-    name: 'むずかしい', color: '#ffd23f', rec: 'Lv.25〜', hp: 2.5, dmg: 1.85, spawn: 1.3, bossHp: 2.4, exp: 1.6, boss: 'yeti',
+    name: 'むずかしい', color: '#ffd23f', rec: 'Lv.45〜', hp: 2.5, dmg: 1.85, spawn: 1.3, bossHp: 2.4, exp: 1.6, boss: 'yeti',
     desc: 'うみ と ゆきやまの 強い敵。ボスは イエティ',
     tiers: [['crab', 'jelly'], ['jelly', 'shark', 'penguin'], ['penguin', 'snowman', 'wolf'], ['wolf', 'golem', 'snowman', 'shark']],
   },
   oni: {
-    name: 'おに', color: '#ff5d5d', rec: 'Lv.40〜', hp: 3.3, dmg: 2.0, spawn: 1.4, bossHp: 3.6, exp: 2.4, boss: 'demon',
+    name: 'おに', color: '#ff5d5d', rec: 'Lv.70〜', hp: 3.3, dmg: 2.0, spawn: 1.4, bossHp: 3.6, exp: 2.4, boss: 'demon',
     desc: 'マグマのしろの 敵が だいしゅうごう。ボスは まおう',
     tiers: [['crab', 'jelly', 'penguin'], ['penguin', 'wolf', 'snowman'], ['wolf', 'imp', 'salamander'], ['imp', 'salamander', 'mgolem']],
   },
@@ -143,7 +145,7 @@ Screens.survival = {
     const max = Math.round(st.hp * 2.5 + 40);
     let speed = 175 * (0.85 + base.spd / 300);
     // とくせいは 進化すると強くなる
-    if (this.ch.id === 'piriri') speed *= [1.15, 1.2, 1.25][this.ch.stage];
+    if (this.ch.id === 'piriri') speed *= [1.15, 1.18, 1.21, 1.24, 1.27][this.ch.stage];
     this.p = { x: 0, y: 0, hp: max, max, speed, face: 1, dir: { x: 1, y: 0 }, inv: 0, regenT: 0, moving: false, slowUntil: 0 };
     this.dmgMult = 1 + (st.atk - 5) / 60;
     this.weapons = { [SV_START_WEAPON[this.ch.id]]: { lv: 1, t: 0.5 } };
@@ -171,7 +173,9 @@ Screens.survival = {
       const w = SV_ENEMIES[id].w;
       return [id, svg, w, w * svgAspect(svg)];
     });
-    jobs.push(['player', slimeSVG(this.ch.id, this.ch.stage), 76, 76 * 134 / 132]);
+    const psvg = slimeSVG(this.ch.id, this.ch.stage);
+    const pw = this.ch.stage >= 3 ? 104 : 76; // つばさのある姿は 横に広い
+    jobs.push(['player', psvg, pw, pw * svgAspect(psvg)]);
     await Promise.all(jobs.map(async ([id, svg, w, h]) => {
       const img = svgToImage(svg);
       try { await img.decode(); } catch (e) { return; }
@@ -344,7 +348,7 @@ Screens.survival = {
     if (p.inv > 0) p.inv -= dt;
     if (this.ch.id === 'purun') {
       p.regenT += dt;
-      if (p.regenT >= [3.5, 3, 2.5][this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
+      if (p.regenT >= [3.5, 3.2, 2.9, 2.6, 2.3][this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
     }
 
     // イベント
@@ -378,12 +382,15 @@ Screens.survival = {
     return tier[Math.floor(Math.random() * tier.length)];
   },
 
-  hpScale() { return (1 + this.time / 140) * 0.9 * this.diff().hp; },
+  // 敵の HP の倍率 (時間・難易度・キャラのレベルで決まる)
+  hpScale() { return (1 + this.time / 140) * 0.9 * this.diff().hp * this.lvScale().hp; },
+  // キャラのレベルが高いほど 敵も少し強くなる (レベルだけで簡単になりすぎないように)
+  lvScale() { const L = this.ch.L; return { hp: 1 + (L - 1) / SV_LV_HP, dmg: 1 + (L - 1) / SV_LV_DMG }; },
 
   makeEnemy(type, x, y) {
     const b = SV_ENEMIES[type];
     const hp = b.hp * this.hpScale();
-    return { type, x, y, hp: Math.round(hp * SV_ENEMY_HP_BOOST), max: Math.round(hp * SV_ENEMY_HP_BOOST), spd: b.spd * (0.9 + Math.random() * 0.2), dmg: b.dmg * this.diff().dmg, r: b.r, flash: 0, kbx: 0, kby: 0, hitCd: {}, slowUntil: 0 };
+    return { type, x, y, hp: Math.round(hp * SV_ENEMY_HP_BOOST), max: Math.round(hp * SV_ENEMY_HP_BOOST), spd: b.spd * (0.9 + Math.random() * 0.2), dmg: b.dmg * this.diff().dmg * this.lvScale().dmg, r: b.r, flash: 0, kbx: 0, kby: 0, hitCd: {}, slowUntil: 0 };
   },
 
   spawn(type) {
@@ -406,8 +413,8 @@ Screens.survival = {
     this.bossSpawned = true;
     const id = this.diff().boss;
     const b = this.makeEnemy(id, this.p.x + 520, this.p.y - 120);
-    b.hp = b.max = Math.round(SV_ENEMIES[id].hp * (1 + this.ch.L / 50) * this.diff().bossHp);
-    b.dmg = SV_ENEMIES[id].dmg * this.diff().dmg;
+    b.hp = b.max = Math.round(SV_ENEMIES[id].hp * this.lvScale().hp * this.diff().bossHp);
+    b.dmg = SV_ENEMIES[id].dmg * this.diff().dmg * this.lvScale().dmg;
     b.boss = true; b.atkT = 3; b.dashT = 8; b.dash = 0; b.warn = 0; b.sumT = 6;
     this.boss = b;
     this.enemies.push(b);
@@ -694,7 +701,7 @@ Screens.survival = {
       b.atkT = enraged ? 2.2 : 3;
       const n = cfg.ring + (enraged ? 4 : 0);
       const off = Math.random() * Math.PI;
-      const dmg = 12 * this.diff().dmg;
+      const dmg = 12 * this.diff().dmg * this.lvScale().dmg;
       for (let i = 0; i < n; i++) {
         const a = off + (i / n) * Math.PI * 2;
         this.eshots.push({ x: b.x, y: b.y, vx: Math.cos(a) * cfg.spd, vy: Math.sin(a) * cfg.spd, r: 11, dmg, life: 4, color: cfg.color, core: cfg.core, homing: false });
@@ -728,7 +735,7 @@ Screens.survival = {
   hitPlayer(dmg, slow = false) {
     const p = this.p;
     let d = dmg * 40 / (40 + this.ch.stats.def);
-    if (this.ch.id === 'gotsun') d *= [0.75, 0.7, 0.65][this.ch.stage];
+    if (this.ch.id === 'gotsun') d *= [0.75, 0.72, 0.69, 0.66, 0.63][this.ch.stage];
     d = Math.max(1, Math.round(d));
     p.hp -= d;
     p.inv = 0.8;
@@ -1174,7 +1181,8 @@ Screens.survival = {
 
   drawPlayer(ctx, clock) {
     const p = this.p;
-    const w = 76, h = w * 134 / 132;
+    const sp0 = this.sprites.player;
+    const w = sp0 ? sp0.w : 76, h = sp0 ? sp0.h : 77;
     const sq = p.moving ? Math.sin(clock * 16) * 0.07 : Math.sin(clock * 4) * 0.04;
     ctx.fillStyle = 'rgba(0,0,0,.2)';
     ctx.beginPath(); ctx.ellipse(p.x, p.y + 18, 28, 8, 0, 0, Math.PI * 2); ctx.fill();

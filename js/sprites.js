@@ -94,10 +94,22 @@ function slimeSVG(id, stage = 0) {
     }
   }
 
+  // ---- 4 段階目 (Lv60〜): つばさ / 5 段階目 (Lv80〜): 光の輪 ----
+  if (stage >= 3) {
+    const wing = (sx) => `<g transform="translate(60,62) scale(${sx},1)">
+      <path d="M22,-4 C44,-34 76,-38 84,-20 C70,-20 64,-12 74,-4 C60,-6 54,2 62,10 C48,8 38,10 26,14 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round" opacity=".95"/>
+      <path d="M34,0 C50,-20 66,-24 76,-18 M36,6 C50,-4 60,-6 68,-4" fill="none" stroke="${c.dark}" stroke-width="1.5" opacity=".6"/></g>`;
+    behind = wing(1) + wing(-1) + behind;
+  }
+  if (stage >= 4) {
+    front += `<ellipse cx="60" cy="${id === 'purun' ? -14 : -4}" rx="24" ry="6" fill="none" stroke="#ffe066" stroke-width="4" class="spark-soft"/>
+      <circle cx="16" cy="96" r="3" fill="#fff" class="spark"/><circle cx="106" cy="30" r="2.5" fill="#fff" class="spark"/>`;
+  }
+
   const aura = stage >= 2
     ? `<ellipse class="aura" cx="60" cy="72" rx="58" ry="48" fill="url(#${u}-aura)"/>` : '';
 
-  return `<svg viewBox="-6 -14 132 134" class="slime slime-${id} stage-${stage}" xmlns="http://www.w3.org/2000/svg">
+  return `<svg viewBox="${stage >= 3 ? '-30 -24 180 144' : '-6 -14 132 134'}" class="slime slime-${id} stage-${stage}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="${u}-g" cx="40%" cy="35%" r="75%">
         <stop offset="0%" stop-color="${c.light}"/><stop offset="55%" stop-color="${c.main}"/><stop offset="100%" stop-color="${c.dark}"/>
@@ -108,7 +120,7 @@ function slimeSVG(id, stage = 0) {
     <ellipse cx="60" cy="109" rx="46" ry="7" fill="#000" opacity=".25"/>
     <g class="body">
       ${behind}
-      <path d="${bodies[id][stage]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="${bodies[id][Math.min(stage, 2)]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
       <ellipse cx="40" cy="56" rx="9" ry="5" fill="#fff" opacity=".7" transform="rotate(-30 40 56)"/>
       <circle cx="30" cy="66" r="3" fill="#fff" opacity=".6"/>
       <g class="eyes">

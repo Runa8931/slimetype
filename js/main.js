@@ -68,11 +68,12 @@ function grantExp(id, amount) {
 }
 
 // 練習モードと同じ式で「打鍵から得られる経験値」を計算する
-function typingExp(correct, miss, seconds, mult = 1) {
+function typingExp(correct, miss, seconds, mult = 1, L = 1) {
   if (correct <= 0) return 0;
   const acc = correct / (correct + miss);
   const kpm = correct / (seconds / 60);
-  return Math.round(correct * acc * acc * (1 + kpm / 300) * mult);
+  // レベルが上がっても れんしゅうの経験値が少なすぎないよう、レベルに合わせて増やす
+  return Math.round(correct * acc * acc * (1 + kpm / 300) * mult * (1 + L / 15));
 }
 
 function recordMiss(key) {
@@ -237,7 +238,7 @@ Screens.select = {
         <div class="stats">${statBars(d.base, 100)}</div>
         <div class="ability"><b>とくせい「${c.trait.name}」</b><span>${c.trait.desc}</span></div>
         <div class="ability"><b>ひっさつ「${c.skill.name}」</b><span>${c.skill.desc}</span></div>
-        <div class="evo-note">Lv.10 と Lv.20 で進化すると とくせい・ひっさつも パワーアップ</div>
+        <div class="evo-note">Lv.20・40・60・80 で進化すると とくせい・ひっさつも パワーアップ</div>
       </button>`;
     }).join('');
     $('#select-grid').querySelectorAll('.char-card').forEach(b => { b.onclick = () => this.pick(b.dataset.id); });
@@ -311,7 +312,7 @@ Screens.home = {
     $('#set-lite').classList.toggle('on', !!s.lite);
 
     const expPct = c.nextLvExp ? (c.exp - c.curLvExp) / (c.nextLvExp - c.curLvExp) * 100 : 100;
-    const nextEvo = c.L < 10 ? 'Lv.10 で進化！' : c.L < 20 ? 'Lv.20 で最終進化！' : 'さいごの すがた';
+    const nextEvo = c.stage < EVO_LEVELS.length ? `Lv.${EVO_LEVELS[c.stage]} で${c.stage === EVO_LEVELS.length - 1 ? '最終' : ''}進化！` : 'さいごの すがた';
     $('#home-char').style.setProperty('--cc', d.colors.main);
     $('#home-char').innerHTML = `
       <div class="hc-top">
@@ -327,7 +328,7 @@ Screens.home = {
       <div class="stats">${statBars(c.stats, Math.max(60, c.stats.hp))}</div>
       <div class="ability"><b>とくせい「${c.trait.name}」</b><span>${c.trait.desc}</span></div>
       <div class="ability"><b>ひっさつ「${c.skill.name}」</b><span>${c.skill.desc}</span></div>
-      ${c.stage < 2 ? `<div class="next-evo"><b>Lv.${c.stage === 0 ? 10 : 20} で進化すると…</b>
+      ${c.stage < EVO_LEVELS.length ? `<div class="next-evo"><b>Lv.${EVO_LEVELS[c.stage]} で「${d.names[c.stage + 1]}」に進化すると…</b>
         <span>とくせい「${d.forms[c.stage + 1].trait.name}」: ${d.forms[c.stage + 1].trait.desc}</span>
         <span>ひっさつ「${d.forms[c.stage + 1].skill.name}」: ${d.forms[c.stage + 1].skill.desc}</span></div>` : ''}`;
 

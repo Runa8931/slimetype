@@ -4,12 +4,12 @@
 //  このゲーム向けに簡略化したもの
 // ============================================================
 
-const MAX_LV = 50;
+const MAX_LV = 99;
 const BATTLE_HP_SCALE = 3;       // バトルを長めに楽しめるよう HP を 3 倍にする
 const ENEMY_HP_SCALE = 3.6;      // 敵はさらに少し多め
 
-// 必要経験値: 「中速グループ」の Lv^3 を 0.8 倍 (Lv10 = 800, Lv20 = 6400)
-function expForLevel(L) { return L <= 1 ? 0 : Math.floor(0.8 * L * L * L); }
+// 必要経験値: Lv^3 の 0.5 倍 (Lv20 = 4000, Lv50 = 62500, Lv99 = 約48万)
+function expForLevel(L) { return L <= 1 ? 0 : Math.floor(0.5 * L * L * L); }
 
 function levelFromExp(exp) {
   let L = 1;
@@ -31,23 +31,26 @@ function calcDamage(L, power, atk, def) {
 // 1 お題あたりの攻撃の威力: 打ったキー数が多いほど強い
 function wordPower(keys) { return 10 + keys * 6; }
 
-// 進化段階 (見た目と名前が変わる)
-function evoStage(L) { return L >= 20 ? 2 : L >= 10 ? 1 : 0; }
+// 進化: Lv20・40・60・80 で 1 段階ずつ (全 5 段階)
+const EVO_LEVELS = [20, 40, 60, 80];
+function evoStage(L) { return EVO_LEVELS.filter(x => L >= x).length; }
 
 const CHARACTERS = {
   purun: {
     id: 'purun',
-    names: ['ぷるん', 'ぷるるん', 'キングぷるん'],
+    names: ['ぷるん', 'ぷるるん', 'キングぷるん', 'アクアロード', 'ポセイドぷるん'],
     type: 'みず',
     role: 'バランス型',
     colors: { main: '#4fb3ff', light: '#b5e3ff', dark: '#1f6fc4', accent: '#7cf0ff' },
-    // 進化段階ごとの体の色 (ぷるん → ぷるるん → キングぷるん)
+    // 進化段階ごとの体の色
     stageColors: [
       { main: '#4fb3ff', light: '#b5e3ff', dark: '#1f6fc4', accent: '#7cf0ff' },
       { main: '#2fd0c8', light: '#c2fff6', dark: '#0f8a8f', accent: '#9bfff0' },
       { main: '#5a6dff', light: '#cfd6ff', dark: '#2a2fa8', accent: '#ffe27a' },
+      { main: '#1098ad', light: '#99e9f2', dark: '#0b5563', accent: '#ffffff' },
+      { main: '#3b5bdb', light: '#e7f5ff', dark: '#1c2c80', accent: '#ffd43b' },
     ],
-    base: { hp: 75, atk: 74, def: 65, spd: 65 },
+    base: { hp: 75, atk: 80, def: 65, spd: 65 },
     desc: 'どこにでもいる、ぷるぷるのみずスライム。なんでもそつなくこなす。',
     // 進化段階ごとの とくせい・ひっさつ (数値はバトルで使う)
     forms: [
@@ -56,18 +59,26 @@ const CHARACTERS = {
         skill: { name: 'アクアヒール', desc: 'HP を 35% 回復し、どく・やけどを消す。次の攻撃が 1.5 倍', heal: 0.35, boost: 1.5, barrier: 0, charge: 1 },
       },
       {
-        trait: { name: 'うるおいボディ+', desc: 'ノーミスで HP 4% 回復。どく・やけどの時間が半分になる', heal: 0.04, statusCut: 0.5 },
-        skill: { name: 'アクアヒール+', desc: 'HP を 40% 回復して状態異常を消す。次の攻撃が 1.8 倍。ゲージが 15% たまりやすい', heal: 0.4, boost: 1.8, barrier: 0, charge: 1.15 },
+        trait: { name: 'うるおいボディ+', desc: 'ノーミスで HP 3.5% 回復。どく・やけどの時間が半分', heal: 0.035, statusCut: 0.5 },
+        skill: { name: 'アクアヒール+', desc: 'HP を 40% 回復して状態異常を消す。次の攻撃が 1.8 倍。ゲージ +10%', heal: 0.4, boost: 1.8, barrier: 0, charge: 1.1 },
       },
       {
-        trait: { name: 'キングのうるおい', desc: 'ノーミスで HP 5% 回復。どく・やけど・こおりが きかない', heal: 0.05, statusCut: 1 },
-        skill: { name: 'ロイヤルアクア', desc: 'HP を 45% 回復。次の攻撃が 2.5 倍になり、水のバリアで 1 回攻撃をふせぐ。ゲージが 30% たまりやすい', heal: 0.45, boost: 2.5, barrier: 1, charge: 1.3 },
+        trait: { name: 'キングのうるおい', desc: 'ノーミスで HP 4% 回復。どく・やけど・こおりが きかない', heal: 0.04, statusCut: 1 },
+        skill: { name: 'ロイヤルアクア', desc: 'HP を 42% 回復。次の攻撃が 2.2 倍。水のバリアで 1 回ふせぐ。ゲージ +15%', heal: 0.42, boost: 2.2, barrier: 1, charge: 1.15 },
+      },
+      {
+        trait: { name: 'しおさいのめぐみ', desc: 'ノーミスで HP 4.5% 回復。状態異常が きかない', heal: 0.045, statusCut: 1 },
+        skill: { name: 'タイダルウェーブ', desc: 'HP を 44% 回復。次の攻撃が 2.5 倍。バリア 1 回。ゲージ +25%', heal: 0.44, boost: 2.5, barrier: 1, charge: 1.25 },
+      },
+      {
+        trait: { name: 'うみのかみ', desc: 'ノーミスで HP 6% 回復。状態異常が きかない', heal: 0.06, statusCut: 1 },
+        skill: { name: 'リヴァイアサン', desc: 'HP を 46% 回復。次の攻撃が 2.8 倍。バリア 2 回。ゲージ +30%', heal: 0.46, boost: 2.8, barrier: 2, charge: 1.3 },
       },
     ],
   },
   piriri: {
     id: 'piriri',
-    names: ['ぴりり', 'ぴりりん', 'ライジンぴりり'],
+    names: ['ぴりり', 'ぴりりん', 'ライジンぴりり', 'サンダーロード', 'ゼウスぴりり'],
     type: 'でんき',
     role: 'スピード型',
     colors: { main: '#ffd23f', light: '#fff2a8', dark: '#d99a00', accent: '#fff' },
@@ -75,27 +86,37 @@ const CHARACTERS = {
       { main: '#ffd23f', light: '#fff2a8', dark: '#d99a00', accent: '#fff' },
       { main: '#ffa62b', light: '#ffe2a8', dark: '#c45f00', accent: '#fff6a0' },
       { main: '#fff27a', light: '#ffffff', dark: '#d9a800', accent: '#7cf0ff' },
+      { main: '#9775fa', light: '#e5dbff', dark: '#5f3dc4', accent: '#fff27a' },
+      { main: '#fcc419', light: '#ffffff', dark: '#e67700', accent: '#74c0fc' },
     ],
     base: { hp: 70, atk: 85, def: 55, spd: 95 },
     desc: 'いつもビリビリしているかみなりスライム。打つのが速いほど強くなる。',
     forms: [
       {
         trait: { name: 'でんこうせっか', desc: 'お題を速く打ち切るほど会心率アップ (最大 55%・会心 1.5 倍)', critMax: 0.55, critMult: 1.5, dodge: 0, shockImmune: false },
-        skill: { name: 'サンダーボルト', desc: '威力 300 のかみなりを落とす大ダメージ攻撃', power: 300, resetGauge: false, charge: 1 },
+        skill: { name: 'サンダーボルト', desc: '威力 300 のかみなりを落とす', power: 300, resetGauge: false, charge: 1 },
       },
       {
-        trait: { name: 'でんこうせっか+', desc: '会心率 最大 65%・会心 1.7 倍。敵の攻撃を 20% の確率でよける', critMax: 0.65, critMult: 1.7, dodge: 0.2, shockImmune: false },
-        skill: { name: 'ギガボルト', desc: '威力 450 の大いなずま。ゲージが 10% たまりやすい', power: 450, resetGauge: false, charge: 1.1 },
+        trait: { name: 'でんこうせっか+', desc: '会心率 最大 62%・会心 1.6 倍。10% の確率で攻撃をよける', critMax: 0.62, critMult: 1.6, dodge: 0.1, shockImmune: false },
+        skill: { name: 'ギガボルト', desc: '威力 420 の大いなずま。ゲージ +5%', power: 420, resetGauge: false, charge: 1.05 },
       },
       {
-        trait: { name: 'ライジン', desc: '会心率 最大 75%・会心 1.9 倍。35% の確率でよける。しびれが きかない', critMax: 0.75, critMult: 1.9, dodge: 0.35, shockImmune: true },
-        skill: { name: 'ライジンサンダー', desc: '威力 620 の いかずち。敵の攻撃ゲージを 0 にもどす。ゲージが 20% たまりやすい', power: 620, resetGauge: true, charge: 1.2 },
+        trait: { name: 'ライジン', desc: '会心率 最大 68%・会心 1.7 倍。20% でよける。しびれが きかない', critMax: 0.68, critMult: 1.7, dodge: 0.2, shockImmune: true },
+        skill: { name: 'ライジンサンダー', desc: '威力 540。敵の攻撃ゲージを 0 にもどす。ゲージ +10%', power: 540, resetGauge: true, charge: 1.1 },
+      },
+      {
+        trait: { name: 'らいめいのはやさ', desc: '会心率 最大 72%・会心 1.8 倍。25% でよける。しびれが きかない', critMax: 0.72, critMult: 1.8, dodge: 0.25, shockImmune: true },
+        skill: { name: 'ボルテックス', desc: '威力 640。攻撃ゲージを 0 に。ゲージ +15%', power: 640, resetGauge: true, charge: 1.15 },
+      },
+      {
+        trait: { name: 'かみなりのかみ', desc: '会心率 最大 76%・会心 1.9 倍。30% でよける。しびれが きかない', critMax: 0.76, critMult: 1.9, dodge: 0.3, shockImmune: true },
+        skill: { name: 'ゼウスのいかずち', desc: '威力 760。攻撃ゲージを 0 に。ゲージ +20%', power: 760, resetGauge: true, charge: 1.2 },
       },
     ],
   },
   gotsun: {
     id: 'gotsun',
-    names: ['ごつん', 'ごつごつん', 'ガンセキごつん'],
+    names: ['ごつん', 'ごつごつん', 'ガンセキごつん', 'ダイヤごつん', 'タイタンごつん'],
     type: 'いわ',
     role: 'ぼうぎょ型',
     colors: { main: '#b08a64', light: '#dcc3a3', dark: '#6e5238', accent: '#9be7a0' },
@@ -103,21 +124,31 @@ const CHARACTERS = {
       { main: '#b08a64', light: '#dcc3a3', dark: '#6e5238', accent: '#9be7a0' },
       { main: '#8f959e', light: '#d6dae0', dark: '#50565e', accent: '#8fe08a' },
       { main: '#5b5f78', light: '#a4aac6', dark: '#2b2e42', accent: '#c58bff' },
+      { main: '#a5d8ff', light: '#ffffff', dark: '#4c6ef5', accent: '#e599f7' },
+      { main: '#495057', light: '#adb5bd', dark: '#212529', accent: '#ffd43b' },
     ],
-    base: { hp: 90, atk: 60, def: 90, spd: 45 },
+    base: { hp: 90, atk: 60, def: 80, spd: 45 },
     desc: 'かたくて重たいいわスライム。のんびりやだけど、とにかくタフ。',
     forms: [
       {
-        trait: { name: 'かたいからだ', desc: '受けるダメージ 15% カット。ミスしてもコンボが半分残る', cut: 0.15, comboKeep: 0.5, freezeImmune: false },
+        trait: { name: 'かたいからだ', desc: '受けるダメージ 15% カット。ミスしてもコンボが半分残る。どく・やけどの時間が 4 わり短い', cut: 0.15, comboKeep: 0.5, freezeImmune: false },
         skill: { name: 'ロックシールド', desc: '敵の攻撃を 2 回ふせぎ、そのたびに威力 80 の岩で反撃', guards: 2, power: 80, heal: 0, charge: 1 },
       },
       {
-        trait: { name: 'がんじょうボディ', desc: '受けるダメージ 17% カット。ミスしてもコンボが 7 わり残る', cut: 0.17, comboKeep: 0.7, freezeImmune: false },
-        skill: { name: 'ロックシールド+', desc: '敵の攻撃を 2 回ふせぎ、威力 110 の岩で反撃。ふせぐたびに HP 2% 回復', guards: 2, power: 110, heal: 0.02, charge: 1 },
+        trait: { name: 'がんじょうボディ', desc: '受けるダメージ 16% カット。ミスしてもコンボが 6 わり残る。どく・やけどの時間が 4 わり短い', cut: 0.16, comboKeep: 0.6, freezeImmune: false },
+        skill: { name: 'ロックシールド+', desc: '2 回ふせぎ、威力 110 で反撃。ふせぐたびに HP 2% 回復', guards: 2, power: 110, heal: 0.02, charge: 1 },
       },
       {
-        trait: { name: 'ガンセキのよろい', desc: '受けるダメージ 20% カット。コンボが 9 わり残る。こおり・やけどが きかない', cut: 0.2, comboKeep: 0.9, freezeImmune: true },
-        skill: { name: 'ガンセキとりで', desc: '敵の攻撃を 2 回ふせぎ、威力 150 で反撃。ふせぐたびに HP 5% 回復', guards: 2, power: 150, heal: 0.05, charge: 1 },
+        trait: { name: 'ガンセキのよろい', desc: '受けるダメージ 17% カット。コンボが 7 わり残る。こおり・やけどが きかない', cut: 0.17, comboKeep: 0.7, freezeImmune: true },
+        skill: { name: 'ガンセキとりで', desc: '2 回ふせぎ、威力 140 で反撃。ふせぐたびに HP 3% 回復', guards: 2, power: 140, heal: 0.03, charge: 1 },
+      },
+      {
+        trait: { name: 'ダイヤのからだ', desc: '受けるダメージ 17% カット。コンボが 8 わり残る。こおり・やけどが きかない', cut: 0.17, comboKeep: 0.8, freezeImmune: true },
+        skill: { name: 'ダイヤモンドウォール', desc: '2 回ふせぎ、威力 160 で反撃。ふせぐたびに HP 3% 回復', guards: 2, power: 160, heal: 0.03, charge: 1 },
+      },
+      {
+        trait: { name: 'きょじんのちから', desc: '受けるダメージ 18% カット。コンボが 9 わり残る。こおり・やけどが きかない', cut: 0.18, comboKeep: 0.9, freezeImmune: true },
+        skill: { name: 'タイタンフォートレス', desc: '2 回ふせぎ、威力 180 で反撃。ふせぐたびに HP 4% 回復', guards: 2, power: 180, heal: 0.04, charge: 1 },
       },
     ],
   },
@@ -126,131 +157,156 @@ const CHARACTERS = {
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく
 for (const c of Object.values(CHARACTERS)) { c.trait = c.forms[0].trait; c.skill = c.forms[0].skill; }
 
-// 敵キャラクター (ステージ順)
-const ENEMIES = [
-  {
-    id: 'bat', world: 0, name: 'コウモリン', lv: 3, base: { hp: 45, atk: 45, def: 40 },
-    power: 36, interval: 4200, exp: 280, diff: 'easy', bg: 'cave',
-    desc: 'どうくつにすむ小さなコウモリ。最初の相手にぴったり。',
-    ability: null, abilityDesc: 'とくになし',
-  },
-  {
-    id: 'mush', world: 0, name: 'ドクキノコ', lv: 6, base: { hp: 54, atk: 50, def: 55 },
-    power: 30, interval: 4800, exp: 320, diff: 'easy', bg: 'forest',
-    desc: 'もりのどくキノコ。攻撃をうけると、どくになってしまう。',
-    ability: 'poison', abilityDesc: 'どく: 攻撃をうけると 5 秒間 HP がへりつづける',
-  },
-  {
-    id: 'ghost', world: 0, name: 'ユウレイン', lv: 10, base: { hp: 60, atk: 65, def: 50 },
-    power: 66, interval: 4200, exp: 360, diff: 'normal', bg: 'grave',
-    desc: 'ぼちをさまようおばけ。ローマ字のガイドをかくしてくる。',
-    ability: 'fade', abilityDesc: 'ゆうれいのきり: ときどきローマ字ガイドが見えなくなる',
-  },
-  {
-    id: 'goblin', world: 0, name: 'ゴブリン', lv: 15, base: { hp: 80, atk: 80, def: 60 },
-    power: 64, interval: 4600, exp: 400, diff: 'normal', bg: 'plain',
-    desc: 'こんぼうをふりまわす らんぼうもの。追いつめるとおこりだす。',
-    ability: 'rage', abilityDesc: 'げきど: HP が半分をきると攻撃が速くなる',
-  },
-  {
-    id: 'golem', world: 0, name: 'ストーンゴーレム', lv: 21, base: { hp: 95, atk: 85, def: 95 },
-    power: 80, interval: 5600, exp: 460, diff: 'hard', bg: 'ruins',
-    desc: 'いせきを守るいしのきょじん。とてもかたい。',
-    ability: 'armor', abilityDesc: 'いしのよろい: コンボ 30 未満だとダメージ半減',
-  },
-  {
-    id: 'dragon', world: 0, name: 'ドラゴン', lv: 28, base: { hp: 125, atk: 100, def: 90 },
-    power: 70, interval: 5400, exp: 600, diff: 'hard', bg: 'volcano', boss: true,
-    desc: 'かざんのおうじゃ。HP が半分をきると本気をだす。',
-    ability: 'dragon', abilityDesc: 'ほんき: HP 半分で攻撃が速くなり、3 回に 1 回ほのおのブレス',
-  },
+// ============================================================
+//  ワールドと敵
+//  1 ワールド 6 体 (最後の 1 体がボス)。レベル・経験値は順番から自動で決める
+// ============================================================
 
-  // ---------- ワールド 2: うみ ----------
-  {
-    id: 'crab', world: 1, name: 'カニッパ', lv: 31, base: { hp: 68, atk: 95, def: 105 },
-    power: 110, interval: 5200, exp: 480, diff: 'normal', bg: 'sea',
-    desc: 'かたいこうらの大きなカニ。ときどき からに とじこもる。',
-    ability: 'shell', abilityDesc: 'からにこもる: ときどき 3 秒間 うけるダメージが大きくへる',
-  },
-  {
-    id: 'jelly', world: 1, name: 'クラゲール', lv: 33, base: { hp: 72, atk: 100, def: 80 },
-    power: 75, interval: 5000, exp: 500, diff: 'hard', bg: 'sea',
-    desc: 'ビリビリするクラゲ。まちがえて さわると しびれる。',
-    ability: 'shock', abilityDesc: 'しびれ: ミスすると 自分が ダメージをうける',
-  },
-  {
-    id: 'shark', world: 1, name: 'サメキバ', lv: 35, base: { hp: 85, atk: 115, def: 85 },
-    power: 74, interval: 4600, exp: 520, diff: 'hard', bg: 'sea',
-    desc: 'うみのハンター。弱ってくると どうもうになる。',
-    ability: 'rage', abilityDesc: 'ちのにおい: HP が半分をきると 攻撃が速くなる',
-  },
-  {
-    id: 'kraken', world: 1, name: 'クラーケン', lv: 38, base: { hp: 110, atk: 110, def: 100 },
-    power: 72, interval: 5400, exp: 700, diff: 'hard', bg: 'sea', boss: true,
-    desc: 'しんかいの ぬし。すみを はいて じゃまをしてくる。',
-    ability: 'ink', abilityDesc: 'すみはき: ときどき お題が すみで見えにくくなる。HP 半分から 2 れんぞく攻撃',
-  },
+// 敵の体つき (種族値のもと)
+const ENEMY_TYPES = {
+  normal: { hp: 70, atk: 80, def: 70 },
+  fast: { hp: 58, atk: 85, def: 58 },
+  tank: { hp: 88, atk: 75, def: 90 },
+  boss: { hp: 125, atk: 100, def: 95 },
+};
 
-  // ---------- ワールド 3: ゆきやま ----------
-  {
-    id: 'penguin', world: 2, name: 'ペンギナイト', lv: 40, base: { hp: 76, atk: 105, def: 100 },
-    power: 87, interval: 4800, exp: 540, diff: 'hard', bg: 'snow',
-    desc: 'たてと やりを もったペンギンの きし。',
-    ability: 'shell', abilityDesc: 'こおりのたて: ときどき 3 秒間 うけるダメージが大きくへる',
-  },
-  {
-    id: 'snowman', world: 2, name: 'ユキダルマン', lv: 42, base: { hp: 85, atk: 100, def: 100 },
-    power: 85, interval: 5000, exp: 560, diff: 'hard', bg: 'snow',
-    desc: 'うごく ゆきだるま。ゆきを あつめて 回復する。',
-    ability: 'regen', abilityDesc: 'ゆきだまり: ときどき HP を回復する',
-  },
-  {
-    id: 'wolf', world: 2, name: 'アイスウルフ', lv: 44, base: { hp: 85, atk: 115, def: 90 },
-    power: 76, interval: 4400, exp: 580, diff: 'hard', bg: 'snow',
-    desc: 'こおりの いきを はく オオカミ。',
-    ability: 'freeze', abilityDesc: 'こおりのいき: 攻撃をうけると 1 秒間 こおって 入力できない',
-  },
-  {
-    id: 'yeti', world: 2, name: 'イエティ', lv: 47, base: { hp: 110, atk: 115, def: 105 },
-    power: 92, interval: 5400, exp: 760, diff: 'hard', bg: 'snow', boss: true,
-    desc: 'ゆきやまの ぬし。ふぶきを よびおこす。',
-    ability: 'blizzard', abilityDesc: 'ふぶき: ときどき 漢字とかなが見えなくなる。攻撃で こおらせてくる',
-  },
+// 攻撃の威力 (ステージごとの強さ。勝率の計算で決めた値)
+// (敵と同じレベル・1 分 220 打鍵で、ふつうの敵は勝率 8〜9 わり、ボスは 6〜7 わり になるよう計算で決めた)
+const ENEMY_POWER = {
+  bat: 123, mush: 75, ghost: 93, goblin: 80, golem: 67, dragon: 65,
+  pbat: 34, frog: 86, bee: 30, swampmush: 98, zombie: 93, hydra: 20,
+  scorpion: 46, cactus: 115, snake: 87, mummy: 107, dgoblin: 84, sphinx: 64,
+  crab: 107, jelly: 72, puffer: 64, shark: 86, pirate: 91, kraken: 49,
+  gummy: 102, lolli: 74, cake: 128, mallow: 104, chocogolem: 100, pudding: 64,
+  snail: 118, kappa: 105, rainfrog: 83, rainmush: 128, tbat: 86, raijin: 38,
+  robot: 96, drone: 79, bomb: 97, mgoblin: 97, geargolem: 141, mechadragon: 60,
+  penguin: 128, snowman: 100, yukionna: 111, wolf: 108, icegolem: 119, yeti: 89,
+  skybird: 102, cloud: 109, wbat: 95, skygolem: 123, wyvern: 126, skydragon: 89,
+  alien: 126, ufo: 96, meteor: 160, star: 96, galaxyrobo: 146, alienking: 81,
+  imp: 102, hellhound: 104, mgolem: 156, darkknight: 144, salamander: 130, demon: 105,
+};
 
-  // ---------- ワールド 4: マグマのしろ ----------
-  {
-    id: 'imp', world: 3, name: 'ファイアインプ', lv: 48, base: { hp: 85, atk: 115, def: 95 },
-    power: 70, interval: 4600, exp: 600, diff: 'hard', bg: 'magma',
-    desc: 'しろを まもる ほのおの こあくま。',
-    ability: 'poison', statusName: 'やけど', abilityDesc: 'やけど: 攻撃をうけると 5 秒間 HP がへりつづける',
-  },
-  {
-    id: 'mgolem', world: 3, name: 'マグマゴーレム', lv: 50, base: { hp: 89, atk: 115, def: 115 },
-    power: 77, interval: 5600, exp: 620, diff: 'hard', bg: 'magma',
-    desc: 'ようがんで できた きょじん。とても かたい。',
-    ability: 'armor', abilityDesc: 'マグマのよろい: コンボ 30 未満だと ダメージ半減',
-  },
-  {
-    id: 'salamander', world: 3, name: 'サラマンダー', lv: 51, base: { hp: 85, atk: 120, def: 100 },
-    power: 68, interval: 4600, exp: 640, diff: 'hard', bg: 'magma',
-    desc: 'ほのおを まとう トカゲ。かげろうで 目をくらます。',
-    ability: 'fade', abilityDesc: 'かげろう: ときどき ローマ字ガイドが ゆらめいて見えなくなる',
-  },
-  {
-    id: 'demon', world: 3, name: 'まおう', lv: 54, base: { hp: 110, atk: 115, def: 110 },
-    power: 69, interval: 5600, exp: 1000, diff: 'hard', bg: 'magma', boss: true, final: true,
-    desc: 'マグマのしろの あるじ。さいごの てき。',
-    ability: 'demon', abilityDesc: 'まおうのちから: HP 2/3 で やみ (ガイドが消える)、1/3 で 攻撃が速くなり ひっさつゲージをうばう',
-  },
+// E(id, 名前, 体つき, 攻撃間隔ms, 特殊能力, 能力の説明, 敵の説明, その他)
+const E = (id, name, type, interval, ability, abilityDesc, desc, extra = {}) => ({ id, name, type, interval, ability, abilityDesc, desc, ...extra });
+
+const WORLD_DEFS = [
+  { id: 'grass', name: 'そうげん', diff: 'normal', enemies: [
+    E('bat', 'コウモリン', 'fast', 4200, null, 'とくになし', 'どうくつにすむ小さなコウモリ。最初の相手にぴったり。', { diff: 'easy', bg: 'cave' }),
+    E('mush', 'ドクキノコ', 'normal', 4800, 'poison', 'どく: 攻撃をうけると 5 秒間 HP がへりつづける', 'もりのどくキノコ。攻撃をうけると、どくになってしまう。', { diff: 'easy', bg: 'forest' }),
+    E('ghost', 'ユウレイン', 'fast', 4200, 'fade', 'ゆうれいのきり: ときどきローマ字ガイドが見えなくなる', 'ぼちをさまようおばけ。ローマ字のガイドをかくしてくる。', { bg: 'grave' }),
+    E('goblin', 'ゴブリン', 'normal', 4600, 'rage', 'げきど: HP が半分をきると攻撃が速くなる', 'こんぼうをふりまわす らんぼうもの。追いつめるとおこりだす。', { bg: 'plain' }),
+    E('golem', 'ストーンゴーレム', 'tank', 5600, 'armor', 'いしのよろい: コンボ 30 未満だとダメージ半減', 'いせきを守るいしのきょじん。とてもかたい。', { bg: 'ruins' }),
+    E('dragon', 'ドラゴン', 'boss', 5400, 'dragon', 'ほんき: HP 半分で攻撃が速くなり、3 回に 1 回ほのおのブレス', 'そうげんの果てにすむ りゅう。HP が半分をきると本気をだす。', { bg: 'volcano' }),
+  ] },
+  { id: 'poison', name: 'どくぬま', diff: 'normal', enemies: [
+    E('pbat', 'ドクコウモリ', 'fast', 4000, 'poison', 'どくのキバ: 攻撃をうけると どくになる', 'ぬまの上をとびまわる どくのコウモリ。'),
+    E('frog', 'ドクガエル', 'normal', 4600, 'mud', 'ぬかるみ: 攻撃をうけると ガイドが泥で見えにくくなり、ゲージがへる', 'どろをとばしてくる カエル。'),
+    E('bee', 'ドクバチ', 'fast', 3800, 'poison', 'どくばり: 攻撃をうけると どくになる', 'ぶんぶんうるさい どくのハチ。'),
+    E('swampmush', 'ヌマダケ', 'normal', 5000, 'regen', 'ぬまのめぐみ: ときどき HP を回復する', 'ぬまにはえる むらさきのキノコ。'),
+    E('zombie', 'ゾンビ', 'tank', 5400, 'regen', 'しぶとい: ときどき HP を回復する', 'なんどでも おきあがる ぬまのゾンビ。'),
+    E('hydra', 'ヒュドラ', 'boss', 5600, ['hydra', 'poison'], 'みつくび: HP がへるたびに 1 回の攻撃回数がふえる。どくもある', 'みっつの首をもつ どくぬまの ぬし。'),
+  ] },
+  { id: 'desert', name: 'さばく', diff: 'normal', enemies: [
+    E('scorpion', 'サソリン', 'fast', 4000, 'poison', 'どくばり: 攻撃をうけると どくになる', 'すなの中から とびだす サソリ。'),
+    E('cactus', 'サボテンマン', 'tank', 5400, 'shell', 'トゲガード: ときどき 3 秒間 うけるダメージが大きくへる', 'トゲだらけの サボテン。'),
+    E('snake', 'スナヘビ', 'fast', 4000, 'rage', 'しっぽ: HP が半分をきると 攻撃が速くなる', 'すなの上を すべるように すすむヘビ。'),
+    E('mummy', 'ミイラン', 'normal', 5000, 'sandstorm', 'すなあらし: ときどき 漢字とかなが見えなくなる', 'ピラミッドから でてきた ミイラ。'),
+    E('dgoblin', 'サバクゴブリン', 'normal', 4400, 'charge', 'ためこうげき: 3 回に 1 回、力をためた強い攻撃', 'さばくの とうぞく ゴブリン。'),
+    E('sphinx', 'スフィンクス', 'boss', 5400, ['sandstorm', 'rage'], 'なぞのちから: すなあらしを おこし、HP 半分で攻撃が速くなる', 'ピラミッドを守る なぞの番人。'),
+  ] },
+  { id: 'sea', name: 'うみ', diff: 'hard', enemies: [
+    E('crab', 'カニッパ', 'tank', 5200, 'shell', 'からにこもる: ときどき 3 秒間 うけるダメージが大きくへる', 'かたいこうらの大きなカニ。', { diff: 'normal' }),
+    E('jelly', 'クラゲール', 'normal', 5000, 'shock', 'しびれ: ミスすると 自分が ダメージをうける', 'ビリビリするクラゲ。まちがえて さわると しびれる。'),
+    E('puffer', 'フグリン', 'normal', 4800, 'shock', 'トゲトゲ: ミスすると 自分が ダメージをうける', 'おこると ふくらむ フグ。'),
+    E('shark', 'サメキバ', 'fast', 4400, 'rage', 'ちのにおい: HP が半分をきると 攻撃が速くなる', 'うみのハンター。弱ってくると どうもうになる。'),
+    E('pirate', 'ガイコツせんちょう', 'normal', 5000, 'charge', 'たいほう: 3 回に 1 回、力をためた強い攻撃', 'ゆうれいせんの せんちょう。'),
+    E('kraken', 'クラーケン', 'boss', 5400, 'ink', 'すみはき: ときどき お題が すみで見えにくくなる。HP 半分から 2 れんぞく攻撃', 'しんかいの ぬし。すみを はいて じゃまをしてくる。'),
+  ] },
+  { id: 'candy', name: 'おかしのくに', diff: 'hard', enemies: [
+    E('gummy', 'グミベア', 'normal', 4600, 'sweet', 'あまいゆうわく: ミスすると 敵の HP が回復する', 'ぷにぷにの グミのクマ。'),
+    E('lolli', 'ペロペロン', 'fast', 4000, 'rage', 'あまのじゃく: HP が半分をきると 攻撃が速くなる', 'ぐるぐるうずまきの キャンディ。'),
+    E('cake', 'ショートケーキン', 'normal', 5000, 'sweet', 'あまいゆうわく: ミスすると 敵の HP が回復する', 'いちごをのせた ケーキのモンスター。'),
+    E('mallow', 'マシュマロおばけ', 'fast', 4400, 'fade', 'ふわふわ: ときどき ローマ字ガイドが見えなくなる', 'ふわふわの マシュマロの おばけ。'),
+    E('chocogolem', 'チョコゴーレム', 'tank', 5600, 'armor', 'チョコのよろい: コンボ 30 未満だと ダメージ半減', 'チョコレートで できた きょじん。'),
+    E('pudding', 'ジャイアントプリン', 'boss', 5600, ['sweet', 'charge'], 'あまいわな: ミスすると回復し、3 回に 1 回 ためこうげきをしてくる', 'おかしのくにの 女王さま。'),
+  ] },
+  { id: 'rain', name: 'あめのもり', diff: 'hard', enemies: [
+    E('snail', 'カタツムリン', 'tank', 5600, 'shell', 'からにこもる: ときどき 3 秒間 うけるダメージが大きくへる', 'あめの日に でてくる カタツムリ。'),
+    E('kappa', 'カッパ', 'normal', 4600, 'fade', 'みずしぶき: ときどき ローマ字ガイドが見えなくなる', 'かわにすむ いたずらもの。'),
+    E('rainfrog', 'アマガエル', 'fast', 4200, 'mud', 'ぬかるみ: 攻撃をうけると ガイドが泥で見えにくくなり、ゲージがへる', 'あめが だいすきな カエル。'),
+    E('rainmush', 'アメフラシダケ', 'normal', 5000, 'regen', 'あめのめぐみ: ときどき HP を回復する', 'あめを よぶ キノコ。'),
+    E('tbat', 'イナズマコウモリ', 'fast', 4000, 'thunder', 'かみなりのよこく: ときどき落雷の予告。3 秒以内にお題を打ち切らないと大ダメージ', 'かみなりをまとう コウモリ。'),
+    E('raijin', 'ライジン', 'boss', 5200, ['thunder', 'rage'], 'かみなりさま: 落雷の予告が多い。HP 半分で攻撃が速くなる', 'たいこを たたく かみなりの神。'),
+  ] },
+  { id: 'factory', name: 'きかいのこうじょう', diff: 'hard', enemies: [
+    E('robot', 'ロボッタ', 'tank', 5400, 'armor', 'てっこう: コンボ 30 未満だと ダメージ半減', 'こうじょうを 見はる ロボット。'),
+    E('drone', 'ドローン', 'fast', 3800, 'charge', 'レーザーためうち: 3 回に 1 回、力をためた強い攻撃', 'ぶーんと とびまわる ドローン。'),
+    E('bomb', 'バクダンくん', 'normal', 4800, 'charge', 'ばくはつ: 3 回に 1 回、力をためた強い攻撃', 'いつ ばくはつするか わからない。'),
+    E('mgoblin', 'メカゴブリン', 'normal', 4400, 'rage', 'オーバーヒート: HP が半分をきると 攻撃が速くなる', 'きかいの 体になった ゴブリン。'),
+    E('geargolem', 'ギアゴーレム', 'tank', 5600, 'shell', 'ギアガード: ときどき 3 秒間 うけるダメージが大きくへる', 'はぐるまで うごく きょじん。'),
+    E('mechadragon', 'メカドラゴン', 'boss', 5200, ['dragon', 'charge'], 'メカのほんき: HP 半分で速くなりブレス。ためこうげきもある', 'こうじょうで つくられた きかいの りゅう。'),
+  ] },
+  { id: 'snow', name: 'ゆきやま', diff: 'hard', enemies: [
+    E('penguin', 'ペンギナイト', 'normal', 4800, 'shell', 'こおりのたて: ときどき 3 秒間 うけるダメージが大きくへる', 'たてと やりを もったペンギンの きし。'),
+    E('snowman', 'ユキダルマン', 'tank', 5000, 'regen', 'ゆきだまり: ときどき HP を回復する', 'うごく ゆきだるま。ゆきを あつめて 回復する。'),
+    E('yukionna', 'ユキオンナ', 'fast', 4400, 'freeze', 'つめたいいき: 攻撃をうけると 1 秒間 こおって入力できない', 'ゆきやまに あらわれる ゆうれい。'),
+    E('wolf', 'アイスウルフ', 'fast', 4200, 'freeze', 'こおりのいき: 攻撃をうけると 1 秒間 こおって入力できない', 'こおりの いきを はく オオカミ。'),
+    E('icegolem', 'アイスゴーレム', 'tank', 5600, 'armor', 'こおりのよろい: コンボ 30 未満だと ダメージ半減', 'こおりで できた きょじん。'),
+    E('yeti', 'イエティ', 'boss', 5400, 'blizzard', 'ふぶき: ときどき 漢字とかなが見えなくなる。攻撃で こおらせてくる', 'ゆきやまの ぬし。ふぶきを よびおこす。'),
+  ] },
+  { id: 'sky', name: 'てんくう', diff: 'hard', enemies: [
+    E('skybird', 'ソラドリ', 'fast', 3800, 'wind', 'かぜおこし: ときどき 風で文字がゆれる', 'くもの上を とぶ 鳥。'),
+    E('cloud', 'カミナリグモ', 'normal', 4800, 'thunder', 'かみなりのよこく: 3 秒以内にお題を打ち切らないと 落雷', 'かみなりを よぶ くも。'),
+    E('wbat', 'シロコウモリ', 'fast', 4000, 'rage', 'てんくうのキバ: HP が半分をきると 攻撃が速くなる', 'まっしろな コウモリ。'),
+    E('skygolem', 'スカイゴーレム', 'tank', 5600, 'armor', 'ひかりのよろい: コンボ 30 未満だと ダメージ半減', 'そらの しろを 守る きょじん。'),
+    E('wyvern', 'ワイバーン', 'normal', 4600, 'wind', 'はばたき: ときどき 風で文字がゆれる', 'そらを かける 小さな りゅう。'),
+    E('skydragon', 'てんくうりゅう', 'boss', 5200, ['dragon', 'wind'], 'てんくうのおう: 風で文字をゆらし、HP 半分で速くなりブレス', 'くもの上の おうさま りゅう。'),
+  ] },
+  { id: 'space', name: 'うちゅう', diff: 'hard', enemies: [
+    E('alien', 'エイリアン', 'normal', 4600, 'fade', 'テレパシー: ときどき ローマ字ガイドが見えなくなる', 'とおい ほしから きた うちゅうじん。'),
+    E('ufo', 'ユーフォー', 'fast', 4000, 'charge', 'ビームためうち: 3 回に 1 回、力をためた強い攻撃', 'ふしぎな ひかりの のりもの。'),
+    E('meteor', 'メテオン', 'tank', 5600, 'shell', 'いわのからだ: ときどき 3 秒間 うけるダメージが大きくへる', 'うちゅうを ただよう いんせき。'),
+    E('star', 'スターン', 'fast', 4200, 'shock', 'ほしくず: ミスすると 自分が ダメージをうける', 'きらきら ひかる ほしの子。'),
+    E('galaxyrobo', 'ギャラクシーロボ', 'tank', 5400, 'armor', 'うちゅうごうきん: コンボ 30 未満だと ダメージ半減', 'うちゅうせんを 守る ロボット。'),
+    E('alienking', 'ギャラクシーキング', 'boss', 5200, ['fade', 'charge'], 'うちゅうのおう: ガイドを隠し、ためこうげきもしてくる', 'うちゅうじんたちの おうさま。'),
+  ] },
+  { id: 'magma', name: 'マグマのしろ', diff: 'hard', enemies: [
+    E('imp', 'ファイアインプ', 'fast', 4400, 'poison', 'やけど: 攻撃をうけると 5 秒間 HP がへりつづける', 'しろを まもる ほのおの こあくま。', { statusName: 'やけど' }),
+    E('hellhound', 'ヘルハウンド', 'fast', 4000, 'rage', 'じごくのキバ: HP が半分をきると 攻撃が速くなる', 'ほのおを はく じごくの いぬ。'),
+    E('mgolem', 'マグマゴーレム', 'tank', 5600, 'armor', 'マグマのよろい: コンボ 30 未満だと ダメージ半減', 'ようがんで できた きょじん。とても かたい。'),
+    E('darkknight', 'ダークナイト', 'normal', 4800, 'shell', 'やみのたて: ときどき 3 秒間 うけるダメージが大きくへる', 'まおうに つかえる やみの きし。'),
+    E('salamander', 'サラマンダー', 'normal', 4600, 'fade', 'かげろう: ときどき ローマ字ガイドが ゆらめいて見えなくなる', 'ほのおを まとう トカゲ。'),
+    E('demon', 'まおう', 'boss', 5600, 'demon', 'まおうのちから: HP 2/3 で やみ (ガイドが消える)、1/3 で 攻撃が速くなり ひっさつゲージをうばう', 'マグマのしろの あるじ。さいごの てき。', { final: true }),
+  ] },
 ];
 
-// ワールド (マップ) の一覧
-const WORLDS = [
-  { id: 'grass', name: 'そうげん' },
-  { id: 'sea', name: 'うみ' },
-  { id: 'snow', name: 'ゆきやま' },
-  { id: 'magma', name: 'マグマのしろ' },
-];
+// ワールドの一覧
+const WORLDS = WORLD_DEFS.map(w => ({ id: w.id, name: w.name }));
+
+// 敵の一覧 (ステージ順)。レベル・経験値は 通し番号から決める
+const ENEMIES = [];
+WORLD_DEFS.forEach((w, wi) => {
+  w.enemies.forEach((e, i) => {
+    const g = ENEMIES.length;
+    const boss = i === w.enemies.length - 1;
+    const lv = e.final ? 99 : Math.round(2 + g * 1.46) + (boss ? 2 : 0);
+    ENEMIES.push({
+      ...e,
+      world: wi,
+      boss,
+      lv,
+      base: { ...ENEMY_TYPES[e.type] },
+      power: 40,
+      exp: Math.round((boss ? 1.4 : 1) * (240 + g * 15)),
+      diff: e.diff || w.diff,
+      bg: e.bg || w.id,
+      abilities: [].concat(e.ability || []),
+    });
+  });
+});
+// 決めてある威力を反映
+function applyEnemyPower() { for (const e of ENEMIES) if (ENEMY_POWER[e.id]) e.power = ENEMY_POWER[e.id]; }
+applyEnemyPower();
 
 // ワールド w のステージ番号 (ENEMIES の添字) の一覧
 function worldStages(w) {
@@ -284,5 +340,5 @@ function rankFor(score) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { expForLevel, levelFromExp, calcStats, calcDamage, wordPower, CHARACTERS, ENEMIES, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS };
+  module.exports = { expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
 }
