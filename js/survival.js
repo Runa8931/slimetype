@@ -90,7 +90,7 @@ const SV_WEAPONS = {
   meteor: { name: 'メテオ', icon: '☄️', color: '#ff6a00', desc: '空から いんせきを落として 大ばくはつ' },
   tornado: { name: 'たつまき', icon: '🌪️', color: '#96f2d7', desc: '敵を まきこむ たつまきを 生みだす' },
 };
-const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock' };
+const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star' };
 
 function svWeaponStat(id, lv) {
   const i = lv - 1;
@@ -148,6 +148,8 @@ Screens.survival = {
     if (this.ch.id === 'piriri') speed *= [1.15, 1.18, 1.21, 1.24, 1.27][this.ch.stage];
     this.p = { x: 0, y: 0, hp: max, max, speed, face: 1, dir: { x: 1, y: 0 }, inv: 0, regenT: 0, moving: false, slowUntil: 0 };
     this.dmgMult = 1 + (st.atk - 5) / 60;
+    // ほむら: 武器のダメージが上がる (進化で もっと上がる)
+    if (this.ch.id === 'homura') this.dmgMult *= [1.1, 1.14, 1.18, 1.22, 1.26][this.ch.stage];
     this.weapons = { [SV_START_WEAPON[this.ch.id]]: { lv: 1, t: 0.5 } };
 
     this.enemies = []; this.shots = []; this.eshots = []; this.pickups = [];
@@ -346,9 +348,10 @@ Screens.survival = {
       if (Math.random() < 0.3) this.parts.push({ x: p.x + (Math.random() - 0.5) * 20, y: p.y + 14, vx: -mx * 30, vy: -10, life: 0.4, max: 0.4, color: 'rgba(255,255,255,.6)', size: 3 });
     }
     if (p.inv > 0) p.inv -= dt;
-    if (this.ch.id === 'purun') {
+    if (this.ch.id === 'purun' || this.ch.id === 'moririn') {
       p.regenT += dt;
-      if (p.regenT >= [3.5, 3.2, 2.9, 2.6, 2.3][this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
+      const regenIv = this.ch.id === 'moririn' ? [2.6, 2.3, 2.0, 1.7, 1.4] : [3.5, 3.2, 2.9, 2.6, 2.3];
+      if (p.regenT >= regenIv[this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
     }
 
     // イベント
@@ -738,7 +741,8 @@ Screens.survival = {
     if (this.ch.id === 'gotsun') d *= [0.75, 0.72, 0.69, 0.66, 0.63][this.ch.stage];
     d = Math.max(1, Math.round(d));
     p.hp -= d;
-    p.inv = 0.8;
+    // かげまる: 攻撃をうけたあと 長めに むてき
+    p.inv = this.ch.id === 'kagemaru' ? [1.0, 1.1, 1.2, 1.3, 1.4][this.ch.stage] : 0.8;
     if (slow) p.slowUntil = this.time + 1.2;
     this.texts.push({ x: p.x, y: p.y - 40, text: d, life: 0.7, max: 0.7, color: '#ff5d5d', size: 26 });
     this.burst(p.x, p.y, ['#ff5d5d', '#fff'], 12, 200, false);

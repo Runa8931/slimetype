@@ -14,7 +14,7 @@ const Save = {
   fresh() {
     return {
       active: null,
-      chars: { purun: { exp: 0 }, piriri: { exp: 0 }, gotsun: { exp: 0 } },
+      chars: Object.fromEntries(Object.keys(CHARACTERS).map(id => [id, { exp: 0 }])),
       cleared: 0,
       best: {},
       settings: { lang: 'ja', sound: true, volume: 0.8, diff: 'easy', time: 60, lite: false },
@@ -270,6 +270,10 @@ Screens.home = {
     $('#go-battle').onclick = () => { SFX.select(); App.show('stages'); };
     $('#go-select').onclick = () => { SFX.select(); App.show('select'); };
     $('#go-survival').onclick = () => { SFX.select(); App.show('survival'); };
+    $('#go-dex').onclick = () => { SFX.select(); App.show('dex'); };
+    $('#go-ach').onclick = () => { SFX.select(); App.show('ach'); };
+    // これまでの記録で とれる しょうごうが あれば 知らせる
+    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 しょうごう「${a.name}」を 手に入れた！`, 2600), 400 + i * 2800));
     document.querySelectorAll('#set-lang button').forEach(b => {
       b.onclick = () => { Save.data.settings.lang = b.dataset.v; Save.save(); SFX.select(); this.render(); };
     });
@@ -319,6 +323,7 @@ Screens.home = {
         <div class="sprite big bounce">${slimeSVG(c.id, c.stage)}</div>
         <div class="hc-id">
           <div class="hc-name">${c.name}</div>
+          ${currentTitle() ? `<div class="hc-title">🏅 ${currentTitle()}</div>` : ''}
           <div class="badges"><span class="badge type-${c.id}">${d.type}</span><span class="badge">${d.role}</span><span class="badge evo">${nextEvo}</span></div>
           <div class="hc-lv">Lv.<b>${c.L}</b></div>
           <div class="expbar"><div class="exp-fill" style="width:${expPct}%"></div></div>
@@ -332,6 +337,8 @@ Screens.home = {
         <span>とくせい「${d.forms[c.stage + 1].trait.name}」: ${d.forms[c.stage + 1].trait.desc}</span>
         <span>ひっさつ「${d.forms[c.stage + 1].skill.name}」: ${d.forms[c.stage + 1].skill.desc}</span></div>` : ''}`;
 
+    $('#dex-count').textContent = `${dexCount()}/${ENEMIES.length}`;
+    $('#ach-count').textContent = `${achCount()}/${ACHIEVEMENTS.length}`;
     const best = Save.data.best;
     const lang = s.lang;
     const diffName = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい' };
@@ -351,6 +358,8 @@ Screens.home = {
     if (e.key === '2') $('#go-battle').click();
     if (e.key === '3') $('#go-survival').click();
     if (e.key === '4') $('#go-select').click();
+    if (e.key === '5') $('#go-dex').click();
+    if (e.key === '6') $('#go-ach').click();
     if (e.key === 'Escape') App.show('title');
   },
 };

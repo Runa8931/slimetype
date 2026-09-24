@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260925d">
+  <link rel="stylesheet" href="css/style.css?v=20260925f">
 </head>
 <body>
   <div class="sky"></div>
@@ -67,6 +67,10 @@
           <span class="mc-title">スライムをかえる</span>
           <span class="mc-desc">ほかのスライムも育ててみよう</span>
         </button>
+        <div class="sub-menu">
+          <button class="sub-card" id="go-dex"><span class="mc-key">5</span>📖 モンスターずかん <small id="dex-count"></small></button>
+          <button class="sub-card" id="go-ach"><span class="mc-key">6</span>🏅 しょうごう <small id="ach-count"></small></button>
+        </div>
         <div class="panel records" id="home-records"></div>
       </div>
     </div>
@@ -192,24 +196,44 @@
     <div class="overlay" id="b-overlay"></div>
   </section>
 
+  <!-- モンスターずかん -->
+  <section class="screen" id="scr-dex">
+    <h2 class="screen-title">モンスターずかん</h2>
+    <p class="screen-desc" id="dex-desc"></p>
+    <div class="dex-wrap">
+      <div class="dex-list" id="dex-list"></div>
+      <div class="dex-detail panel" id="dex-detail"></div>
+    </div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-dex-back">もどる <kbd>Esc</kbd></button></div>
+  </section>
+
+  <!-- しょうごう -->
+  <section class="screen" id="scr-ach">
+    <h2 class="screen-title">しょうごう</h2>
+    <p class="screen-desc" id="ach-desc"></p>
+    <div class="ach-list" id="ach-list"></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-ach-back">もどる <kbd>Esc</kbd></button></div>
+  </section>
+
   <!-- 結果 -->
   <section class="screen" id="scr-result">
     <div class="result-wrap" id="result-wrap"></div>
   </section>
 
-  <script src="js/romaji.js?v=20260925d"></script>
-  <script src="js/data.js?v=20260925d"></script>
-  <script src="js/words.js?v=20260925d"></script>
-  <script src="js/sprites.js?v=20260925d"></script>
-  <script src="js/enemies2.js?v=20260925d"></script>
-  <script src="js/effects.js?v=20260925d"></script>
-  <script src="js/audio.js?v=20260925d"></script>
-  <script src="js/main.js?v=20260925d"></script>
-  <script src="js/practice.js?v=20260925d"></script>
-  <script src="js/map.js?v=20260925d"></script>
-  <script src="js/battle.js?v=20260925d"></script>
-  <script src="js/survival.js?v=20260925d"></script>
-  <script src="js/result.js?v=20260925d"></script>
+  <script src="js/romaji.js?v=20260925f"></script>
+  <script src="js/data.js?v=20260925f"></script>
+  <script src="js/words.js?v=20260925f"></script>
+  <script src="js/sprites.js?v=20260925f"></script>
+  <script src="js/enemies2.js?v=20260925f"></script>
+  <script src="js/effects.js?v=20260925f"></script>
+  <script src="js/audio.js?v=20260925f"></script>
+  <script src="js/main.js?v=20260925f"></script>
+  <script src="js/practice.js?v=20260925f"></script>
+  <script src="js/map.js?v=20260925f"></script>
+  <script src="js/battle.js?v=20260925f"></script>
+  <script src="js/survival.js?v=20260925f"></script>
+  <script src="js/collection.js?v=20260925f"></script>
+  <script src="js/result.js?v=20260925f"></script>
   <script>App.boot();</script>
 </body>
 </html>

@@ -160,6 +160,120 @@ const CHARACTERS = {
       },
     ],
   },
+  homura: {
+    id: 'homura',
+    names: ['ほむら', 'ほむらん', 'フレイムほむら', 'インフェルノ', 'フェニックスほむら'],
+    type: 'ほのお',
+    role: 'こうげき型',
+    colors: { main: '#ff6b35', light: '#ffd8a8', dark: '#c92a2a', accent: '#ffe066' },
+    stageColors: [
+      { main: '#ff6b35', light: '#ffd8a8', dark: '#c92a2a', accent: '#ffe066' },
+      { main: '#ff922b', light: '#ffe8cc', dark: '#d9480f', accent: '#fff3bf' },
+      { main: '#f03e3e', light: '#ffc9c9', dark: '#862e2e', accent: '#ffd43b' },
+      { main: '#e8590c', light: '#ffec99', dark: '#5c1a00', accent: '#ff8787' },
+      { main: '#fab005', light: '#fff9db', dark: '#c92a2a', accent: '#ff6b6b' },
+    ],
+    base: { hp: 78, atk: 98, def: 64, spd: 75 },
+    desc: 'あつい心の ほのおスライム。コンボが つづくほど 手がつけられなくなる。',
+    forms: [
+      {
+        trait: { name: 'ねっけつ', desc: 'コンボ倍率の上限が 1.7 倍に上がる (ふつうは 1.5 倍)。やけどが きかない', burnImmune: true, statusCut: 0, comboMax: 140 },
+        skill: { name: 'ファイアブレス', desc: '威力 220 のほのお。敵を 5 秒間 やけど (毎秒 HP 3% ダメージ)', power: 220, burn: 5, charge: 1 },
+      },
+      {
+        trait: { name: 'ねっけつ+', desc: 'コンボ倍率の上限が 1.8 倍。やけどが きかない', burnImmune: true, statusCut: 0, comboMax: 160 },
+        skill: { name: 'フレイムバースト', desc: '威力 300。敵を 6 秒間 やけど。ゲージ +5%', power: 300, burn: 6, charge: 1.05 },
+      },
+      {
+        trait: { name: 'もえあがる魂', desc: 'コンボ倍率の上限が 1.9 倍。やけどが きかない。どくの時間が半分', burnImmune: true, statusCut: 0.5, comboMax: 180 },
+        skill: { name: 'ボルケーノ', desc: '威力 380。敵を 7 秒間 やけど。ゲージ +10%', power: 380, burn: 7, charge: 1.1 },
+      },
+      {
+        trait: { name: 'ごうか', desc: 'コンボ倍率の上限が 2.0 倍。やけどが きかない。どくの時間が半分', burnImmune: true, statusCut: 0.5, comboMax: 200 },
+        skill: { name: 'インフェルノ', desc: '威力 460。敵を 8 秒間 やけど。ゲージ +15%', power: 460, burn: 8, charge: 1.15 },
+      },
+      {
+        trait: { name: 'ふしちょう', desc: 'コンボ倍率の上限が 2.1 倍。やけど・どくが きかない', burnImmune: true, statusCut: 1, comboMax: 220 },
+        skill: { name: 'フェニックスフレア', desc: '威力 540。敵を 9 秒間 やけど。ゲージ +20%', power: 540, burn: 9, charge: 1.2 },
+      },
+    ],
+  },
+  moririn: {
+    id: 'moririn',
+    names: ['もりりん', 'もりもりん', 'ジャングルもりりん', 'せいれいもりりん', 'ユグドラもりりん'],
+    type: 'くさ',
+    role: 'かいふく型',
+    colors: { main: '#51cf66', light: '#d3f9d8', dark: '#2b8a3e', accent: '#ffd43b' },
+    stageColors: [
+      { main: '#51cf66', light: '#d3f9d8', dark: '#2b8a3e', accent: '#ffd43b' },
+      { main: '#40c057', light: '#ebfbee', dark: '#1b5e20', accent: '#ff8fab' },
+      { main: '#2f9e44', light: '#b2f2bb', dark: '#0b3d16', accent: '#ffe066' },
+      { main: '#20c997', light: '#c3fae8', dark: '#087f5b', accent: '#fff3bf' },
+      { main: '#94d82d', light: '#f4fce3', dark: '#2b8a3e', accent: '#ffd43b' },
+    ],
+    base: { hp: 85, atk: 70, def: 72, spd: 60 },
+    desc: 'もりに すむ くさスライム。ひなたぼっこで いつのまにか 元気になる。',
+    forms: [
+      {
+        trait: { name: 'こうごうせい', desc: '3 秒ごとに HP が 1% 回復する', regen: 0.01, statusCut: 0 },
+        skill: { name: 'やどりぎのタネ', desc: '威力 160 で攻撃し、自分の HP を 20% 回復', power: 160, heal: 0.2, charge: 1 },
+      },
+      {
+        trait: { name: 'こうごうせい+', desc: '3 秒ごとに HP が 1.2% 回復。どく・やけどの時間が半分', regen: 0.012, statusCut: 0.5 },
+        skill: { name: 'ギガドレイン', desc: '威力 220 で攻撃し、HP を 22% 回復', power: 220, heal: 0.22, charge: 1.05 },
+      },
+      {
+        trait: { name: 'もりのめぐみ', desc: '3 秒ごとに HP が 1.4% 回復。どく・やけど・こおりが きかない', regen: 0.014, statusCut: 1 },
+        skill: { name: 'ジャングルドレイン', desc: '威力 280 で攻撃し、HP を 24% 回復。ゲージ +10%', power: 280, heal: 0.24, charge: 1.1 },
+      },
+      {
+        trait: { name: 'せいれいのいぶき', desc: '3 秒ごとに HP が 1.6% 回復。状態異常が きかない', regen: 0.016, statusCut: 1 },
+        skill: { name: 'せいれいのしずく', desc: '威力 340 で攻撃し、HP を 26% 回復。ゲージ +15%', power: 340, heal: 0.26, charge: 1.15 },
+      },
+      {
+        trait: { name: 'せかいじゅ', desc: '3 秒ごとに HP が 1.8% 回復。状態異常が きかない', regen: 0.018, statusCut: 1 },
+        skill: { name: 'ユグドラシル', desc: '威力 400 で攻撃し、HP を 28% 回復。ゲージ +20%', power: 400, heal: 0.28, charge: 1.2 },
+      },
+    ],
+  },
+  kagemaru: {
+    id: 'kagemaru',
+    names: ['かげまる', 'かげまるん', 'シャドウかげまる', 'ナイトメア', 'ダークロードかげまる'],
+    type: 'かげ',
+    role: 'テクニック型',
+    colors: { main: '#7048e8', light: '#d0bfff', dark: '#2b1a4a', accent: '#ff6b6b' },
+    stageColors: [
+      { main: '#7048e8', light: '#d0bfff', dark: '#2b1a4a', accent: '#ff6b6b' },
+      { main: '#5f3dc4', light: '#b197fc', dark: '#1a0f3a', accent: '#ffd43b' },
+      { main: '#495057', light: '#adb5bd', dark: '#101113', accent: '#e599f7' },
+      { main: '#343a40', light: '#9775fa', dark: '#000000', accent: '#ff006e' },
+      { main: '#3b1f6b', light: '#e5dbff', dark: '#10002b', accent: '#ffd43b' },
+    ],
+    base: { hp: 84, atk: 84, def: 66, spd: 85 },
+    desc: 'かげに かくれる にんじゃスライム。正確に打つほど 敵の動きを にぶらせる。',
+    forms: [
+      {
+        trait: { name: 'かげぬい', desc: 'かげで 敵の足をしばり、敵の攻撃が 12% おそくなる', slow: 0.12 },
+        skill: { name: 'シャドウバインド', desc: '威力 150 で攻撃し、敵の攻撃ゲージを 4 秒間 とめる。ゲージ +10%', power: 150, bind: 4, charge: 1.1 },
+      },
+      {
+        trait: { name: 'かげぬい+', desc: 'かげで 敵の足をしばり、敵の攻撃が 15% おそくなる', slow: 0.15 },
+        skill: { name: 'かげしばり', desc: '威力 210。敵を 4.5 秒間 とめる。ゲージ +15%', power: 210, bind: 4.5, charge: 1.15 },
+      },
+      {
+        trait: { name: 'やみのしのび', desc: 'かげで 敵の足をしばり、敵の攻撃が 18% おそくなる', slow: 0.18 },
+        skill: { name: 'シャドウロック', desc: '威力 270。敵を 5 秒間 とめる。ゲージ +20%', power: 270, bind: 5, charge: 1.2 },
+      },
+      {
+        trait: { name: 'あくむ', desc: 'かげで 敵の足をしばり、敵の攻撃が 21% おそくなる', slow: 0.21 },
+        skill: { name: 'ナイトメアバインド', desc: '威力 330。敵を 5.5 秒間 とめる。ゲージ +25%', power: 330, bind: 5.5, charge: 1.25 },
+      },
+      {
+        trait: { name: 'やみのおう', desc: 'かげで 敵の足をしばり、敵の攻撃が 24% おそくなる', slow: 0.24 },
+        skill: { name: 'ダークエンド', desc: '威力 390。敵を 6 秒間 とめる。ゲージ +30%', power: 390, bind: 6, charge: 1.3 },
+      },
+    ],
+  },
 };
 
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく

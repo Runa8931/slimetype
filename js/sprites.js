@@ -22,6 +22,21 @@ function slimeSVG(id, stage = 0) {
       'M60,28 C90,28 108,54 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C12,54 30,28 60,28 Z',
       'M60,28 C90,28 108,54 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C12,54 30,28 60,28 Z',
     ],
+    homura: [
+      'M60,16 C64,30 76,26 78,40 C92,42 106,62 106,80 C108,98 96,104 84,104 L36,104 C24,104 12,98 14,80 C14,62 26,48 38,44 C38,30 52,34 60,16 Z',
+      'M60,8 C66,26 80,20 82,38 C98,40 110,62 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C10,60 22,46 36,42 C34,26 50,30 60,8 Z',
+      'M60,8 C66,26 80,20 82,38 C98,40 110,62 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C10,60 22,46 36,42 C34,26 50,30 60,8 Z',
+    ],
+    moririn: [
+      'M60,34 C92,34 108,58 108,80 C108,98 96,104 84,104 L36,104 C24,104 12,98 12,80 C12,58 28,34 60,34 Z',
+      'M60,30 C94,30 112,56 112,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 8,80 C8,56 26,30 60,30 Z',
+      'M60,30 C94,30 112,56 112,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 8,80 C8,56 26,30 60,30 Z',
+    ],
+    kagemaru: [
+      'M60,30 C88,30 104,56 106,80 C108,98 96,104 84,104 L36,104 C24,104 12,98 14,80 C16,56 32,30 60,30 Z',
+      'M60,26 C90,26 108,54 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C12,54 30,26 60,26 Z',
+      'M60,26 C90,26 108,54 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C12,54 30,26 60,26 Z',
+    ],
     gotsun: [
       'M30,44 L50,32 L74,34 L94,48 L104,74 L100,100 L86,104 L34,104 L18,100 L16,72 Z',
       'M26,42 L48,28 L76,30 L98,46 L110,74 L104,102 L88,106 L32,106 L14,102 L10,72 Z',
@@ -31,6 +46,7 @@ function slimeSVG(id, stage = 0) {
 
   let behind = '';
   let front = '';
+  let mid = ''; // 体の上・目の下 (かげまるの ずきん など)
 
   // ---- 種類ごとの基本の飾り ----
   if (id === 'purun') {
@@ -49,6 +65,27 @@ function slimeSVG(id, stage = 0) {
               <path d="M82,52 L94,58 L86,64 Z" fill="${c.dark}" opacity=".45"/>
               <path d="M22,88 L34,84 L30,96 Z" fill="${c.dark}" opacity=".35"/>
               <path d="M70,92 L84,88 L80,100 Z" fill="${c.dark}" opacity=".35"/>`;
+  }
+
+  if (id === 'homura') {
+    front += `<circle cx="36" cy="84" r="5" fill="#ff8787" opacity=".7"/><circle cx="84" cy="84" r="5" fill="#ff8787" opacity=".7"/>
+      <path d="M52,50 C54,42 60,40 60,32 C64,40 68,44 66,52 Z" fill="${c.accent}" opacity=".85"/>`;
+    if (stage >= 1) behind += `<g class="spark"><path d="M18,52 C14,40 24,36 22,26 C30,34 32,44 26,52 Z" fill="${c.accent}"/><path d="M102,52 C106,40 96,36 98,26 C90,34 88,44 94,52 Z" fill="${c.accent}"/></g>`;
+  }
+  if (id === 'moririn') {
+    behind += `<path d="M60,36 C60,26 62,18 66,12" stroke="#2b8a3e" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M64,18 C72,4 94,6 96,14 C86,22 72,24 64,18 Z" fill="#69db7c" stroke="#2b8a3e" stroke-width="2.5"/>
+      <path d="M62,22 C54,8 34,10 32,18 C42,26 56,28 62,22 Z" fill="#8ce99a" stroke="#2b8a3e" stroke-width="2.5"/>`;
+    front += `<circle cx="36" cy="84" r="5" fill="#ffa8a8" opacity=".6"/><circle cx="84" cy="84" r="5" fill="#ffa8a8" opacity=".6"/>`;
+    if (stage >= 1) front += `<g transform="translate(96,50)"><circle r="7" fill="#fff"/>${[0, 72, 144, 216, 288].map(a => `<circle cx="${Math.cos(a * Math.PI / 180) * 7}" cy="${Math.sin(a * Math.PI / 180) * 7}" r="4.5" fill="${c.accent}"/>`).join('')}<circle r="3.5" fill="#ffd43b"/></g>`;
+  }
+  if (id === 'kagemaru') {
+    // にんじゃの ずきん と マフラー
+    mid += `<path d="M18,62 C30,56 90,56 104,62 L104,80 C90,76 30,76 16,80 Z" fill="#1a1a2e" opacity=".92"/>
+      <ellipse cx="46" cy="70" rx="10" ry="7" fill="#fff"/><ellipse cx="74" cy="70" rx="10" ry="7" fill="#fff"/>`;
+    behind += `<path d="M100,70 C118,66 126,78 122,92 C116,84 108,84 100,86 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>`;
+    front += `<path d="M24,92 C44,100 76,100 96,92 L94,100 C74,108 46,108 26,100 Z" fill="${c.accent}"/>`;
+    if (stage >= 1) front += `<g transform="translate(18,40) rotate(-20)"><path d="M0,-10 L3,-3 L10,0 L3,3 L0,10 L-3,3 L-10,0 L-3,-3 Z" fill="#dee2e6" stroke="#495057" stroke-width="1.5"/><circle r="2" fill="#495057"/></g>`;
   }
 
   // ---- 1 段階目の進化: 見た目がはっきり変わる飾り ----
@@ -81,7 +118,7 @@ function slimeSVG(id, stage = 0) {
 
   // ---- 最終進化: 王冠 + オーラ ----
   if (stage >= 2) {
-    const crownY = id === 'purun' ? -6 : id === 'piriri' ? 6 : 8;
+    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4 }[id] ?? 6;
     front += `<g transform="translate(60,${crownY})">
       <path d="M-20,18 L-22,0 L-11,9 L0,-6 L11,9 L22,0 L20,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
       <circle cx="0" cy="10" r="3.8" fill="#ff4d6d"/><circle cx="-12" cy="12" r="2.6" fill="#4dd2ff"/><circle cx="12" cy="12" r="2.6" fill="#6dff8a"/>
@@ -123,6 +160,7 @@ function slimeSVG(id, stage = 0) {
       <path d="${bodies[id][Math.min(stage, 2)]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
       <ellipse cx="40" cy="56" rx="9" ry="5" fill="#fff" opacity=".7" transform="rotate(-30 40 56)"/>
       <circle cx="30" cy="66" r="3" fill="#fff" opacity=".6"/>
+      ${mid}
       <g class="eyes">
         <ellipse cx="46" cy="72" rx="6" ry="8" fill="#1d1d2b"/><ellipse cx="74" cy="72" rx="6" ry="8" fill="#1d1d2b"/>
         <circle cx="48" cy="69" r="2.4" fill="#fff"/><circle cx="76" cy="69" r="2.4" fill="#fff"/>

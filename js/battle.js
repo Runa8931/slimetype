@@ -26,7 +26,9 @@ Screens.battle = {
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
     this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
-    this.e = { hp: Math.round(es.hp * ENEMY_HP_SCALE), max: Math.round(es.hp * ENEMY_HP_SCALE), stats: es, gauge: 0, attacks: 0, angry: false };
+    this.e = { hp: Math.round(es.hp * ENEMY_HP_SCALE), max: Math.round(es.hp * ENEMY_HP_SCALE), stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0 };
+    this.nextRegenP = 3000; this._estatus = null;
+    $('#b-estatus').innerHTML = '';
     this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0;
     this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
     // 新しい敵の特殊能力で使う状態
@@ -40,6 +42,7 @@ Screens.battle = {
     this.pending = 0; // 飛んでいる途中の攻撃
 
     this.deck = new WordDeck(Save.data.settings.lang, DIFF_POOLS[this.ed.diff], this.ed.bg);
+    dexSeen(this.ed.id); // ずかん: であった
 
     const arena = $('#arena');
     arena.className = 'arena bg-' + this.ed.bg;
@@ -119,7 +122,8 @@ Screens.battle = {
     this.last = now;
     this.elapsed += dt;
 
-    this.e.gauge += dt / this.interval();
+    // かげまる: ひっさつで しばっている間は 敵の攻撃ゲージが止まる / とくせいで 少しおそくなる
+    if (!(this.e.bindUntil > this.elapsed)) this.e.gauge += dt / this.interval() * (1 - (this.ch.trait.slow || 0));
     if (this.e.gauge >= 1) { this.e.gauge = 0; this.enemyAttack(); }
     $('#b-atk').style.transform = `scaleX(${this.e.gauge})`;
     $('#b-atk').classList.toggle('danger', this.e.gauge > 0.8);
@@ -141,6 +145,34 @@ Screens.battle = {
     ].join('');
     // 変わったときだけ書きかえる (毎フレーム書きかえると重い)
     if (status !== this._status) { this._status = status; $('#b-pstatus').innerHTML = status; }
+
+    // 敵のやけど (ほむらの ひっさつ)
+    if (this.e.burnUntil > this.elapsed && this.elapsed >= (this.e.nextBurn || 0)) {
+      this.e.nextBurn = this.elapsed + 1000;
+      const d = Math.max(1, Math.round(this.e.max * 0.03));
+      this.e.hp -= d;
+      const ec = FX.center($('#b-esprite'));
+      floatText(ec.x + (Math.random() - 0.5) * 30, ec.y - 30, d, 'dmg burn');
+      this.updateBars();
+      if (this.e.hp <= 0) { this.win(); return; }
+    }
+    // もりりん: こうごうせい (3 秒ごとに回復)
+    if (this.ch.trait.regen && this.elapsed >= (this.nextRegenP || 3000)) {
+      this.nextRegenP = this.elapsed + 3000;
+      if (this.p.hp < this.p.max) {
+        const h = Math.max(1, Math.round(this.p.max * this.ch.trait.regen));
+        this.p.hp = Math.min(this.p.max, this.p.hp + h);
+        const pc = FX.center($('#b-psprite'));
+        floatText(pc.x + 30, pc.y - 30, `+${h}`, 'heal');
+        this.updateBars();
+      }
+    }
+    const estatus = [
+      this.e.burnUntil > this.elapsed ? '<i class="st burn">やけど</i>' : '',
+      this.e.bindUntil > this.elapsed ? '<i class="st bind">しばり</i>' : '',
+    ].join('');
+    if (estatus !== this._estatus) { this._estatus = estatus; $('#b-estatus').innerHTML = estatus; }
+    $('#b-enemy').classList.toggle('bound', this.e.bindUntil > this.elapsed);
 
     this.tickAbilities();
 
@@ -279,7 +311,7 @@ Screens.battle = {
     renderTyping($('#b-tp'), this.word, this.target, { hideRoma: this.fogUntil > this.elapsed });
   },
 
-  comboMult() { return 1 + Math.min(this.combo, 100) / 200; },
+  comboMult() { return 1 + Math.min(this.combo, this.ch.trait.comboMax || 100) / 200; },
 
   updateCombo() {
     $('#b-combo').textContent = this.combo;
@@ -578,6 +610,34 @@ Screens.battle = {
       }, 700);
     }
 
+    // ほむら・もりりん・かげまる: 攻撃 + それぞれの効果
+    if (ch.id === 'homura' || ch.id === 'moririn' || ch.id === 'kagemaru') {
+      this.after(() => {
+        if (this.state !== 'run') return;
+        const ec = FX.center($('#b-esprite'));
+        const dmg = Math.round(calcDamage(ch.L, sk.power, ch.stats.atk, this.e.stats.def) * (0.92 + Math.random() * 0.08));
+        const fxCol = { homura: ['#ff6b35', '#ffe066', '#fff'], moririn: ['#51cf66', '#d3f9d8', '#fff'], kagemaru: ['#7048e8', '#1a1a2e', '#e5dbff'] }[ch.id];
+        for (let i = 0; i < 16; i++) {
+          this.after(() => this.proj({ x: pc.x + 20, y: pc.y + (Math.random() - 0.5) * 40 }, { x: ec.x + (Math.random() - 0.5) * 60, y: ec.y + (Math.random() - 0.5) * 60 },
+            { color: fxCol[i % 3], size: 5 + Math.random() * 7, frames: 16, arc: (Math.random() - 0.5) * 100, trail: false }), i * 20);
+        }
+        this.after(() => {
+          if (this.state !== 'run') return;
+          this.hitEnemy(dmg, { big: true, colors: fxCol });
+          if (ch.id === 'homura') { this.e.burnUntil = this.elapsed + sk.burn * 1000; this.e.nextBurn = this.elapsed + 1000; this.log(`${sk.name}！ ${dmg} のダメージ！ 敵が やけどした！`, 'good'); }
+          if (ch.id === 'moririn') {
+            const h = Math.round(this.p.max * sk.heal);
+            this.p.hp = Math.min(this.p.max, this.p.hp + h); this.p.poisonUntil = 0;
+            floatText(pc.x, pc.y - 60, `+${h}`, 'heal big');
+            SFX.heal();
+            this.log(`${sk.name}！ ${dmg} ダメージ、HP が ${h} 回復した！`, 'good');
+            this.updateBars();
+          }
+          if (ch.id === 'kagemaru') { this.e.bindUntil = this.elapsed + sk.bind * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.bind} 秒 しばった！`, 'good'); }
+        }, 420);
+      }, 700);
+    }
+
     if (ch.id === 'gotsun') {
       this.after(() => {
         this.p.shield = sk.guards;
@@ -720,8 +780,9 @@ Screens.battle = {
     }
     this.damagePlayer(dmg, big ? 'big' : 'normal');
     // 状態異常への強さ (進化で手に入る)
-    const statusCut = this.ch.id === 'purun' ? this.ch.trait.statusCut : this.ch.id === 'gotsun' ? (this.ch.trait.freezeImmune ? 1 : 0.4) : 0;
-    if (this.has('poison') && this.p.poisonUntil <= this.elapsed && statusCut < 1) {
+    const statusCut = this.ch.id === 'gotsun' ? (this.ch.trait.freezeImmune ? 1 : 0.4) : (this.ch.trait.statusCut || 0);
+    const burnSafe = this.ch.trait.burnImmune && this.ed.statusName === 'やけど';
+    if (this.has('poison') && this.p.poisonUntil <= this.elapsed && statusCut < 1 && !burnSafe) {
       this.p.poisonUntil = this.elapsed + 5000 * (1 - statusCut);
       this.p.nextPoison = this.elapsed + 1000;
       this.log(`${this.ed.statusName || 'どく'}を うけてしまった！`, 'enemy');
@@ -799,12 +860,13 @@ Screens.battle = {
     const bonus = won ? Math.floor(this.ed.exp * this.ed.lv / 5 * gap) : 0;
     const firstClear = won && this.idx === Save.data.cleared;
     if (firstClear) Save.data.cleared = Math.min(ENEMIES.length, this.idx + 1);
-    if (won) Save.data.totals.wins++;
+    if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); } // ずかん: たおした
     Save.data.totals.keys += this.correct;
     const expRes = grantExp(this.ch.id, typing + bonus);
     const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
     App.show('result', {
       mode: 'battle', won, enemyIdx: this.idx, firstClear,
+      hpLeft: Math.max(0, this.p.hp / this.p.max), playerLv: this.ch.L, enemyLv: this.ed.lv,
       correct: this.correct, miss: this.miss, acc,
       kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs),
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,

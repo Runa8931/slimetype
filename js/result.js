@@ -72,6 +72,12 @@ Screens.result = {
         <button class="btn ghost" id="res-home">ホームへ <kbd>Esc</kbd></button>
         <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もういちど' : r.mode === 'survival' ? 'もういちど' : r.won ? 'マップへ' : 'リベンジ'} <kbd>Space</kbd></button>
       </div>`;
+    // しょうごう: 新しく とれたものを 知らせる
+    const got = checkAchievements(r);
+    if (got.length) {
+      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="ach-get">${got.map(a => `<div>🏅 しょうごう「<b>${a.name}</b>」ゲット！<small>${a.desc}</small></div>`).join('')}</div>`);
+      setTimeout(() => { SFX.levelup(); FX.confetti(); }, 600);
+    }
     $('#res-home').onclick = () => this.home();
     $('#res-again').onclick = () => this.again();
     this.animateExp();

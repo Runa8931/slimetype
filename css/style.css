@@ -868,3 +868,72 @@ body.lite .sky { display: none; }
 .drawer-group.far .drawer-world { opacity: .55; }
 .drawer-cards { display: none; gap: 10px; padding-top: 8px; }
 .drawer-group.open .drawer-cards { display: grid; }
+
+/* 新しいキャラ (ほむら・もりりん・かげまる) */
+.badge.type-homura { background: #d9480f; }
+.badge.type-moririn { background: #2b8a3e; }
+.badge.type-kagemaru { background: #5f3dc4; }
+.st.burn { background: #e8590c; } .st.bind { background: #5f3dc4; }
+.float-text.dmg.burn { color: #ff922b; font-size: 22px; }
+.fighter.bound .sprite { filter: grayscale(.6) drop-shadow(0 0 10px #7048e8); }
+.fighter.bound .sprite::after { content: '⛓'; position: absolute; right: 10%; top: 20%; font-size: 30px; }
+.select-grid { grid-template-columns: repeat(3, minmax(0, 300px)); }
+
+/* にがてキー特訓 */
+.diff-grid { grid-template-columns: repeat(4, 220px); }
+.key.weak { box-shadow: inset 0 0 0 2px #ff8787, 0 0 10px rgba(255,135,135,.5); }
+
+/* ホーム: ずかん・しょうごう */
+.sub-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sub-card { position: relative; border: 2px solid var(--panel-bd); background: var(--panel); border-radius: 14px; padding: 10px 10px 10px 42px; font-weight: 800; text-align: left; }
+.sub-card:hover { border-color: #fff; }
+.sub-card .mc-key { top: 50%; transform: translateY(-50%); }
+.sub-card small { color: var(--gold); font-family: var(--pixel); margin-left: 4px; }
+.hc-title { font-size: 13px; font-weight: 800; color: var(--gold); background: rgba(255,210,63,.12); border: 1px solid rgba(255,210,63,.4); border-radius: 99px; padding: 2px 10px; justify-self: start; }
+
+/* ずかん */
+#scr-dex { justify-content: flex-start; }
+.dex-wrap { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 320px; gap: 16px; flex: 1; min-height: 0; }
+.dex-list { overflow-y: auto; max-height: calc(100vh - 210px); padding-right: 6px; }
+.dex-world { font-family: var(--pixel); font-size: 16px; padding: 6px 12px; border-radius: 10px; margin: 8px 0 6px; }
+.dex-world.w-grass { background: rgba(95,179,58,.35); } .dex-world.w-poison { background: rgba(106,76,147,.45); } .dex-world.w-desert { background: rgba(226,183,102,.4); }
+.dex-world.w-sea { background: rgba(28,126,214,.4); } .dex-world.w-candy { background: rgba(255,143,171,.4); } .dex-world.w-rain { background: rgba(43,122,62,.45); }
+.dex-world.w-factory { background: rgba(134,142,150,.4); } .dex-world.w-snow { background: rgba(165,216,255,.3); } .dex-world.w-sky { background: rgba(116,192,252,.4); }
+.dex-world.w-space { background: rgba(95,61,196,.45); } .dex-world.w-magma { background: rgba(157,2,8,.45); }
+.dex-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.dex-cell { position: relative; border: 2px solid var(--panel-bd); background: var(--panel); border-radius: 12px; padding: 16px 4px 6px; display: grid; justify-items: center; gap: 2px; }
+.dex-cell:hover, .dex-cell.on { border-color: var(--gold); }
+.dex-cell.boss { background: linear-gradient(180deg, rgba(255,93,93,.18), var(--panel)); }
+.dex-no { position: absolute; top: 3px; left: 6px; font-family: var(--pixel); font-size: 10px; color: var(--sub); }
+.dex-sprite { width: 72px; height: 60px; }
+.dex-sprite svg, .dd-sprite svg { width: 100%; height: 100%; }
+.dex-cell.none .dex-sprite { filter: brightness(0); opacity: .35; }
+.dex-cell.seen .dex-sprite { filter: grayscale(1) brightness(.7); }
+.dex-name { font-size: 11.5px; font-weight: 800; text-align: center; }
+.dex-detail { align-self: start; display: grid; gap: 8px; justify-items: center; text-align: center; position: sticky; top: 0; }
+.dex-hint { color: var(--sub); padding: 40px 10px; }
+.dd-sprite { width: 200px; height: 170px; }
+.dd-sprite.none { filter: brightness(0); opacity: .35; } .dd-sprite.seen { filter: grayscale(1) brightness(.75); }
+.dd-name { font-size: 22px; font-weight: 800; }
+.dd-meta { font-size: 12px; color: var(--gold); }
+.dd-desc { font-size: 13px; color: var(--sub); margin: 0; }
+.dd-ability { font-size: 12px; background: rgba(0,0,0,.25); border-radius: 8px; padding: 6px 10px; }
+.dd-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.dd-stats div { background: rgba(0,0,0,.2); border-radius: 10px; padding: 8px; display: grid; }
+.dd-stats span { font-size: 11px; color: var(--sub); } .dd-stats b { font-family: var(--pixel); font-size: 20px; }
+
+/* しょうごう */
+.ach-list { width: 100%; max-width: 1100px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ach-card { position: relative; display: flex; gap: 10px; align-items: center; text-align: left; border: 2px solid var(--panel-bd); background: var(--panel); border-radius: 14px; padding: 10px 12px; }
+.ach-card.got { border-color: rgba(255,210,63,.5); background: linear-gradient(120deg, rgba(255,210,63,.12), var(--panel)); }
+.ach-card.got:hover { border-color: var(--gold); }
+.ach-card.locked { opacity: .5; cursor: default; }
+.ach-card.on { box-shadow: 0 0 0 2px var(--gold) inset, 0 0 16px rgba(255,210,63,.35); }
+.ach-icon { font-size: 26px; }
+.ach-name { font-weight: 800; }
+.ach-desc { font-size: 12px; color: var(--sub); }
+.ach-on { position: absolute; top: 6px; right: 8px; font-size: 10px; font-weight: 800; color: #3a2200; background: var(--gold); border-radius: 99px; padding: 1px 8px; }
+.ach-get { display: grid; gap: 6px; justify-items: center; animation: pop .4s; }
+.ach-get div { background: linear-gradient(90deg, rgba(255,210,63,.25), rgba(255,210,63,.08)); border: 2px solid var(--gold); color: var(--gold); border-radius: 14px; padding: 6px 18px; font-weight: 800; }
+.ach-get small { display: block; color: var(--sub); font-weight: 400; font-size: 12px; }
+@media (max-width: 1000px) { .dex-wrap { grid-template-columns: 1fr; } .dex-grid { grid-template-columns: repeat(3, 1fr); } .ach-list { grid-template-columns: 1fr; } }

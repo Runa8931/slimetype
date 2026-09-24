@@ -6,11 +6,47 @@ const DIFFS = {
   easy: { name: 'かんたん', mult: 1.0, desc: '短い単語', ex: { ja: 'ねこ / 電車 / 学校', en: 'cat / slime / magic' } },
   normal: { name: 'ふつう', mult: 1.2, desc: '少し長いことば', ex: { ja: '新幹線 / 必殺技', en: 'keyboard / adventure' } },
   hard: { name: 'むずかしい', mult: 1.5, desc: 'ことわざ・文章', ex: { ja: '急がば回れ', en: 'practice makes perfect' } },
+  weak: { name: 'にがてキー特訓', mult: 1.2, desc: 'にがてなキーを たくさん使う お題', ex: { ja: '', en: '' } },
 };
+
+// にがてなキー (記録が少ないうちは まちがえやすい キーで練習する)
+function practiceWeakKeys() {
+  const wk = weakKeys(6).map(([k]) => k).filter(k => /^[a-z]$/.test(k));
+  return wk.length >= 3 ? { keys: wk, fromRecord: true } : { keys: ['q', 'z', 'x', 'p', 'y', 'b'], fromRecord: false };
+}
+
+// にがてなキーを 多くふくむ お題を あつめた山札
+class WeakDeck {
+  constructor(lang, keys) {
+    const all = lang === 'en'
+      ? [...WORDS_EN.easy, ...WORDS_EN.normal, ...WORDS_EN.hard].map(w => ({ t: w, k: w }))
+      : [...WORDS_JA.easy, ...WORDS_JA.normal, ...WORDS_JA.hard];
+    // ローマ字にしたとき にがてなキーが どれだけ出てくるかで 点数をつける
+    const scored = all.map(w => {
+      const roma = new TypingTarget(w.k).guide().rest;
+      const hits = [...roma].filter(ch => keys.includes(ch)).length;
+      return { w, hits, score: hits / Math.sqrt(roma.length) };
+    }).filter(o => o.hits >= 2);
+    scored.sort((a, b) => b.score - a.score);
+    this.pool = scored.slice(0, 60).map(o => o.w);
+    if (this.pool.length < 10) this.pool = all;
+    this.deck = [];
+  }
+  next() {
+    if (!this.deck.length) {
+      this.deck = this.pool.slice();
+      for (let i = this.deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]]; }
+    }
+    return this.deck.pop();
+  }
+}
 
 Screens.psetup = {
   enter() {
     const s = Save.data.settings;
+    const wk = practiceWeakKeys();
+    DIFFS.weak.ex = { ja: wk.keys.map(k => k.toUpperCase()).join(' '), en: wk.keys.map(k => k.toUpperCase()).join(' ') };
+    DIFFS.weak.desc = wk.fromRecord ? 'きろくした にがてキーを たくさん使う' : 'きろくが少ないので まちがえやすいキーで';
     $('#diff-grid').innerHTML = Object.entries(DIFFS).map(([k, d], i) => `
       <button class="diff-card ${s.diff === k ? 'on' : ''}" data-k="${k}">
         <span class="mc-key">${i + 1}</span>
@@ -31,7 +67,7 @@ Screens.psetup = {
   onKey(e) {
     const keys = Object.keys(DIFFS);
     const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= 3) this.setDiff(keys[n - 1]);
+    if (n >= 1 && n <= keys.length) this.setDiff(keys[n - 1]);
     if (e.key === ' ' || e.key === 'Enter') App.show('practice');
     if (e.key === 'Escape') App.show('home');
   },
@@ -43,7 +79,8 @@ Screens.practice = {
     this.char = charInfo(Save.data.active);
     this.diff = s.diff;
     this.duration = s.time;
-    this.deck = new WordDeck(s.lang, [s.diff]);
+    this.weak = s.diff === 'weak' ? practiceWeakKeys() : null;
+    this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, [s.diff]);
     this.state = 'ready';
     this.correct = 0; this.miss = 0; this.combo = 0; this.maxCombo = 0; this.words = 0;
     this.wordMiss = false;
@@ -53,6 +90,8 @@ Screens.practice = {
     $('#p-sprite').innerHTML = slimeSVG(this.char.id, this.char.stage);
     $('#p-name').textContent = `${this.char.name} Lv.${this.char.L}`;
     buildKeyboard($('#p-kb'));
+    // にがてキー特訓: 特訓するキーに しるしをつける
+    if (this.weak) this.weak.keys.forEach(k => { const el = $(`#p-kb .key[data-k="${k}"]`); if (el) el.classList.add('weak'); });
     this.nextWord();
     this.updateHud();
     $('#p-timebar').style.width = '100%';
@@ -195,6 +234,7 @@ Screens.practice = {
     if (newBest) Save.data.best[bestKey] = score;
     Save.data.totals.keys += correct;
     Save.data.totals.plays++;
+    if (this.diff === 'weak') Save.data.totals.weakPlays = (Save.data.totals.weakPlays || 0) + 1;
     const expRes = grantExp(this.char.id, exp);
 
     this.overlay('<div class="count go">FINISH!</div>');
