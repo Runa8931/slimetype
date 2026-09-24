@@ -328,6 +328,7 @@ Screens.stages = {
     this.drawerOpen = false;
     this.moving = false;
     this.unlockAnim = null;
+    this.openWorlds = this.openWorlds || new Set();
 
     if (arg.justCleared != null) {
       // たおしたステージのワールドを表示して、次の道をひらく
@@ -476,8 +477,26 @@ Screens.stages = {
           ${locked ? '' : `<div class="st-actions">${here ? '<span class="st-here">いまここ</span>' : '<span class="st-warp">ワープ</span>'}<button class="st-fight" data-g="${g}">たたかう</button></div>`}
         </div>`;
       }).join('');
-      return `<div class="drawer-world w-${wd.id}">ワールド ${w + 1}　${wd.name}</div>${cards}`;
+      // ワールドごとに 折りたためる (最初は 今いるワールドだけ ひらく)
+      const list = worldStages(w);
+      const done = list.filter(g => g < this.cleared).length;
+      const reached = list[0] <= this.cleared;
+      const open = this.openWorlds.has(w);
+      return `<div class="drawer-group ${open ? 'open' : ''} ${reached ? '' : 'far'}" data-w="${w}">
+        <button class="drawer-world w-${wd.id}" data-w="${w}"><span class="dw-arrow">${open ? '▼' : '▶'}</span>ワールド ${w + 1}　${wd.name}
+          <span class="dw-count">${reached ? `${done}/${list.length} クリア` : 'まだ いけない'}</span></button>
+        <div class="drawer-cards">${cards}</div></div>`;
     }).join('');
+    $('#stage-list').querySelectorAll('.drawer-world').forEach(b => {
+      b.onclick = () => {
+        const w = +b.dataset.w;
+        if (this.openWorlds.has(w)) this.openWorlds.delete(w); else this.openWorlds.add(w);
+        const g = b.parentElement;
+        g.classList.toggle('open');
+        b.querySelector('.dw-arrow').textContent = g.classList.contains('open') ? '▼' : '▶';
+        SFX.select();
+      };
+    });
     // カードをクリック → そのステージへ ワープ / 「たたかう」→ すぐバトル
     $('#stage-list').querySelectorAll('.stage-card:not(.locked)').forEach(b => {
       b.onclick = () => this.warpTo(+b.dataset.g);
@@ -492,7 +511,9 @@ Screens.stages = {
     $('#drawer').classList.toggle('open', this.drawerOpen);
     SFX.select();
     if (this.drawerOpen) {
-      const cur = $('#stage-list').querySelectorAll('.drawer-world')[this.world];
+      // 今いるワールドは かならず ひらいておく
+      if (!this.openWorlds.has(this.world)) { this.openWorlds.add(this.world); this.buildDrawer(); }
+      const cur = $('#stage-list').querySelector(`.drawer-group[data-w="${this.world}"]`);
       if (cur) cur.scrollIntoView({ block: 'start' });
     }
   },

@@ -858,3 +858,13 @@ body.lite .sky { display: none; }
 .warp-in { animation: warp-in .5s ease-out; }
 @keyframes warp-in { from { transform: scale(0) rotate(-180deg); opacity: 0; } 70% { transform: scale(1.2); opacity: 1; } }
 .drawer .stage-card { padding-bottom: 42px; }
+
+/* ステージ一覧: ワールドごとに 折りたたみ */
+.drawer-group { margin-bottom: 6px; }
+.drawer-world { display: flex; align-items: center; gap: 8px; width: 100%; border: none; color: var(--text); text-align: left; cursor: pointer; }
+.drawer-world:hover { filter: brightness(1.15); }
+.dw-arrow { font-size: 12px; width: 14px; }
+.dw-count { margin-left: auto; font-family: var(--font); font-size: 12px; font-weight: 700; background: rgba(0,0,0,.3); padding: 2px 10px; border-radius: 99px; }
+.drawer-group.far .drawer-world { opacity: .55; }
+.drawer-cards { display: none; gap: 10px; padding-top: 8px; }
+.drawer-group.open .drawer-cards { display: grid; }
