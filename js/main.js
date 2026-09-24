@@ -164,6 +164,8 @@ const App = {
     Save.load();
     SFX.enabled = Save.data.settings.sound;
     SFX.setVolume(Save.data.settings.volume);
+    // 動作確認用: アドレスに ?mute=1 を付けたときは音を出さない (設定は保存しない)
+    if (new URLSearchParams(location.search).has('mute')) SFX.enabled = false;
     document.body.classList.toggle('lite', !!Save.data.settings.lite);
     FX.init();
 
@@ -277,6 +279,8 @@ Screens.home = {
     vol.oninput = () => {
       Save.data.settings.volume = vol.value / 100;
       SFX.setVolume(Save.data.settings.volume);
+    // 動作確認用: アドレスに ?mute=1 を付けたときは音を出さない (設定は保存しない)
+    if (new URLSearchParams(location.search).has('mute')) SFX.enabled = false;
       $('#set-vol-num').textContent = vol.value + '%';
       clearTimeout(this._volT);
       this._volT = setTimeout(() => { Save.save(); SFX.select(); }, 120);
