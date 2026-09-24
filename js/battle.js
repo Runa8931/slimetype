@@ -35,7 +35,7 @@ Screens.battle = {
     this.elapsed = 0;
     this.pending = 0; // 飛んでいる途中の攻撃
 
-    this.deck = new WordDeck(Save.data.settings.lang, DIFF_POOLS[this.ed.diff]);
+    this.deck = new WordDeck(Save.data.settings.lang, DIFF_POOLS[this.ed.diff], this.ed.bg);
 
     const arena = $('#arena');
     arena.className = 'arena bg-' + this.ed.bg;

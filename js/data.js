@@ -47,21 +47,21 @@ const CHARACTERS = {
       { main: '#2fd0c8', light: '#c2fff6', dark: '#0f8a8f', accent: '#9bfff0' },
       { main: '#5a6dff', light: '#cfd6ff', dark: '#2a2fa8', accent: '#ffe27a' },
     ],
-    base: { hp: 75, atk: 65, def: 65, spd: 65 },
+    base: { hp: 75, atk: 74, def: 65, spd: 65 },
     desc: 'どこにでもいる、ぷるぷるのみずスライム。なんでもそつなくこなす。',
     // 進化段階ごとの とくせい・ひっさつ (数値はバトルで使う)
     forms: [
       {
-        trait: { name: 'うるおいボディ', desc: 'ノーミスでお題を打ち切ると HP が 4% 回復する', heal: 0.04, statusCut: 0 },
-        skill: { name: 'アクアヒール', desc: 'HP を 40% 回復し、どく・やけどを消す。次の攻撃が 1.5 倍', heal: 0.4, boost: 1.5, barrier: 0, charge: 1 },
+        trait: { name: 'うるおいボディ', desc: 'ノーミスでお題を打ち切ると HP が 3% 回復する', heal: 0.03, statusCut: 0 },
+        skill: { name: 'アクアヒール', desc: 'HP を 35% 回復し、どく・やけどを消す。次の攻撃が 1.5 倍', heal: 0.35, boost: 1.5, barrier: 0, charge: 1 },
       },
       {
-        trait: { name: 'うるおいボディ+', desc: 'ノーミスで HP 6% 回復。どく・やけどの時間が半分になる', heal: 0.06, statusCut: 0.5 },
-        skill: { name: 'アクアヒール+', desc: 'HP を 50% 回復して状態異常を消す。次の攻撃が 1.8 倍。ゲージが 15% たまりやすい', heal: 0.5, boost: 1.8, barrier: 0, charge: 1.15 },
+        trait: { name: 'うるおいボディ+', desc: 'ノーミスで HP 4% 回復。どく・やけどの時間が半分になる', heal: 0.04, statusCut: 0.5 },
+        skill: { name: 'アクアヒール+', desc: 'HP を 40% 回復して状態異常を消す。次の攻撃が 1.8 倍。ゲージが 15% たまりやすい', heal: 0.4, boost: 1.8, barrier: 0, charge: 1.15 },
       },
       {
-        trait: { name: 'キングのうるおい', desc: 'ノーミスで HP 10% 回復。どく・やけど・こおりが きかない', heal: 0.1, statusCut: 1 },
-        skill: { name: 'ロイヤルアクア', desc: 'HP を 60% 回復。次の攻撃が 2.5 倍になり、水のバリアで 2 回攻撃をふせぐ。ゲージが 30% たまりやすい', heal: 0.6, boost: 2.5, barrier: 2, charge: 1.3 },
+        trait: { name: 'キングのうるおい', desc: 'ノーミスで HP 5% 回復。どく・やけど・こおりが きかない', heal: 0.05, statusCut: 1 },
+        skill: { name: 'ロイヤルアクア', desc: 'HP を 45% 回復。次の攻撃が 2.5 倍になり、水のバリアで 1 回攻撃をふせぐ。ゲージが 30% たまりやすい', heal: 0.45, boost: 2.5, barrier: 1, charge: 1.3 },
       },
     ],
   },
@@ -76,7 +76,7 @@ const CHARACTERS = {
       { main: '#ffa62b', light: '#ffe2a8', dark: '#c45f00', accent: '#fff6a0' },
       { main: '#fff27a', light: '#ffffff', dark: '#d9a800', accent: '#7cf0ff' },
     ],
-    base: { hp: 62, atk: 85, def: 52, spd: 95 },
+    base: { hp: 70, atk: 85, def: 55, spd: 95 },
     desc: 'いつもビリビリしているかみなりスライム。打つのが速いほど強くなる。',
     forms: [
       {
@@ -108,15 +108,15 @@ const CHARACTERS = {
     desc: 'かたくて重たいいわスライム。のんびりやだけど、とにかくタフ。',
     forms: [
       {
-        trait: { name: 'かたいからだ', desc: '受けるダメージ 20% カット。ミスしてもコンボが半分残る', cut: 0.2, comboKeep: 0.5, freezeImmune: false },
+        trait: { name: 'かたいからだ', desc: '受けるダメージ 15% カット。ミスしてもコンボが半分残る', cut: 0.15, comboKeep: 0.5, freezeImmune: false },
         skill: { name: 'ロックシールド', desc: '敵の攻撃を 2 回ふせぎ、そのたびに威力 80 の岩で反撃', guards: 2, power: 80, heal: 0, charge: 1 },
       },
       {
-        trait: { name: 'がんじょうボディ', desc: '受けるダメージ 22% カット。ミスしてもコンボが 7 わり残る', cut: 0.22, comboKeep: 0.7, freezeImmune: false },
+        trait: { name: 'がんじょうボディ', desc: '受けるダメージ 17% カット。ミスしてもコンボが 7 わり残る', cut: 0.17, comboKeep: 0.7, freezeImmune: false },
         skill: { name: 'ロックシールド+', desc: '敵の攻撃を 2 回ふせぎ、威力 110 の岩で反撃。ふせぐたびに HP 2% 回復', guards: 2, power: 110, heal: 0.02, charge: 1 },
       },
       {
-        trait: { name: 'ガンセキのよろい', desc: '受けるダメージ 25% カット。コンボが 9 わり残る。こおり・やけどが きかない', cut: 0.25, comboKeep: 0.9, freezeImmune: true },
+        trait: { name: 'ガンセキのよろい', desc: '受けるダメージ 20% カット。コンボが 9 わり残る。こおり・やけどが きかない', cut: 0.2, comboKeep: 0.9, freezeImmune: true },
         skill: { name: 'ガンセキとりで', desc: '敵の攻撃を 2 回ふせぎ、威力 150 で反撃。ふせぐたびに HP 5% 回復', guards: 2, power: 150, heal: 0.05, charge: 1 },
       },
     ],
@@ -142,103 +142,103 @@ const ENEMIES = [
   },
   {
     id: 'ghost', world: 0, name: 'ユウレイン', lv: 10, base: { hp: 60, atk: 65, def: 50 },
-    power: 44, interval: 4200, exp: 360, diff: 'normal', bg: 'grave',
+    power: 66, interval: 4200, exp: 360, diff: 'normal', bg: 'grave',
     desc: 'ぼちをさまようおばけ。ローマ字のガイドをかくしてくる。',
     ability: 'fade', abilityDesc: 'ゆうれいのきり: ときどきローマ字ガイドが見えなくなる',
   },
   {
     id: 'goblin', world: 0, name: 'ゴブリン', lv: 15, base: { hp: 80, atk: 80, def: 60 },
-    power: 40, interval: 4600, exp: 400, diff: 'normal', bg: 'plain',
+    power: 64, interval: 4600, exp: 400, diff: 'normal', bg: 'plain',
     desc: 'こんぼうをふりまわす らんぼうもの。追いつめるとおこりだす。',
     ability: 'rage', abilityDesc: 'げきど: HP が半分をきると攻撃が速くなる',
   },
   {
     id: 'golem', world: 0, name: 'ストーンゴーレム', lv: 21, base: { hp: 95, atk: 85, def: 95 },
-    power: 44, interval: 5600, exp: 460, diff: 'hard', bg: 'ruins',
+    power: 80, interval: 5600, exp: 460, diff: 'hard', bg: 'ruins',
     desc: 'いせきを守るいしのきょじん。とてもかたい。',
     ability: 'armor', abilityDesc: 'いしのよろい: コンボ 30 未満だとダメージ半減',
   },
   {
     id: 'dragon', world: 0, name: 'ドラゴン', lv: 28, base: { hp: 125, atk: 100, def: 90 },
-    power: 46, interval: 5400, exp: 600, diff: 'hard', bg: 'volcano', boss: true,
+    power: 70, interval: 5400, exp: 600, diff: 'hard', bg: 'volcano', boss: true,
     desc: 'かざんのおうじゃ。HP が半分をきると本気をだす。',
     ability: 'dragon', abilityDesc: 'ほんき: HP 半分で攻撃が速くなり、3 回に 1 回ほのおのブレス',
   },
 
   // ---------- ワールド 2: うみ ----------
   {
-    id: 'crab', world: 1, name: 'カニッパ', lv: 31, base: { hp: 80, atk: 95, def: 105 },
-    power: 46, interval: 5200, exp: 480, diff: 'normal', bg: 'sea',
+    id: 'crab', world: 1, name: 'カニッパ', lv: 31, base: { hp: 68, atk: 95, def: 105 },
+    power: 110, interval: 5200, exp: 480, diff: 'normal', bg: 'sea',
     desc: 'かたいこうらの大きなカニ。ときどき からに とじこもる。',
     ability: 'shell', abilityDesc: 'からにこもる: ときどき 3 秒間 うけるダメージが大きくへる',
   },
   {
-    id: 'jelly', world: 1, name: 'クラゲール', lv: 33, base: { hp: 85, atk: 100, def: 80 },
-    power: 46, interval: 5000, exp: 500, diff: 'hard', bg: 'sea',
+    id: 'jelly', world: 1, name: 'クラゲール', lv: 33, base: { hp: 72, atk: 100, def: 80 },
+    power: 75, interval: 5000, exp: 500, diff: 'hard', bg: 'sea',
     desc: 'ビリビリするクラゲ。まちがえて さわると しびれる。',
     ability: 'shock', abilityDesc: 'しびれ: ミスすると 自分が ダメージをうける',
   },
   {
-    id: 'shark', world: 1, name: 'サメキバ', lv: 35, base: { hp: 100, atk: 115, def: 85 },
-    power: 48, interval: 4600, exp: 520, diff: 'hard', bg: 'sea',
+    id: 'shark', world: 1, name: 'サメキバ', lv: 35, base: { hp: 85, atk: 115, def: 85 },
+    power: 74, interval: 4600, exp: 520, diff: 'hard', bg: 'sea',
     desc: 'うみのハンター。弱ってくると どうもうになる。',
     ability: 'rage', abilityDesc: 'ちのにおい: HP が半分をきると 攻撃が速くなる',
   },
   {
-    id: 'kraken', world: 1, name: 'クラーケン', lv: 38, base: { hp: 130, atk: 110, def: 100 },
-    power: 48, interval: 5400, exp: 700, diff: 'hard', bg: 'sea', boss: true,
+    id: 'kraken', world: 1, name: 'クラーケン', lv: 38, base: { hp: 110, atk: 110, def: 100 },
+    power: 72, interval: 5400, exp: 700, diff: 'hard', bg: 'sea', boss: true,
     desc: 'しんかいの ぬし。すみを はいて じゃまをしてくる。',
     ability: 'ink', abilityDesc: 'すみはき: ときどき お題が すみで見えにくくなる。HP 半分から 2 れんぞく攻撃',
   },
 
   // ---------- ワールド 3: ゆきやま ----------
   {
-    id: 'penguin', world: 2, name: 'ペンギナイト', lv: 40, base: { hp: 90, atk: 105, def: 100 },
-    power: 46, interval: 4800, exp: 540, diff: 'hard', bg: 'snow',
+    id: 'penguin', world: 2, name: 'ペンギナイト', lv: 40, base: { hp: 76, atk: 105, def: 100 },
+    power: 87, interval: 4800, exp: 540, diff: 'hard', bg: 'snow',
     desc: 'たてと やりを もったペンギンの きし。',
     ability: 'shell', abilityDesc: 'こおりのたて: ときどき 3 秒間 うけるダメージが大きくへる',
   },
   {
-    id: 'snowman', world: 2, name: 'ユキダルマン', lv: 42, base: { hp: 100, atk: 100, def: 100 },
-    power: 46, interval: 5000, exp: 560, diff: 'hard', bg: 'snow',
+    id: 'snowman', world: 2, name: 'ユキダルマン', lv: 42, base: { hp: 85, atk: 100, def: 100 },
+    power: 85, interval: 5000, exp: 560, diff: 'hard', bg: 'snow',
     desc: 'うごく ゆきだるま。ゆきを あつめて 回復する。',
     ability: 'regen', abilityDesc: 'ゆきだまり: ときどき HP を回復する',
   },
   {
-    id: 'wolf', world: 2, name: 'アイスウルフ', lv: 44, base: { hp: 100, atk: 115, def: 90 },
-    power: 46, interval: 4400, exp: 580, diff: 'hard', bg: 'snow',
+    id: 'wolf', world: 2, name: 'アイスウルフ', lv: 44, base: { hp: 85, atk: 115, def: 90 },
+    power: 76, interval: 4400, exp: 580, diff: 'hard', bg: 'snow',
     desc: 'こおりの いきを はく オオカミ。',
     ability: 'freeze', abilityDesc: 'こおりのいき: 攻撃をうけると 1 秒間 こおって 入力できない',
   },
   {
-    id: 'yeti', world: 2, name: 'イエティ', lv: 47, base: { hp: 130, atk: 115, def: 105 },
-    power: 48, interval: 5400, exp: 760, diff: 'hard', bg: 'snow', boss: true,
+    id: 'yeti', world: 2, name: 'イエティ', lv: 47, base: { hp: 110, atk: 115, def: 105 },
+    power: 92, interval: 5400, exp: 760, diff: 'hard', bg: 'snow', boss: true,
     desc: 'ゆきやまの ぬし。ふぶきを よびおこす。',
     ability: 'blizzard', abilityDesc: 'ふぶき: ときどき 漢字とかなが見えなくなる。攻撃で こおらせてくる',
   },
 
   // ---------- ワールド 4: マグマのしろ ----------
   {
-    id: 'imp', world: 3, name: 'ファイアインプ', lv: 48, base: { hp: 100, atk: 115, def: 95 },
-    power: 46, interval: 4600, exp: 600, diff: 'hard', bg: 'magma',
+    id: 'imp', world: 3, name: 'ファイアインプ', lv: 48, base: { hp: 85, atk: 115, def: 95 },
+    power: 70, interval: 4600, exp: 600, diff: 'hard', bg: 'magma',
     desc: 'しろを まもる ほのおの こあくま。',
     ability: 'poison', statusName: 'やけど', abilityDesc: 'やけど: 攻撃をうけると 5 秒間 HP がへりつづける',
   },
   {
-    id: 'mgolem', world: 3, name: 'マグマゴーレム', lv: 50, base: { hp: 105, atk: 115, def: 115 },
-    power: 46, interval: 5600, exp: 620, diff: 'hard', bg: 'magma',
+    id: 'mgolem', world: 3, name: 'マグマゴーレム', lv: 50, base: { hp: 89, atk: 115, def: 115 },
+    power: 77, interval: 5600, exp: 620, diff: 'hard', bg: 'magma',
     desc: 'ようがんで できた きょじん。とても かたい。',
     ability: 'armor', abilityDesc: 'マグマのよろい: コンボ 30 未満だと ダメージ半減',
   },
   {
-    id: 'salamander', world: 3, name: 'サラマンダー', lv: 51, base: { hp: 100, atk: 120, def: 100 },
-    power: 48, interval: 4600, exp: 640, diff: 'hard', bg: 'magma',
+    id: 'salamander', world: 3, name: 'サラマンダー', lv: 51, base: { hp: 85, atk: 120, def: 100 },
+    power: 68, interval: 4600, exp: 640, diff: 'hard', bg: 'magma',
     desc: 'ほのおを まとう トカゲ。かげろうで 目をくらます。',
     ability: 'fade', abilityDesc: 'かげろう: ときどき ローマ字ガイドが ゆらめいて見えなくなる',
   },
   {
-    id: 'demon', world: 3, name: 'まおう', lv: 54, base: { hp: 130, atk: 115, def: 110 },
-    power: 46, interval: 5600, exp: 1000, diff: 'hard', bg: 'magma', boss: true, final: true,
+    id: 'demon', world: 3, name: 'まおう', lv: 54, base: { hp: 110, atk: 115, def: 110 },
+    power: 69, interval: 5600, exp: 1000, diff: 'hard', bg: 'magma', boss: true, final: true,
     desc: 'マグマのしろの あるじ。さいごの てき。',
     ability: 'demon', abilityDesc: 'まおうのちから: HP 2/3 で やみ (ガイドが消える)、1/3 で 攻撃が速くなり ひっさつゲージをうばう',
   },
