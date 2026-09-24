@@ -462,7 +462,8 @@ Screens.stages = {
         const cleared = g < this.cleared;
         const warn = !locked && c.L < e.lv - 2 ? '<span class="warn">レベル不足かも</span>' : '';
         const key = w === this.world ? `<span class="mc-key">${i + 1}</span>` : '';
-        return `<button class="stage-card ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''}" data-g="${g}" ${locked ? 'disabled' : ''}>
+        const here = w === this.world && i === this.pos;
+        return `<div class="stage-card ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''} ${here ? 'here' : ''}" data-g="${g}" title="${locked ? '' : 'クリックで このステージへ ワープ'}">
           ${key}
           <div class="st-sprite">${locked ? '<div class="lock">?</div>' : enemySVG(e.id)}</div>
           <div class="st-body">
@@ -472,12 +473,17 @@ Screens.stages = {
             ${locked ? '' : `<div class="st-ability">${e.abilityDesc}</div>`}
           </div>
           ${cleared ? '<div class="st-clear">CLEAR</div>' : ''}
-        </button>`;
+          ${locked ? '' : `<div class="st-actions">${here ? '<span class="st-here">いまここ</span>' : '<span class="st-warp">ワープ</span>'}<button class="st-fight" data-g="${g}">たたかう</button></div>`}
+        </div>`;
       }).join('');
       return `<div class="drawer-world w-${wd.id}">ワールド ${w + 1}　${wd.name}</div>${cards}`;
     }).join('');
+    // カードをクリック → そのステージへ ワープ / 「たたかう」→ すぐバトル
     $('#stage-list').querySelectorAll('.stage-card:not(.locked)').forEach(b => {
-      b.onclick = () => this.startBattle(+b.dataset.g);
+      b.onclick = () => this.warpTo(+b.dataset.g);
+    });
+    $('#stage-list').querySelectorAll('.st-fight').forEach(b => {
+      b.onclick = ev => { ev.stopPropagation(); this.startBattle(+b.dataset.g); };
     });
   },
 
@@ -644,6 +650,30 @@ Screens.stages = {
     setTimeout(() => { fade.classList.remove('show'); SFX.select(); }, 1500);
   },
 
+  // ステージ一覧から そのステージへ ワープする
+  warpTo(g) {
+    if (g > this.cleared || this.moving) return;
+    const e = ENEMIES[g];
+    const pos = worldStages(e.world).indexOf(g);
+    this.toggleDrawer(false);
+    if (e.world !== this.world) { this.changeWorld(e.world, pos); return; }
+    if (pos === this.pos) return;
+    // 同じワールドの中: ぱっと消えて ぱっと現れる
+    const pl = $('#map-player');
+    const r1 = pl.getBoundingClientRect();
+    FX.burst(r1.left + r1.width / 2, r1.top, { colors: ['#e0aaff', '#fff', '#74c0fc'], count: 24, shape: 'star', size: 6, speed: 5 });
+    SFX.charge();
+    this.pos = pos;
+    this.saveSpot();
+    this.placePlayer(this.spotPos(pos));
+    replayAnim($('#map-player .sprite'), 'warp-in', 500);
+    const r2 = pl.getBoundingClientRect();
+    FX.burst(r2.left + r2.width / 2, r2.top, { colors: ['#e0aaff', '#fff', '#74c0fc'], count: 30, shape: 'star', size: 6, speed: 6 });
+    FX.ring(r2.left + r2.width / 2, r2.top + 20, '#e0aaff', 70, 24, 5);
+    this.updateInfo();
+    this.buildDrawer();
+  },
+
   // 敵をたおした直後: 次の道 (またはゲート) が少しずつ現れる
   playUnlock(k) {
     const isGate = k === 'gate';
@@ -691,7 +721,7 @@ Screens.stages = {
     if (this.drawerOpen) {
       const n = parseInt(e.key, 10);
       const list = this.stages();
-      if (n >= 1 && n <= list.length && list[n - 1] <= this.cleared) this.startBattle(list[n - 1]);
+      if (n >= 1 && n <= list.length && list[n - 1] <= this.cleared) this.warpTo(list[n - 1]);
       if (e.key === 'Escape') this.toggleDrawer(false);
       return;
     }
