@@ -41,7 +41,7 @@ kbd {
     radial-gradient(2px 2px at 55% 30%, #fff, transparent), radial-gradient(1px 1px at 75% 60%, #fff, transparent),
     radial-gradient(2px 2px at 90% 15%, #fff, transparent), radial-gradient(1.5px 1.5px at 20% 90%, #fff, transparent),
     radial-gradient(1px 1px at 65% 85%, #fff, transparent), radial-gradient(1.5px 1.5px at 42% 12%, #fff, transparent);
-  animation: twinkle 4s ease-in-out infinite alternate;
+  animation: twinkle 4s ease-in-out infinite alternate; will-change: opacity;
 }
 @keyframes twinkle { to { opacity: .25; } }
 
@@ -58,7 +58,7 @@ kbd {
 .screen-title { font-family: var(--pixel); font-size: 30px; margin: 8px 0 4px; letter-spacing: .05em; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
 .screen-desc { color: var(--sub); margin: 0 0 18px; }
 .bottom-bar { display: flex; gap: 14px; justify-content: center; margin-top: 22px; }
-.panel { background: var(--panel); border: 1px solid var(--panel-bd); border-radius: 18px; padding: 18px; backdrop-filter: blur(4px); }
+.panel { background: var(--panel); border: 1px solid var(--panel-bd); border-radius: 18px; padding: 18px; }
 
 .btn {
   border: none; border-radius: 14px; padding: 12px 22px; font-size: 17px; font-weight: 800;
@@ -342,7 +342,7 @@ kbd {
 .hp-num { font-family: var(--pixel); font-size: 13px; text-align: right; margin-top: 3px; }
 .atk-gauge { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 11px; color: var(--sub); }
 .atk-bar { flex: 1; height: 7px; border-radius: 9px; background: rgba(0,0,0,.5); overflow: hidden; }
-.atk-fill { height: 100%; width: 0; background: #ffb040; }
+.atk-fill { height: 100%; width: 100%; background: #ffb040; transform: scaleX(0); transform-origin: left; }
 .atk-fill.danger { background: var(--red); box-shadow: 0 0 10px var(--red); }
 
 .fighter.angry .sprite { filter: drop-shadow(0 0 14px #ff3030) saturate(1.4); animation: angry-shake .25s infinite; }
@@ -678,17 +678,20 @@ kbd {
 
 /* ---------- バトルの背景 (新ワールド) ---------- */
 .bg-sea .arena-bg { background: linear-gradient(180deg, #0b4f91 0%, #1c7ed6 45%, #48b8f0 100%); }
-.bg-sea .arena-bg::after { content: ''; position: absolute; inset: 0; background:
-  radial-gradient(6px 6px at 20% 70%, rgba(255,255,255,.5), transparent), radial-gradient(4px 4px at 70% 50%, rgba(255,255,255,.4), transparent),
-  radial-gradient(5px 5px at 45% 85%, rgba(255,255,255,.45), transparent), repeating-linear-gradient(100deg, transparent 0 60px, rgba(255,255,255,.06) 60px 90px);
-  animation: bubbles 4s linear infinite; }
-@keyframes bubbles { from { background-position: 0 0, 0 0, 0 0, 0 0; } to { background-position: 0 -200px, 0 -300px, 0 -250px, 80px 0; } }
+.bg-sea .arena-bg { overflow: hidden; }
+.bg-sea .arena-bg::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 200px); background:
+  radial-gradient(6px 6px at 20% 30%, rgba(255,255,255,.5), transparent), radial-gradient(4px 4px at 70% 60%, rgba(255,255,255,.4), transparent),
+  radial-gradient(5px 5px at 45% 85%, rgba(255,255,255,.45), transparent);
+  background-size: 320px 200px; animation: layer-up 7s linear infinite; will-change: transform; }
+@keyframes layer-up { to { transform: translateY(-200px); } }
 .bg-sea { --ground: #e9c98e; }
 .bg-snow .arena-bg { background: linear-gradient(180deg, #8fb8de, #dbeaf7); }
-.bg-snow .arena-bg::after { content: ''; position: absolute; inset: 0; background-image:
+.bg-snow .arena-bg { overflow: hidden; }
+.bg-snow .arena-bg::after { content: ''; position: absolute; left: 0; right: 0; top: -300px; height: calc(100% + 300px); background-image:
   radial-gradient(3px 3px at 10% 20%, #fff, transparent), radial-gradient(2px 2px at 30% 60%, #fff, transparent), radial-gradient(3px 3px at 60% 30%, #fff, transparent),
-  radial-gradient(2px 2px at 80% 70%, #fff, transparent), radial-gradient(3px 3px at 50% 90%, #fff, transparent); background-size: 300px 300px; animation: snowfall 6s linear infinite; }
-@keyframes snowfall { to { background-position: 40px 300px, -30px 300px, 20px 300px, -40px 300px, 10px 300px; } }
+  radial-gradient(2px 2px at 80% 70%, #fff, transparent), radial-gradient(3px 3px at 50% 90%, #fff, transparent);
+  background-size: 300px 300px; animation: layer-down 8s linear infinite; will-change: transform; }
+@keyframes layer-down { to { transform: translateY(300px); } }
 .bg-snow { --ground: #f8fbff; }
 .bg-magma .arena-bg { background: radial-gradient(ellipse at 50% 120%, #ff5400, transparent 55%), linear-gradient(180deg, #1a0505, #4a0e0e); }
 .bg-magma .arena-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(3px 3px at 20% 80%, #ffb040, transparent), radial-gradient(2px 2px at 60% 70%, #ffb040, transparent), radial-gradient(3px 3px at 85% 85%, #ff7a1a, transparent); animation: ember 2.4s linear infinite; }
@@ -715,11 +718,11 @@ kbd {
 .tp.frozen { box-shadow: inset 0 0 0 4px #74c0fc, inset 0 0 40px rgba(116,192,252,.6); }
 .tp.frozen::after { content: 'こおっている…'; position: absolute; top: 6px; right: 12px; font-size: 12px; color: #a5d8ff; font-weight: 800; }
 .arena.snowing::before {
-  content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  content: ''; position: absolute; left: -200px; right: 0; top: -200px; bottom: 0; z-index: 4; pointer-events: none;
   background-image: radial-gradient(4px 4px at 10% 20%, #fff, transparent), radial-gradient(3px 3px at 40% 50%, #fff, transparent), radial-gradient(5px 5px at 70% 30%, #fff, transparent), radial-gradient(3px 3px at 90% 80%, #fff, transparent);
-  background-size: 200px 200px; background-color: rgba(255,255,255,.25); animation: blizzard .6s linear infinite;
+  background-size: 200px 200px; background-color: rgba(255,255,255,.25); animation: blizzard .6s linear infinite; will-change: transform;
 }
-@keyframes blizzard { to { background-position: -200px 200px, -150px 200px, -250px 200px, -180px 200px; } }
+@keyframes blizzard { to { transform: translate(200px, 200px); } }
 .arena.dark .arena-bg { filter: brightness(.45) saturate(1.4) hue-rotate(-20deg); }
 .float-text.dmg.shock { color: #e0aaff; font-size: 24px; }
 .res-diff { font-weight: 800; }
@@ -744,3 +747,33 @@ kbd {
 .sv-diff { font-size: 13px; margin-left: 6px; }
 .node-flag { white-space: nowrap; }
 .node.gate .node-label { transform: translateX(-78%); }
+
+/* ---------- 進化による とくせい・ひっさつ強化 ---------- */
+.st.barrier { background: #0c8599; }
+.fighter.bubbled .sprite::before {
+  content: ''; position: absolute; inset: -14px; border-radius: 50%; z-index: 2; pointer-events: none;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), rgba(124,240,255,.12) 45%, rgba(124,240,255,.3) 70%);
+  border: 3px solid rgba(124,240,255,.8); box-shadow: 0 0 20px #7cf0ff; animation: pulse 1.4s infinite;
+}
+.dodge { animation: dodge .4s; }
+@keyframes dodge { 30% { transform: translate(-30px, -16px); opacity: .5; } 60% { transform: translate(-30px, -16px); opacity: .5; } }
+.evo-note { font-size: 11.5px; color: var(--gold); margin-top: 8px; opacity: .85; }
+.next-evo { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(255,210,63,.08); border: 1px dashed rgba(255,210,63,.4); display: grid; gap: 3px; font-size: 12px; }
+.next-evo b { color: var(--gold); } .next-evo span { color: var(--sub); }
+.evo-up { margin-top: 8px; display: grid; gap: 4px; font-size: 12.5px; animation: pop .4s; }
+.evo-up b { color: var(--gold); margin-right: 4px; } .evo-up em { color: var(--green); font-style: normal; font-weight: 800; }
+.evo-up small { display: block; color: var(--sub); }
+
+/* ============================================================
+   軽くするための設定
+   ============================================================ */
+/* 小さなアイコンの中の絵は動かさない (SVG の中が動くと 毎フレーム 描き直しになり重い) */
+.node-icon svg *, .st-sprite svg *, .mi-sprite svg *, .svd-boss svg *, .res-enemy svg *, .cutin-sprite svg *,
+.map-char svg *, .enemy-mini svg *, .vs-row svg *, .char-card svg *, .title-slimes svg *, .re-sprite svg * { animation: none !important; }
+/* 大きなマップの背景も止める (1 か所でも動くと マップ全体を描き直すため) */
+.map-svg * { animation: none !important; }
+
+/* ひかえめモード: くりかえしのアニメーションは 1 回で止める */
+body.lite *, body.lite *::before, body.lite *::after { animation-iteration-count: 1 !important; }
+body.lite .sky { display: none; }
+.icon-btn.on { background: rgba(109,255,138,.2); border-color: var(--green); }

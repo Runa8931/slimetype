@@ -22,7 +22,7 @@ Screens.battle = {
     this.ch = ch;
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
-    this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
+    this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
     this.e = { hp: Math.round(es.hp * ENEMY_HP_SCALE), max: Math.round(es.hp * ENEMY_HP_SCALE), stats: es, gauge: 0, attacks: 0, angry: false };
     this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0;
     this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
@@ -47,7 +47,7 @@ Screens.battle = {
     $('#b-plv').textContent = ` Lv.${ch.L}`;
     $('#b-ename').textContent = this.ed.name;
     $('#b-elv').textContent = ` Lv.${this.ed.lv}`;
-    $('#b-skillname').textContent = ch.def.skill.name;
+    $('#b-skillname').textContent = ch.skill.name;
     $('#b-skill').style.setProperty('--cc', ch.def.colors.main);
     $('#b-log').innerHTML = '';
     $('#b-tp .tp-roma').classList.remove('hidden-guide');
@@ -116,7 +116,7 @@ Screens.battle = {
 
     this.e.gauge += dt / this.interval();
     if (this.e.gauge >= 1) { this.e.gauge = 0; this.enemyAttack(); }
-    $('#b-atk').style.width = (this.e.gauge * 100) + '%';
+    $('#b-atk').style.transform = `scaleX(${this.e.gauge})`;
     $('#b-atk').classList.toggle('danger', this.e.gauge > 0.8);
 
     // どく
@@ -127,12 +127,15 @@ Screens.battle = {
         this.damagePlayer(d, 'poison');
       }
     }
-    $('#b-pstatus').innerHTML = [
+    const status = [
       this.p.poisonUntil > this.elapsed ? `<i class="st poison">${this.ed.statusName || 'どく'}</i>` : '',
       this.frozenUntil > this.elapsed ? '<i class="st frozen">こおり</i>' : '',
       this.p.shield > 0 ? `<i class="st shield">シールド×${this.p.shield}</i>` : '',
+      this.p.barrier > 0 ? `<i class="st barrier">バリア×${this.p.barrier}</i>` : '',
       this.p.boost > 1 ? '<i class="st boost">こうげきUP</i>' : '',
     ].join('');
+    // 変わったときだけ書きかえる (毎フレーム書きかえると重い)
+    if (status !== this._status) { this._status = status; $('#b-pstatus').innerHTML = status; }
 
     this.tickAbilities();
 
@@ -292,14 +295,14 @@ Screens.battle = {
       this.wordMiss = true;
       this.missMap[expected] = (this.missMap[expected] || 0) + 1;
       recordMiss(expected);
-      // ごつん: ミスしてもコンボが半分残る
-      this.combo = this.ch.id === 'gotsun' ? Math.floor(this.combo / 2) : 0;
+      // ごつん: ミスしてもコンボが一部残る (進化すると多く残る)
+      this.combo = this.ch.id === 'gotsun' ? Math.floor(this.combo * this.ch.trait.comboKeep) : 0;
       this.e.gauge = Math.min(0.99, this.e.gauge + 0.04);
       this.p.skill = Math.max(0, this.p.skill - 3);
       SFX.miss();
       replayAnim($('#b-tp'), 'miss-shake', 300);
       // しびれ: ミスすると自分にダメージ
-      if (this.ed.ability === 'shock') {
+      if (this.ed.ability === 'shock' && !this.ch.trait.shockImmune) {
         const pc = FX.center($('#b-psprite'));
         FX.bolt(pc.x - 20, pc.y - 90, pc.x, pc.y, '#e0aaff', 10);
         this.damagePlayer(Math.max(1, Math.round(this.p.max * 0.03)), 'shock');
@@ -309,7 +312,7 @@ Screens.battle = {
       this.combo++;
       this.maxCombo = Math.max(this.maxCombo, this.combo);
       const before = this.p.skill;
-      this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200));
+      this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200) * this.ch.skill.charge);
       if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.useSkill(); }
       SFX.key();
       if (r === 'done') { this.wordDone(); }
@@ -335,11 +338,14 @@ Screens.battle = {
     const boosted = this.p.boost > 1;
     this.p.boost = 1;
 
-    // 会心: ぴりりは速く打つほど出やすい
-    let critRate = 0.06;
-    if (this.ch.id === 'piriri') critRate = 0.1 + clamp((kps - 2.5) * 0.15, 0, 0.45);
+    // 会心: ぴりりは速く打つほど出やすい (進化すると上限と倍率が上がる)
+    let critRate = 0.06, critMult = 1.5;
+    if (this.ch.id === 'piriri') {
+      critRate = 0.1 + clamp((kps - 2) * 0.2, 0, this.ch.trait.critMax - 0.1);
+      critMult = this.ch.trait.critMult;
+    }
     const crit = Math.random() < critRate;
-    if (crit) dmg *= 1.5;
+    if (crit) dmg *= critMult;
 
     // ゴーレムのよろい
     let armorMsg = '';
@@ -351,7 +357,7 @@ Screens.battle = {
 
     // うるおいボディ
     if (this.ch.id === 'purun' && perfect) {
-      const heal = Math.max(1, Math.round(this.p.max * 0.04));
+      const heal = Math.max(1, Math.round(this.p.max * this.ch.trait.heal));
       if (this.p.hp < this.p.max) {
         this.p.hp = Math.min(this.p.max, this.p.hp + heal);
         const pc = FX.center($('#b-psprite'));
@@ -460,15 +466,21 @@ Screens.battle = {
     this.p.skill = 0;
     const ch = this.ch;
     const col = ch.def.colors;
-    cutin(ch.def.skill.name, ch.name, col.main, slimeSVG(ch.id, ch.stage));
+    const sk = ch.skill;
+    cutin(sk.name, ch.name, col.main, slimeSVG(ch.id, ch.stage));
     const pc = FX.center($('#b-psprite'));
 
     if (ch.id === 'purun') {
-      const heal = Math.round(this.p.max * 0.4);
+      const heal = Math.round(this.p.max * sk.heal);
       this.after(() => {
         this.p.hp = Math.min(this.p.max, this.p.hp + heal);
         this.p.poisonUntil = 0;
-        this.p.boost = 1.5;
+        this.frozenUntil = 0;
+        this.p.boost = sk.boost;
+        if (sk.barrier) {
+          this.p.barrier = sk.barrier;
+          $('#b-player').classList.add('bubbled');
+        }
         SFX.heal();
         for (let i = 0; i < 3; i++) this.after(() => FX.ring(pc.x, pc.y, col.accent, 90 + i * 20, 30), i * 150);
         for (let i = 0; i < 24; i++) {
@@ -476,7 +488,7 @@ Screens.battle = {
         }
         floatText(pc.x, pc.y - 60, `+${heal}`, 'heal big');
         replayAnim($('#b-psprite'), 'glow', 900);
-        this.log(`${ch.name} のアクアヒール！ HP が ${heal} 回復した！`, 'good');
+        this.log(`${ch.name} の${sk.name}！ HP が ${heal} 回復した！${sk.barrier ? ' 水のバリアをはった！' : ''}`, 'good');
         this.updateBars();
       }, 700);
     }
@@ -489,24 +501,25 @@ Screens.battle = {
         for (let i = 0; i < 4; i++) {
           this.after(() => FX.bolt(ec.x + (Math.random() - .5) * 80, -20, ec.x + (Math.random() - .5) * 30, ec.y, '#fff27a', 16), i * 90);
         }
-        const dmg = Math.round(calcDamage(ch.L, 280, ch.stats.atk, this.e.stats.def) * (0.92 + Math.random() * 0.08));
+        const dmg = Math.round(calcDamage(ch.L, sk.power, ch.stats.atk, this.e.stats.def) * (0.92 + Math.random() * 0.08));
         this.after(() => {
           if (this.state !== 'run') return;
           FX.burst(ec.x, ec.y, { colors: ['#fff27a', '#ffd23f', '#fff'], count: 60, speed: 10, shape: 'star', size: 7 });
           this.hitEnemy(dmg, { big: true, colors: ['#fff27a', '#fff'] });
-          this.log(`サンダーボルト！ ${dmg} のダメージ！`, 'good');
+          this.log(`${sk.name}！ ${dmg} のダメージ！`, 'good');
+          if (sk.resetGauge) { this.e.gauge = 0; this.log('いかずちで 敵の攻撃を とめた！', 'good'); }
         }, 250);
       }, 700);
     }
 
     if (ch.id === 'gotsun') {
       this.after(() => {
-        this.p.shield = 2;
+        this.p.shield = sk.guards;
         SFX.guard();
         $('#b-player').classList.add('shielded');
         FX.burst(pc.x, pc.y, { colors: [col.dark, col.main, col.accent], count: 30, speed: 6, shape: 'rect', size: 8 });
         FX.ring(pc.x, pc.y, col.accent, 100, 30, 8);
-        this.log(`${ch.name} はロックシールドをはった！`, 'good');
+        this.log(`${ch.name} の${sk.name}！ ${sk.guards} 回 ふせぐ！`, 'good');
       }, 700);
     }
     this.updateBars();
@@ -519,7 +532,7 @@ Screens.battle = {
     const breath = ed.ability === 'dragon' && this.e.angry && this.e.attacks % 3 === 0;
     let dmg = calcDamage(ed.lv, ed.power, this.e.stats.atk, this.ch.stats.def) * (0.85 + Math.random() * 0.15);
     if (breath) dmg *= 1.5;
-    if (this.ch.id === 'gotsun') dmg *= 0.8;
+    if (this.ch.id === 'gotsun') dmg *= 1 - this.ch.trait.cut;
     dmg = Math.max(1, Math.round(dmg));
 
     const esEl = $('#b-esprite');
@@ -582,14 +595,38 @@ Screens.battle = {
   resolveEnemyHit(dmg, big) {
     if (this.state !== 'run' && this.state !== 'pause') return;
     const pc = FX.center($('#b-psprite'));
+    // ぷるん: 水のバリア
+    if (this.p.barrier > 0) {
+      this.p.barrier--;
+      if (this.p.barrier === 0) $('#b-player').classList.remove('bubbled');
+      SFX.guard();
+      FX.ring(pc.x, pc.y, '#7cf0ff', 100, 22, 8);
+      FX.burst(pc.x, pc.y, { colors: ['#7cf0ff', '#fff'], count: 20, speed: 5 });
+      floatText(pc.x, pc.y - 50, 'バリア！', 'guard');
+      return;
+    }
+    // ぴりり: すばやく よける
+    if (this.ch.id === 'piriri' && Math.random() < this.ch.trait.dodge) {
+      replayAnim($('#b-psprite'), 'dodge', 400);
+      floatText(pc.x, pc.y - 50, 'よけた！', 'guard');
+      SFX.tone(1600, 0.08, { type: 'triangle', vol: 0.04, slide: 2400 });
+      return;
+    }
     if (this.p.shield > 0) {
       this.p.shield--;
       if (this.p.shield === 0) $('#b-player').classList.remove('shielded');
       SFX.guard();
       FX.ring(pc.x, pc.y, '#9be7a0', 90, 20, 8);
       floatText(pc.x, pc.y - 50, 'ガード！', 'guard');
-      // 反撃: ふせいだダメージの 1.5 倍 + 威力 120 の岩
-      const back = Math.round(dmg * 1.5 + calcDamage(this.ch.L, 120, this.ch.stats.atk, this.e.stats.def));
+      // 反撃: ふせいだダメージ + 岩の威力 (進化すると強くなる)
+      const sk = this.ch.skill;
+      const back = Math.round(dmg + calcDamage(this.ch.L, sk.power, this.ch.stats.atk, this.e.stats.def));
+      if (sk.heal) {
+        const h = Math.round(this.p.max * sk.heal);
+        this.p.hp = Math.min(this.p.max, this.p.hp + h);
+        floatText(pc.x + 40, pc.y - 20, `+${h}`, 'heal');
+        this.updateBars();
+      }
       const ec = FX.center($('#b-esprite'));
       this.proj(pc, ec, {
         color: this.ch.def.colors.dark, size: 14, frames: 18, arc: -60,
@@ -599,13 +636,15 @@ Screens.battle = {
     }
     this.damagePlayer(dmg, big ? 'big' : 'normal');
     const ab = this.ed.ability;
-    if (ab === 'poison' && this.p.poisonUntil <= this.elapsed) {
-      this.p.poisonUntil = this.elapsed + 5000;
+    // 状態異常への強さ (進化で手に入る)
+    const statusCut = this.ch.id === 'purun' ? this.ch.trait.statusCut : this.ch.trait.freezeImmune ? 1 : 0;
+    if (ab === 'poison' && this.p.poisonUntil <= this.elapsed && statusCut < 1) {
+      this.p.poisonUntil = this.elapsed + 5000 * (1 - statusCut);
       this.p.nextPoison = this.elapsed + 1000;
       this.log(`${this.ed.statusName || 'どく'}を うけてしまった！`, 'enemy');
     }
     // こおりのいき / ふぶき: しばらく入力できない
-    if (ab === 'freeze' || ab === 'blizzard') {
+    if ((ab === 'freeze' || ab === 'blizzard') && !this.ch.trait.freezeImmune && statusCut < 1) {
       this.frozenUntil = this.elapsed + (ab === 'freeze' ? 1000 : 700);
       this.log('こおってしまった！ すこし まってね', 'enemy');
       FX.burst(pc.x, pc.y, { colors: ['#d0ebff', '#fff', '#74c0fc'], count: 24, speed: 6, shape: 'star', size: 6 });
@@ -613,7 +652,7 @@ Screens.battle = {
     }
     // まおう (ほんき): ひっさつゲージを うばう
     if (ab === 'demon' && this.demonPhase >= 2 && this.p.skill > 0) {
-      this.p.skill = Math.max(0, this.p.skill - 25);
+      this.p.skill = Math.max(0, this.p.skill - 15);
       this.log('ひっさつゲージを うばわれた！', 'enemy');
       this.updateBars();
     }

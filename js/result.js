@@ -154,6 +154,10 @@ Screens.result = {
     FX.burst(c.x, c.y, { colors: ['#fff', '#ffd23f', ex.after.def.colors.accent], count: 80, shape: 'star', size: 8, speed: 10 });
     FX.confetti();
     cutin(`${ex.after.name} に進化！`, `${ex.before.name} のようすが…？`, ex.after.def.colors.main, slimeSVG(ex.after.id, ex.after.stage));
+    // とくせい・ひっさつの パワーアップを知らせる
+    $('#re-up').insertAdjacentHTML('beforeend', `<div class="evo-up">
+      <div><b>とくせい</b> ${ex.before.trait.name} → <em>${ex.after.trait.name}</em><small>${ex.after.trait.desc}</small></div>
+      <div><b>ひっさつ</b> ${ex.before.skill.name} → <em>${ex.after.skill.name}</em><small>${ex.after.skill.desc}</small></div></div>`);
   },
 
   again() {

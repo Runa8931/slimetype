@@ -49,8 +49,21 @@ const CHARACTERS = {
     ],
     base: { hp: 75, atk: 65, def: 65, spd: 65 },
     desc: 'どこにでもいる、ぷるぷるのみずスライム。なんでもそつなくこなす。',
-    trait: { name: 'うるおいボディ', desc: 'ノーミスでお題を打ち切ると HP が 4% 回復する' },
-    skill: { name: 'アクアヒール', desc: 'HP を 40% 回復し、どくを消す。次の攻撃が 1.5 倍になる' },
+    // 進化段階ごとの とくせい・ひっさつ (数値はバトルで使う)
+    forms: [
+      {
+        trait: { name: 'うるおいボディ', desc: 'ノーミスでお題を打ち切ると HP が 4% 回復する', heal: 0.04, statusCut: 0 },
+        skill: { name: 'アクアヒール', desc: 'HP を 40% 回復し、どく・やけどを消す。次の攻撃が 1.5 倍', heal: 0.4, boost: 1.5, barrier: 0, charge: 1 },
+      },
+      {
+        trait: { name: 'うるおいボディ+', desc: 'ノーミスで HP 6% 回復。どく・やけどの時間が半分になる', heal: 0.06, statusCut: 0.5 },
+        skill: { name: 'アクアヒール+', desc: 'HP を 50% 回復して状態異常を消す。次の攻撃が 1.8 倍。ゲージが 15% たまりやすい', heal: 0.5, boost: 1.8, barrier: 0, charge: 1.15 },
+      },
+      {
+        trait: { name: 'キングのうるおい', desc: 'ノーミスで HP 10% 回復。どく・やけど・こおりが きかない', heal: 0.1, statusCut: 1 },
+        skill: { name: 'ロイヤルアクア', desc: 'HP を 60% 回復。次の攻撃が 2.5 倍になり、水のバリアで 2 回攻撃をふせぐ。ゲージが 30% たまりやすい', heal: 0.6, boost: 2.5, barrier: 2, charge: 1.3 },
+      },
+    ],
   },
   piriri: {
     id: 'piriri',
@@ -63,10 +76,22 @@ const CHARACTERS = {
       { main: '#ffa62b', light: '#ffe2a8', dark: '#c45f00', accent: '#fff6a0' },
       { main: '#fff27a', light: '#ffffff', dark: '#d9a800', accent: '#7cf0ff' },
     ],
-    base: { hp: 55, atk: 85, def: 45, spd: 95 },
+    base: { hp: 62, atk: 85, def: 52, spd: 95 },
     desc: 'いつもビリビリしているかみなりスライム。打つのが速いほど強くなる。',
-    trait: { name: 'でんこうせっか', desc: 'お題を速く打ち切るほど会心率アップ (最大 55%)' },
-    skill: { name: 'サンダーボルト', desc: '威力 280 のかみなりを落とす大ダメージ攻撃' },
+    forms: [
+      {
+        trait: { name: 'でんこうせっか', desc: 'お題を速く打ち切るほど会心率アップ (最大 55%・会心 1.5 倍)', critMax: 0.55, critMult: 1.5, dodge: 0, shockImmune: false },
+        skill: { name: 'サンダーボルト', desc: '威力 300 のかみなりを落とす大ダメージ攻撃', power: 300, resetGauge: false, charge: 1 },
+      },
+      {
+        trait: { name: 'でんこうせっか+', desc: '会心率 最大 65%・会心 1.7 倍。敵の攻撃を 20% の確率でよける', critMax: 0.65, critMult: 1.7, dodge: 0.2, shockImmune: false },
+        skill: { name: 'ギガボルト', desc: '威力 450 の大いなずま。ゲージが 10% たまりやすい', power: 450, resetGauge: false, charge: 1.1 },
+      },
+      {
+        trait: { name: 'ライジン', desc: '会心率 最大 75%・会心 1.9 倍。35% の確率でよける。しびれが きかない', critMax: 0.75, critMult: 1.9, dodge: 0.35, shockImmune: true },
+        skill: { name: 'ライジンサンダー', desc: '威力 620 の いかずち。敵の攻撃ゲージを 0 にもどす。ゲージが 20% たまりやすい', power: 620, resetGauge: true, charge: 1.2 },
+      },
+    ],
   },
   gotsun: {
     id: 'gotsun',
@@ -79,12 +104,27 @@ const CHARACTERS = {
       { main: '#8f959e', light: '#d6dae0', dark: '#50565e', accent: '#8fe08a' },
       { main: '#5b5f78', light: '#a4aac6', dark: '#2b2e42', accent: '#c58bff' },
     ],
-    base: { hp: 95, atk: 60, def: 90, spd: 45 },
+    base: { hp: 90, atk: 60, def: 90, spd: 45 },
     desc: 'かたくて重たいいわスライム。のんびりやだけど、とにかくタフ。',
-    trait: { name: 'かたいからだ', desc: '受けるダメージ 20% カット。ミスしてもコンボが半分残る' },
-    skill: { name: 'ロックシールド', desc: '敵の攻撃を 2 回ふせぎ、そのたびに岩で反撃する (ふせいだダメージの 1.5 倍 + 威力 120)' },
+    forms: [
+      {
+        trait: { name: 'かたいからだ', desc: '受けるダメージ 20% カット。ミスしてもコンボが半分残る', cut: 0.2, comboKeep: 0.5, freezeImmune: false },
+        skill: { name: 'ロックシールド', desc: '敵の攻撃を 2 回ふせぎ、そのたびに威力 80 の岩で反撃', guards: 2, power: 80, heal: 0, charge: 1 },
+      },
+      {
+        trait: { name: 'がんじょうボディ', desc: '受けるダメージ 22% カット。ミスしてもコンボが 7 わり残る', cut: 0.22, comboKeep: 0.7, freezeImmune: false },
+        skill: { name: 'ロックシールド+', desc: '敵の攻撃を 2 回ふせぎ、威力 110 の岩で反撃。ふせぐたびに HP 2% 回復', guards: 2, power: 110, heal: 0.02, charge: 1 },
+      },
+      {
+        trait: { name: 'ガンセキのよろい', desc: '受けるダメージ 25% カット。コンボが 9 わり残る。こおり・やけどが きかない', cut: 0.25, comboKeep: 0.9, freezeImmune: true },
+        skill: { name: 'ガンセキとりで', desc: '敵の攻撃を 2 回ふせぎ、威力 150 で反撃。ふせぐたびに HP 5% 回復', guards: 2, power: 150, heal: 0.05, charge: 1 },
+      },
+    ],
   },
 };
+
+// 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく
+for (const c of Object.values(CHARACTERS)) { c.trait = c.forms[0].trait; c.skill = c.forms[0].skill; }
 
 // 敵キャラクター (ステージ順)
 const ENEMIES = [
@@ -95,8 +135,8 @@ const ENEMIES = [
     ability: null, abilityDesc: 'とくになし',
   },
   {
-    id: 'mush', world: 0, name: 'ドクキノコ', lv: 6, base: { hp: 60, atk: 50, def: 55 },
-    power: 40, interval: 4400, exp: 320, diff: 'easy', bg: 'forest',
+    id: 'mush', world: 0, name: 'ドクキノコ', lv: 6, base: { hp: 54, atk: 50, def: 55 },
+    power: 30, interval: 4800, exp: 320, diff: 'easy', bg: 'forest',
     desc: 'もりのどくキノコ。攻撃をうけると、どくになってしまう。',
     ability: 'poison', abilityDesc: 'どく: 攻撃をうけると 5 秒間 HP がへりつづける',
   },
@@ -197,8 +237,8 @@ const ENEMIES = [
     ability: 'fade', abilityDesc: 'かげろう: ときどき ローマ字ガイドが ゆらめいて見えなくなる',
   },
   {
-    id: 'demon', world: 3, name: 'まおう', lv: 54, base: { hp: 140, atk: 120, def: 110 },
-    power: 50, interval: 5600, exp: 1000, diff: 'hard', bg: 'magma', boss: true, final: true,
+    id: 'demon', world: 3, name: 'まおう', lv: 54, base: { hp: 130, atk: 115, def: 110 },
+    power: 46, interval: 5600, exp: 1000, diff: 'hard', bg: 'magma', boss: true, final: true,
     desc: 'マグマのしろの あるじ。さいごの てき。',
     ability: 'demon', abilityDesc: 'まおうのちから: HP 2/3 で やみ (ガイドが消える)、1/3 で 攻撃が速くなり ひっさつゲージをうばう',
   },

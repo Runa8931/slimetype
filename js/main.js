@@ -17,7 +17,7 @@ const Save = {
       chars: { purun: { exp: 0 }, piriri: { exp: 0 }, gotsun: { exp: 0 } },
       cleared: 0,
       best: {},
-      settings: { lang: 'ja', sound: true, diff: 'easy', time: 60 },
+      settings: { lang: 'ja', sound: true, diff: 'easy', time: 60, lite: false },
       missKeys: {},
       totals: { keys: 0, plays: 0, wins: 0 },
     };
@@ -49,6 +49,9 @@ function charInfo(id) {
   return {
     id, def, exp, L, stage,
     name: def.names[stage],
+    // 進化段階に合わせた とくせい・ひっさつ
+    trait: def.forms[stage].trait,
+    skill: def.forms[stage].skill,
     stats: calcStats(def.base, L),
     curLvExp: expForLevel(L),
     nextLvExp: L >= MAX_LV ? null : expForLevel(L + 1),
@@ -160,6 +163,7 @@ const App = {
   boot() {
     Save.load();
     SFX.enabled = Save.data.settings.sound;
+    document.body.classList.toggle('lite', !!Save.data.settings.lite);
     FX.init();
 
     document.addEventListener('keydown', e => {
@@ -228,8 +232,9 @@ Screens.select = {
         <div class="badges"><span class="badge type-${id}">${d.type}</span><span class="badge">${d.role}</span></div>
         <p class="cc-desc">${d.desc}</p>
         <div class="stats">${statBars(d.base, 100)}</div>
-        <div class="ability"><b>とくせい「${d.trait.name}」</b><span>${d.trait.desc}</span></div>
-        <div class="ability"><b>ひっさつ「${d.skill.name}」</b><span>${d.skill.desc}</span></div>
+        <div class="ability"><b>とくせい「${c.trait.name}」</b><span>${c.trait.desc}</span></div>
+        <div class="ability"><b>ひっさつ「${c.skill.name}」</b><span>${c.skill.desc}</span></div>
+        <div class="evo-note">Lv.10 と Lv.20 で進化すると とくせい・ひっさつも パワーアップ</div>
       </button>`;
     }).join('');
     $('#select-grid').querySelectorAll('.char-card').forEach(b => { b.onclick = () => this.pick(b.dataset.id); });
@@ -264,6 +269,14 @@ Screens.home = {
     document.querySelectorAll('#set-lang button').forEach(b => {
       b.onclick = () => { Save.data.settings.lang = b.dataset.v; Save.save(); SFX.select(); this.render(); };
     });
+    // エフェクトの量 (ひかえめ = パソコンへの負担を減らす)
+    $('#set-lite').onclick = () => {
+      Save.data.settings.lite = !Save.data.settings.lite;
+      document.body.classList.toggle('lite', Save.data.settings.lite);
+      FX.resize();
+      Save.save(); SFX.select(); this.render();
+      toast(Save.data.settings.lite ? 'エフェクトを ひかえめにしました (パソコンが熱くなりにくい)' : 'エフェクトを ふつうに もどしました');
+    };
     $('#set-sound').onclick = () => {
       Save.data.settings.sound = !Save.data.settings.sound;
       SFX.enabled = Save.data.settings.sound;
@@ -277,6 +290,8 @@ Screens.home = {
     const s = Save.data.settings;
     document.querySelectorAll('#set-lang button').forEach(b => b.classList.toggle('on', b.dataset.v === s.lang));
     $('#set-sound').textContent = s.sound ? '♪ 効果音 ON' : '♪ 効果音 OFF';
+    $('#set-lite').textContent = s.lite ? '✨ エフェクト ひかえめ' : '✨ エフェクト ふつう';
+    $('#set-lite').classList.toggle('on', !!s.lite);
 
     const expPct = c.nextLvExp ? (c.exp - c.curLvExp) / (c.nextLvExp - c.curLvExp) * 100 : 100;
     const nextEvo = c.L < 10 ? 'Lv.10 で進化！' : c.L < 20 ? 'Lv.20 で最終進化！' : 'さいごの すがた';
@@ -293,8 +308,11 @@ Screens.home = {
         </div>
       </div>
       <div class="stats">${statBars(c.stats, Math.max(60, c.stats.hp))}</div>
-      <div class="ability"><b>とくせい「${d.trait.name}」</b><span>${d.trait.desc}</span></div>
-      <div class="ability"><b>ひっさつ「${d.skill.name}」</b><span>${d.skill.desc}</span></div>`;
+      <div class="ability"><b>とくせい「${c.trait.name}」</b><span>${c.trait.desc}</span></div>
+      <div class="ability"><b>ひっさつ「${c.skill.name}」</b><span>${c.skill.desc}</span></div>
+      ${c.stage < 2 ? `<div class="next-evo"><b>Lv.${c.stage === 0 ? 10 : 20} で進化すると…</b>
+        <span>とくせい「${d.forms[c.stage + 1].trait.name}」: ${d.forms[c.stage + 1].trait.desc}</span>
+        <span>ひっさつ「${d.forms[c.stage + 1].skill.name}」: ${d.forms[c.stage + 1].skill.desc}</span></div>` : ''}`;
 
     const best = Save.data.best;
     const lang = s.lang;

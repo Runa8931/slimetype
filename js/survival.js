@@ -12,11 +12,17 @@ const SV_TOTAL = 180;     // タイムバーの長さ(秒)
 const SV_PLAYER_R = 22;
 const SV_MAX_LV = 5;
 const SV_MAX_WEAPONS = 6;
+// 軽くするための上限 (ひかえめモードでは さらに少なく)
+const SV_LIMITS = {
+  normal: { enemies: 90, parts: 260, texts: 40, dpr: 1.5 },
+  lite: { enemies: 60, parts: 120, texts: 24, dpr: 1 },
+};
+const SV_ENEMY_HP_BOOST = 1.0; // 敵1体のかたさの調整用 (1 = そのまま)
 
 // 難易度: 敵の HP・攻撃・出現数・ボスの HP・もらえる経験値の倍率
 const SV_DIFFS = {
   easy: {
-    name: 'かんたん', color: '#6dff8a', rec: 'Lv.1〜', hp: 0.85, dmg: 0.7, spawn: 0.85, bossHp: 0.7, exp: 0.7, boss: 'dragon',
+    name: 'かんたん', color: '#6dff8a', rec: 'Lv.1〜', hp: 0.75, dmg: 0.5, spawn: 0.85, bossHp: 0.45, exp: 0.7, boss: 'dragon',
     desc: 'そうげんの 敵だけ。はじめての人に',
     tiers: [['bat', 'mush'], ['bat', 'mush', 'ghost'], ['mush', 'ghost', 'goblin'], ['ghost', 'goblin', 'golem']],
   },
@@ -116,19 +122,15 @@ Screens.survival = {
     this._onResize = () => this.resize();
     addEventListener('resize', this._onResize);
 
-    // 画像を用意
-    this.imgs = {}; this.aspect = {};
-    for (const id of Object.keys(SV_ENEMIES)) {
-      const svg = enemySVG(id);
-      this.imgs[id] = svgToImage(svg);
-      this.aspect[id] = svgAspect(svg);
-    }
-    this.imgs.player = svgToImage(slimeSVG(this.ch.id, this.ch.stage));
+    // 画像を用意 (SVG は毎フレーム描くととても重いので、最初に 1 回だけ 絵(ビットマップ)にしておく)
+    this.sprites = {}; this.glows = {};
+    this.buildSprites();
     this.pattern = this.makeGround();
 
     this.diffKey = SV_DIFFS[Save.data.settings.svDiff] ? Save.data.settings.svDiff : 'normal';
     this.reset();
     this.state = 'ready';
+    this._drawnState = null;
     this.showReady();
     this.last = performance.now();
     this.raf = requestAnimationFrame(t => this.tick(t));
@@ -140,7 +142,8 @@ Screens.survival = {
     const base = this.ch.def.base;
     const max = st.hp * 3 + 60;
     let speed = 175 * (0.85 + base.spd / 300);
-    if (this.ch.id === 'piriri') speed *= 1.15;
+    // とくせいは 進化すると強くなる
+    if (this.ch.id === 'piriri') speed *= [1.15, 1.2, 1.25][this.ch.stage];
     this.p = { x: 0, y: 0, hp: max, max, speed, face: 1, dir: { x: 1, y: 0 }, inv: 0, regenT: 0, moving: false, slowUntil: 0 };
     this.dmgMult = 1 + (st.atk - 5) / 60;
     this.weapons = { [SV_START_WEAPON[this.ch.id]]: { lv: 1, t: 0.5 } };
@@ -159,6 +162,56 @@ Screens.survival = {
   },
 
   diff() { return SV_DIFFS[this.diffKey]; },
+  lim() { return Save.data.settings.lite ? SV_LIMITS.lite : SV_LIMITS.normal; },
+
+  async buildSprites() {
+    const q = this.dpr;
+    const jobs = Object.keys(SV_ENEMIES).map(id => {
+      const svg = enemySVG(id);
+      const w = SV_ENEMIES[id].w;
+      return [id, svg, w, w * svgAspect(svg)];
+    });
+    jobs.push(['player', slimeSVG(this.ch.id, this.ch.stage), 76, 76 * 134 / 132]);
+    await Promise.all(jobs.map(async ([id, svg, w, h]) => {
+      const img = svgToImage(svg);
+      try { await img.decode(); } catch (e) { return; }
+      const c = document.createElement('canvas');
+      c.width = Math.ceil(w * q); c.height = Math.ceil(h * q);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      this.sprites[id] = { c, flash: this.tint(c, 'rgba(255,255,255,.8)'), slow: this.tint(c, 'rgba(70,150,255,.5)'), w, h };
+    }));
+  },
+
+  // 絵を 1 色で うすく ぬった版を作る (ダメージの白い光・こおった青色用)
+  tint(src, color) {
+    const c = document.createElement('canvas');
+    c.width = src.width; c.height = src.height;
+    const g = c.getContext('2d');
+    g.drawImage(src, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
+    return c;
+  },
+
+  // 光る玉の絵をキャッシュ (毎フレーム グラデーションを作らない)
+  glow(color, r) {
+    const key = color + r;
+    if (this.glows[key]) return this.glows[key];
+    const q = this.dpr;
+    const c = document.createElement('canvas');
+    c.width = c.height = Math.ceil(r * 2 * q);
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(r * q, r * q, 0, r * q, r * q, r * q);
+    gr.addColorStop(0, color); gr.addColorStop(0.35, color); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, c.width, c.height);
+    return (this.glows[key] = c);
+  },
+
+  drawGlow(ctx, color, x, y, r, alpha = 1) {
+    if (alpha < 1) ctx.globalAlpha = alpha;
+    ctx.drawImage(this.glow(color, r), x - r, y - r, r * 2, r * 2);
+    if (alpha < 1) ctx.globalAlpha = 1;
+  },
 
   showReady() {
     const w = SV_WEAPONS[SV_START_WEAPON[this.ch.id]];
@@ -205,11 +258,22 @@ Screens.survival = {
   },
 
   resize() {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, this.lim().dpr);
     this.W = innerWidth; this.H = innerHeight;
     this.cv.width = this.W * dpr; this.cv.height = this.H * dpr;
     this.cv.style.width = this.W + 'px'; this.cv.style.height = this.H + 'px';
     this.dpr = dpr;
+    // 画面のふちの暗さ (毎フレーム作らないよう、ここで作っておく)
+    this.vignettes = {};
+    for (const [k, col] of [['n', 'rgba(0,0,30,.45)'], ['b', 'rgba(60,0,0,.5)']]) {
+      const c = document.createElement('canvas');
+      c.width = Math.ceil(this.W / 4); c.height = Math.ceil(this.H / 4);
+      const g = c.getContext('2d');
+      const gr = g.createRadialGradient(c.width / 2, c.height / 2, Math.min(c.width, c.height) * 0.35, c.width / 2, c.height / 2, Math.max(c.width, c.height) * 0.75);
+      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, col);
+      g.fillStyle = gr; g.fillRect(0, 0, c.width, c.height);
+      this.vignettes[k] = c;
+    }
   },
 
   overlay(html) {
@@ -248,7 +312,11 @@ Screens.survival = {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     if (this.state === 'run') this.update(dt);
-    this.draw(now / 1000);
+    // 止まっている画面 (えらぶ・ポーズ) では描き直さない
+    if (this.state === 'run' || this.state !== this._drawnState) {
+      this.draw(now / 1000);
+      this._drawnState = this.state;
+    }
     this.raf = requestAnimationFrame(t => this.tick(t));
   },
 
@@ -276,7 +344,7 @@ Screens.survival = {
     if (p.inv > 0) p.inv -= dt;
     if (this.ch.id === 'purun') {
       p.regenT += dt;
-      if (p.regenT >= 2) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
+      if (p.regenT >= [2, 1.6, 1.2][this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
     }
 
     // イベント
@@ -288,9 +356,9 @@ Screens.survival = {
     // 敵の出現
     this.spawnT -= dt;
     if (this.spawnT <= 0) {
-      this.spawnT = Math.max(0.3, 1.2 - this.time / 200) * (this.boss ? 1.8 : 1) / this.diff().spawn;
-      const n = 1 + Math.floor(this.time / 75);
-      for (let i = 0; i < n; i++) this.spawn(this.pickType());
+      this.spawnT = Math.max(0.4, 1.4 - this.time / 200) * (this.boss ? 1.8 : 1) / this.diff().spawn;
+      const n = 1 + Math.floor(this.time / 90);
+      for (let i = 0; i < n && this.enemies.length < this.lim().enemies; i++) this.spawn(this.pickType());
     }
 
     this.updateWeapons(dt);
@@ -314,8 +382,8 @@ Screens.survival = {
 
   makeEnemy(type, x, y) {
     const b = SV_ENEMIES[type];
-    const hp = Math.round(b.hp * this.hpScale());
-    return { type, x, y, hp, max: hp, spd: b.spd * (0.9 + Math.random() * 0.2), dmg: b.dmg * this.diff().dmg, r: b.r, flash: 0, kbx: 0, kby: 0, hitCd: {}, slowUntil: 0 };
+    const hp = b.hp * this.hpScale();
+    return { type, x, y, hp: Math.round(hp * SV_ENEMY_HP_BOOST), max: Math.round(hp * SV_ENEMY_HP_BOOST), spd: b.spd * (0.9 + Math.random() * 0.2), dmg: b.dmg * this.diff().dmg, r: b.r, flash: 0, kbx: 0, kby: 0, hitCd: {}, slowUntil: 0 };
   },
 
   spawn(type) {
@@ -326,7 +394,7 @@ Screens.survival = {
 
   // ぐるっと囲まれるイベント
   surround(type) {
-    const n = 20;
+    const n = Math.min(14, this.lim().enemies - this.enemies.length);
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2;
       this.enemies.push(this.makeEnemy(type, this.p.x + Math.cos(a) * 480, this.p.y + Math.sin(a) * 480));
@@ -538,7 +606,7 @@ Screens.survival = {
     const big = dmg >= 50;
     this.texts.push({ x: e.x + (Math.random() - 0.5) * 24, y: e.y - e.r, text: dmg, life: 0.7, max: 0.7, color: e.boss || big ? '#ffd23f' : '#fff', size: Math.min(34, 16 + dmg / 6) });
     // ヒットの火花
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 2; i++) {
       const a = Math.random() * Math.PI * 2;
       this.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, life: 0.25, max: 0.25, color, size: 3, glow: true });
     }
@@ -660,7 +728,7 @@ Screens.survival = {
   hitPlayer(dmg, slow = false) {
     const p = this.p;
     let d = dmg * 40 / (40 + this.ch.stats.def);
-    if (this.ch.id === 'gotsun') d *= 0.75;
+    if (this.ch.id === 'gotsun') d *= [0.75, 0.7, 0.65][this.ch.stage];
     d = Math.max(1, Math.round(d));
     p.hp -= d;
     p.inv = 0.8;
@@ -785,7 +853,9 @@ Screens.survival = {
   updateEffects(dt) {
     for (const q of this.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.93; q.vy *= 0.93; }
     this.parts = this.parts.filter(q => q.life > 0);
-    if (this.parts.length > 700) this.parts.splice(0, this.parts.length - 700);
+    const lim = this.lim();
+    if (this.parts.length > lim.parts) this.parts.splice(0, this.parts.length - lim.parts);
+    if (this.texts.length > lim.texts) this.texts.splice(0, this.texts.length - lim.texts);
     for (const t of this.texts) { t.life -= dt; t.y -= 44 * dt; }
     this.texts = this.texts.filter(t => t.life > 0);
     for (const f of this.fx) {
@@ -801,6 +871,7 @@ Screens.survival = {
   },
 
   burst(x, y, colors, n, speed, glow) {
+    if (Save.data.settings.lite) n = Math.ceil(n / 2);
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, s = speed * (0.3 + Math.random() * 0.7);
       this.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5, max: 0.5, color: colors[i % colors.length], size: 3 + Math.random() * 3, glow });
@@ -889,11 +960,7 @@ Screens.survival = {
         ctx.beginPath(); ctx.moveTo(it.x, it.y - 8 + bob); ctx.lineTo(it.x + 6, it.y + bob); ctx.lineTo(it.x, it.y + 8 + bob); ctx.lineTo(it.x - 6, it.y + bob); ctx.closePath(); ctx.fill();
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
       } else {
-        if (it.kind === 'chest') {
-          const g = ctx.createRadialGradient(it.x, it.y, 4, it.x, it.y, 46);
-          g.addColorStop(0, 'rgba(255,220,80,.7)'); g.addColorStop(1, 'rgba(255,220,80,0)');
-          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(it.x, it.y, 46, 0, Math.PI * 2); ctx.fill();
-        }
+        if (it.kind === 'chest') this.drawGlow(ctx, 'rgba(255,220,80,.6)', it.x, it.y, 46);
         ctx.font = it.kind === 'chest' ? '34px sans-serif' : '24px sans-serif';
         ctx.fillText(it.kind === 'chest' ? '🎁' : '❤️', it.x, it.y + bob);
       }
@@ -916,7 +983,9 @@ Screens.survival = {
     for (const a of actors) {
       if (a.player) { this.drawPlayer(ctx, clock); continue; }
       const b = SV_ENEMIES[a.type];
-      const w = b.w, h = w * this.aspect[a.type];
+      const sp = this.sprites[a.type];
+      if (!sp) continue;
+      const w = sp.w, h = sp.h;
       const bob = Math.sin(clock * 6 + a.x * 0.1) * 0.05;
       ctx.save();
       ctx.translate(a.x, a.y);
@@ -928,13 +997,10 @@ Screens.survival = {
       ctx.beginPath(); ctx.ellipse(0, a.r * 0.7, a.r, a.r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
       ctx.scale(p.x > a.x ? -1 : 1, 1);
       ctx.scale(1 + bob, 1 - bob);
+      if (a.boss) this.drawGlow(ctx, a.hp < a.max / 2 ? 'rgba(255,48,48,.55)' : 'rgba(255,255,255,.3)', 0, -h * 0.12, w * 0.6);
       if (b.alpha) ctx.globalAlpha = b.alpha;
-      const filters = [];
-      if (a.flash > 0) filters.push('brightness(3)');
-      if (a.slowUntil > this.time) filters.push('sepia(1) hue-rotate(170deg) saturate(2.5)');
-      if (filters.length) ctx.filter = filters.join(' ');
-      if (a.boss) { ctx.shadowColor = a.hp < a.max / 2 ? '#ff3030' : SV_BOSS[a.type].color; ctx.shadowBlur = 30; }
-      ctx.drawImage(this.imgs[a.type], -w / 2, -h * 0.62, w, h);
+      const img = a.flash > 0 ? sp.flash : a.slowUntil > this.time ? sp.slow : sp.c;
+      ctx.drawImage(img, -w / 2, -h * 0.62, w, h);
       ctx.restore();
       if (a.slowUntil > this.time) {
         ctx.strokeStyle = 'rgba(165,216,255,.8)'; ctx.lineWidth = 2;
@@ -969,9 +1035,8 @@ Screens.survival = {
 
     // 敵の弾
     for (const s of this.eshots) {
-      const g = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, s.r * 2);
-      g.addColorStop(0, s.core); g.addColorStop(0.4, s.color); g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 2, 0, Math.PI * 2); ctx.fill();
+      this.drawGlow(ctx, s.color, s.x, s.y, s.r * 2);
+      ctx.fillStyle = s.core; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 0.5, 0, Math.PI * 2); ctx.fill();
     }
 
     // エフェクト
@@ -992,9 +1057,7 @@ Screens.survival = {
           ctx.lineWidth = w * 0.5;
           ctx.beginPath(); f.branch.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
         }
-        const g = ctx.createRadialGradient(f.x, f.y, 2, f.x, f.y, 60);
-        g.addColorStop(0, 'rgba(255,255,200,.9)'); g.addColorStop(1, 'rgba(255,255,200,0)');
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(f.x, f.y, 60, 0, Math.PI * 2); ctx.fill();
+        this.drawGlow(ctx, 'rgba(255,255,200,.8)', f.x, f.y, 60);
         ctx.globalAlpha = 1;
       }
       if (f.kind === 'laser') {
@@ -1013,16 +1076,13 @@ Screens.survival = {
         // 空から落ちてくる いんせき
         const t = 1 - k;
         const mx = f.x + (1 - t) * 260, my = f.y - (1 - t) * 520;
-        const g = ctx.createRadialGradient(mx, my, 2, mx, my, 40);
-        g.addColorStop(0, '#fff'); g.addColorStop(0.3, '#ffd43b'); g.addColorStop(0.7, 'rgba(255,106,0,.8)'); g.addColorStop(1, 'rgba(255,106,0,0)');
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(mx, my, 40, 0, Math.PI * 2); ctx.fill();
+        this.drawGlow(ctx, 'rgba(255,140,20,.9)', mx, my, 40);
+        ctx.fillStyle = '#fff3b0'; ctx.beginPath(); ctx.arc(mx, my, 12, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = 'rgba(255,140,40,.5)'; ctx.lineWidth = 22; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(mx + 90, my - 180); ctx.stroke();
       }
       if (f.kind === 'boom') {
-        const g = ctx.createRadialGradient(f.x, f.y, 4, f.x, f.y, f.r * 1.2);
-        g.addColorStop(0, `rgba(255,255,255,${k})`); g.addColorStop(0.35, `rgba(255,212,59,${k})`); g.addColorStop(1, 'rgba(255,106,0,0)');
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(f.x, f.y, f.r * 1.2 * (1.2 - k * 0.4), 0, Math.PI * 2); ctx.fill();
+        this.drawGlow(ctx, 'rgba(255,212,59,1)', f.x, f.y, f.r * 1.2 * (1.2 - k * 0.4), k);
       }
     }
 
@@ -1068,23 +1128,21 @@ Screens.survival = {
     }
 
     // 画面のふち・フラッシュ
-    const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
-    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, this.boss ? 'rgba(60,0,0,.5)' : 'rgba(0,0,30,.45)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(this.vignettes[this.boss ? 'b' : 'n'], 0, 0, W, H);
     if (this.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${this.flash})`; ctx.fillRect(0, 0, W, H); }
   },
 
   drawShot(ctx, s) {
     if (s.kind === 'water') {
-      const g = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, s.r * 2);
-      g.addColorStop(0, '#fff'); g.addColorStop(0.4, '#4fb3ff'); g.addColorStop(1, 'rgba(79,179,255,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 2, 0, Math.PI * 2); ctx.fill();
+      this.drawGlow(ctx, '#4fb3ff', s.x, s.y, s.r * 2);
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 0.45, 0, Math.PI * 2); ctx.fill();
     } else if (s.kind === 'boomerang') {
       s.trail.forEach((t, i) => this.drawBoomerang(ctx, t.x, t.y, t.a, (i + 1) / (s.trail.length + 1) * 0.4));
       this.drawBoomerang(ctx, s.x, s.y, s.spin, 1);
     } else if (s.kind === 'star') {
       ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin);
-      ctx.fillStyle = '#ffd43b'; ctx.shadowColor = '#ffd43b'; ctx.shadowBlur = 16;
+      this.drawGlow(ctx, 'rgba(255,212,59,.6)', 0, 0, s.r * 2);
+      ctx.fillStyle = '#ffd43b';
       FX.star(ctx, s.r * 1.4);
       ctx.restore();
     } else if (s.kind === 'ice') {
@@ -1123,9 +1181,9 @@ Screens.survival = {
     ctx.save();
     ctx.translate(p.x, p.y);
     if (p.inv > 0 && Math.floor(clock * 20) % 2) ctx.globalAlpha = 0.4;
-    if (p.slowUntil > this.time) ctx.filter = 'hue-rotate(160deg)';
     ctx.scale(p.face * (1 + sq), 1 - sq);
-    ctx.drawImage(this.imgs.player, -w / 2, -h * 0.66, w, h);
+    const sp = this.sprites.player;
+    if (sp) ctx.drawImage(p.slowUntil > this.time ? sp.slow : sp.c, -w / 2, -h * 0.66, w, h);
     ctx.restore();
   },
 

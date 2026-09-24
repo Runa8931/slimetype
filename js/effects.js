@@ -9,8 +9,9 @@ const FX = {
   init() {
     this.cv = document.getElementById('fx');
     this.ctx = this.cv.getContext('2d');
-    const resize = () => {
-      this.dpr = window.devicePixelRatio || 1;
+    const resize = this.resize = () => {
+      // 画面の細かさに上限をつける (高解像度の画面で重くならないように)
+      this.dpr = Math.min(window.devicePixelRatio || 1, Save.data && Save.data.settings.lite ? 1 : 1.5);
       this.cv.width = innerWidth * this.dpr;
       this.cv.height = innerHeight * this.dpr;
     };
@@ -29,7 +30,8 @@ const FX = {
   },
 
   // 放射状に飛び散る粒
-  burst(x, y, { colors = ['#fff'], count = 20, speed = 5, size = 4, life = 40, gravity = 0.12, shape = 'circle' } = {}) {
+  burst(x, y, { colors = ['#fff'], count: countIn = 20, speed = 5, size = 4, life = 40, gravity = 0.12, shape = 'circle' } = {}) {
+    const count = Save.data && Save.data.settings.lite ? Math.ceil(countIn / 2) : countIn;
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
       const s = speed * (0.4 + Math.random() * 0.8);
@@ -107,8 +109,7 @@ const FX = {
     } else if (p.kind === 'bolt') {
       p.life--;
       ctx.globalAlpha = k;
-      ctx.shadowColor = p.color; ctx.shadowBlur = 20;
-      for (const [w, c] of [[8, p.color], [3, '#fff']]) {
+      for (const [w, c] of [[18, 'rgba(255,255,200,.25)'], [8, p.color], [3, '#fff']]) {
         ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineJoin = 'round';
         ctx.beginPath(); p.pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
       }
@@ -117,8 +118,10 @@ const FX = {
       const t = p.t / p.frames;
       const x = p.from.x + (p.to.x - p.from.x) * t;
       const y = p.from.y + (p.to.y - p.from.y) * t + Math.sin(t * Math.PI) * p.arc;
-      ctx.shadowColor = p.color; ctx.shadowBlur = 18; ctx.fillStyle = p.color;
-      ctx.beginPath(); ctx.arc(x, y, p.size, 0, Math.PI * 2); ctx.fill();
+      // ぼかし(shadowBlur)は重いので、うすい大きな円で光って見せる
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = 0.3; ctx.beginPath(); ctx.arc(x, y, p.size * 1.9, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(x, y, p.size, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x - p.size * 0.3, y - p.size * 0.3, p.size * 0.35, 0, Math.PI * 2); ctx.fill();
       if (p.trail && p.t % 2 === 0) {
         this.parts.push({ kind: 'dot', shape: 'circle', x, y, vx: (Math.random() - .5), vy: (Math.random() - .5), g: 0, size: p.size * 0.6, life: 14, max: 14, color: p.color, rot: 0, vr: 0 });
