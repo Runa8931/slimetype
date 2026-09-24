@@ -793,8 +793,10 @@ Screens.battle = {
 
   finish(won) {
     const secs = Math.max(1, this.elapsed / 1000);
-    const typing = Math.round(typingExp(this.correct, this.miss, secs, 1, this.ch.L) * 0.5);
-    const bonus = won ? Math.floor(this.ed.exp * this.ed.lv / 5) : 0;
+    // 格下をたおしたときは 経験値がへる (レベル差の補正)
+    const gap = levelGapMult(this.ed.lv, this.ch.L);
+    const typing = Math.round(typingExp(this.correct, this.miss, secs, 1, this.ch.L) * 0.5 * gap);
+    const bonus = won ? Math.floor(this.ed.exp * this.ed.lv / 5 * gap) : 0;
     const firstClear = won && this.idx === Save.data.cleared;
     if (firstClear) Save.data.cleared = Math.min(ENEMIES.length, this.idx + 1);
     if (won) Save.data.totals.wins++;
@@ -806,7 +808,8 @@ Screens.battle = {
       correct: this.correct, miss: this.miss, acc,
       kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs),
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
-      expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (敵の基礎EXP ${this.ed.exp} × Lv.${this.ed.lv} ÷ 5)` : '勝利ボーナスなし'],
+      expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (敵の基礎EXP ${this.ed.exp} × Lv.${this.ed.lv} ÷ 5)` : '勝利ボーナスなし',
+        `レベル差の補正 ×${gap.toFixed(2)} (敵 Lv.${this.ed.lv} / 自分 Lv.${this.ch.L}${gap < 1 ? '・格下なので へった' : gap > 1 ? '・格上なので ふえた' : ''})`],
     });
   },
 };

@@ -845,3 +845,4 @@ body.lite .sky { display: none; }
 .map-info .mi-name { font-size: 16px; }
 .map-info .mi-desc { font-size: 12px; }
 .map-info .mi-go { margin-top: 0; font-size: 13px; }
+.mi-low { font-size: 12px; color: #74c0fc; }

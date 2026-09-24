@@ -548,7 +548,9 @@ Screens.stages = {
     const e = ENEMIES[g];
     const cleared = g < this.cleared;
     $('#map-world').innerHTML = `${head} - <b>${this.pos + 1}</b>`;
-    const warn = this.ch.L < e.lv - 2 ? `<div class="mi-warn">レベルが たりないかも (おすすめ Lv.${Math.min(e.lv, MAX_LV)})</div>` : '';
+    const gap = levelGapMult(e.lv, this.ch.L);
+    const warn = this.ch.L < e.lv - 2 ? `<div class="mi-warn">レベルが たりないかも (おすすめ Lv.${Math.min(e.lv, MAX_LV)})</div>`
+      : gap < 0.8 ? `<div class="mi-low">格下の あいて: もらえる経験値 ×${gap.toFixed(2)}</div>` : '';
     info.innerHTML = `<div class="mi-sprite">${enemySVG(e.id)}</div>
       <div class="mi-body">
         <div class="mi-name">${e.name} <small>Lv.${e.lv}</small> ${e.boss ? '<span class="badge boss">BOSS</span>' : ''} ${cleared ? '<span class="mi-clear">CLEAR</span>' : ''}</div>
