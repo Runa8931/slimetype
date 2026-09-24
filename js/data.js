@@ -28,11 +28,11 @@ function calcDamage(L, power, atk, def) {
   return ((2 * L / 5 + 2) * power * atk / def) / 50 + 2;
 }
 
-// レベル差による経験値の倍率 (ポケモン第 5 世代の式)
-//   ((2×敵Lv + 10) / (敵Lv + 自分Lv + 10)) ^ 2.5
-//   格下をたおすと へり、格上をたおすと ふえる (最大 1.5 倍)
+// レベル差による経験値の倍率 (ポケモン第 5 世代の式を もっと きびしくしたもの)
+//   ((2×敵Lv + 10) / (敵Lv + 自分Lv + 10)) ^ 6
+//   格下をたおすと 大きく へり、格上をたおすと ふえる (最大 1.5 倍)
 function levelGapMult(enemyLv, playerLv) {
-  const m = Math.pow((2 * enemyLv + 10) / (enemyLv + playerLv + 10), 2.5);
+  const m = Math.pow((2 * enemyLv + 10) / (enemyLv + playerLv + 10), 6);
   return Math.min(1.5, m);
 }
 
