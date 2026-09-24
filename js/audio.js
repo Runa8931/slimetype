@@ -5,10 +5,17 @@
 const SFX = {
   ctx: null,
   enabled: true,
+  volume: 0.8,   // 全体の音量 (0〜1)
+  master: null,  // すべての音が通る「音量つまみ」
 
   ensure() {
     if (!this.ctx) {
-      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { this.enabled = false; }
+      try {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = this.volume;
+        this.master.connect(this.ctx.destination);
+      } catch (e) { this.enabled = false; }
     }
     if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
     return this.ctx;
@@ -24,7 +31,7 @@ const SFX = {
     if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
     g.gain.setValueAtTime(vol, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(this.ctx.destination);
+    o.connect(g).connect(this.master);
     o.start(t); o.stop(t + dur + 0.02);
   },
 
@@ -41,8 +48,14 @@ const SFX = {
     f.type = 'lowpass'; f.frequency.value = filter;
     const g = this.ctx.createGain();
     g.gain.value = vol;
-    src.connect(f).connect(g).connect(this.ctx.destination);
+    src.connect(f).connect(g).connect(this.master);
     src.start(t);
+  },
+
+  // 音量を変える (0〜1)
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(1, v));
+    if (this.master) this.master.gain.value = this.volume;
   },
 
   key() { this.tone(1200 + Math.random() * 200, 0.03, { type: 'triangle', vol: 0.04 }); },

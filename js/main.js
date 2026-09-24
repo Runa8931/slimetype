@@ -17,7 +17,7 @@ const Save = {
       chars: { purun: { exp: 0 }, piriri: { exp: 0 }, gotsun: { exp: 0 } },
       cleared: 0,
       best: {},
-      settings: { lang: 'ja', sound: true, diff: 'easy', time: 60, lite: false },
+      settings: { lang: 'ja', sound: true, volume: 0.8, diff: 'easy', time: 60, lite: false },
       missKeys: {},
       totals: { keys: 0, plays: 0, wins: 0 },
     };
@@ -163,6 +163,7 @@ const App = {
   boot() {
     Save.load();
     SFX.enabled = Save.data.settings.sound;
+    SFX.setVolume(Save.data.settings.volume);
     document.body.classList.toggle('lite', !!Save.data.settings.lite);
     FX.init();
 
@@ -269,6 +270,18 @@ Screens.home = {
     document.querySelectorAll('#set-lang button').forEach(b => {
       b.onclick = () => { Save.data.settings.lang = b.dataset.v; Save.save(); SFX.select(); this.render(); };
     });
+    // 音量つまみ (動かすと ためしに音が鳴る)
+    const vol = $('#set-vol');
+    vol.value = Math.round(Save.data.settings.volume * 100);
+    $('#set-vol-num').textContent = vol.value + '%';
+    vol.oninput = () => {
+      Save.data.settings.volume = vol.value / 100;
+      SFX.setVolume(Save.data.settings.volume);
+      $('#set-vol-num').textContent = vol.value + '%';
+      clearTimeout(this._volT);
+      this._volT = setTimeout(() => { Save.save(); SFX.select(); }, 120);
+    };
+
     // エフェクトの量 (ひかえめ = パソコンへの負担を減らす)
     $('#set-lite').onclick = () => {
       Save.data.settings.lite = !Save.data.settings.lite;

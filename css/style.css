@@ -777,3 +777,8 @@ kbd {
 body.lite *, body.lite *::before, body.lite *::after { animation-iteration-count: 1 !important; }
 body.lite .sky { display: none; }
 .icon-btn.on { background: rgba(109,255,138,.2); border-color: var(--green); }
+
+/* 音量つまみ */
+.vol { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--panel-bd); background: rgba(255,255,255,.08); border-radius: 12px; padding: 5px 12px; font-weight: 700; font-size: 14px; }
+.vol input { width: 110px; accent-color: var(--gold); cursor: pointer; }
+.vol span { font-family: var(--pixel); font-size: 13px; min-width: 38px; text-align: right; }

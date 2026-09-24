@@ -22,22 +22,22 @@ const SV_ENEMY_HP_BOOST = 1.0; // 敵1体のかたさの調整用 (1 = そのま
 // 難易度: 敵の HP・攻撃・出現数・ボスの HP・もらえる経験値の倍率
 const SV_DIFFS = {
   easy: {
-    name: 'かんたん', color: '#6dff8a', rec: 'Lv.1〜', hp: 0.75, dmg: 0.5, spawn: 0.85, bossHp: 0.45, exp: 0.7, boss: 'dragon',
+    name: 'かんたん', color: '#6dff8a', rec: 'Lv.1〜', hp: 0.8, dmg: 0.6, spawn: 0.85, bossHp: 0.45, exp: 0.7, boss: 'dragon',
     desc: 'そうげんの 敵だけ。はじめての人に',
     tiers: [['bat', 'mush'], ['bat', 'mush', 'ghost'], ['mush', 'ghost', 'goblin'], ['ghost', 'goblin', 'golem']],
   },
   normal: {
-    name: 'ふつう', color: '#4fb3ff', rec: 'Lv.10〜', hp: 1.4, dmg: 1.15, spawn: 1.1, bossHp: 1.4, exp: 1, boss: 'kraken',
+    name: 'ふつう', color: '#4fb3ff', rec: 'Lv.10〜', hp: 1.5, dmg: 1.35, spawn: 1.1, bossHp: 1.4, exp: 1, boss: 'kraken',
     desc: 'うみの 敵も まざる。ボスは クラーケン',
     tiers: [['bat', 'mush'], ['bat', 'ghost', 'crab'], ['ghost', 'goblin', 'jelly', 'crab'], ['goblin', 'golem', 'shark', 'jelly']],
   },
   hard: {
-    name: 'むずかしい', color: '#ffd23f', rec: 'Lv.25〜', hp: 2.3, dmg: 1.75, spawn: 1.3, bossHp: 2.4, exp: 1.6, boss: 'yeti',
+    name: 'むずかしい', color: '#ffd23f', rec: 'Lv.25〜', hp: 2.5, dmg: 1.85, spawn: 1.3, bossHp: 2.4, exp: 1.6, boss: 'yeti',
     desc: 'うみ と ゆきやまの 強い敵。ボスは イエティ',
     tiers: [['crab', 'jelly'], ['jelly', 'shark', 'penguin'], ['penguin', 'snowman', 'wolf'], ['wolf', 'golem', 'snowman', 'shark']],
   },
   oni: {
-    name: 'おに', color: '#ff5d5d', rec: 'Lv.40〜', hp: 3.0, dmg: 1.8, spawn: 1.4, bossHp: 3.6, exp: 2.4, boss: 'demon',
+    name: 'おに', color: '#ff5d5d', rec: 'Lv.40〜', hp: 3.3, dmg: 2.0, spawn: 1.4, bossHp: 3.6, exp: 2.4, boss: 'demon',
     desc: 'マグマのしろの 敵が だいしゅうごう。ボスは まおう',
     tiers: [['crab', 'jelly', 'penguin'], ['penguin', 'wolf', 'snowman'], ['wolf', 'imp', 'salamander'], ['imp', 'salamander', 'mgolem']],
   },
@@ -140,7 +140,7 @@ Screens.survival = {
   reset() {
     const st = this.ch.stats;
     const base = this.ch.def.base;
-    const max = st.hp * 3 + 60;
+    const max = Math.round(st.hp * 2.5 + 40);
     let speed = 175 * (0.85 + base.spd / 300);
     // とくせいは 進化すると強くなる
     if (this.ch.id === 'piriri') speed *= [1.15, 1.2, 1.25][this.ch.stage];
@@ -344,7 +344,7 @@ Screens.survival = {
     if (p.inv > 0) p.inv -= dt;
     if (this.ch.id === 'purun') {
       p.regenT += dt;
-      if (p.regenT >= [2, 1.6, 1.2][this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
+      if (p.regenT >= [3.5, 3, 2.5][this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
     }
 
     // イベント
@@ -628,7 +628,7 @@ Screens.survival = {
       this.pickups.push({ kind: 'chest', x: this.p.x + Math.cos(a) * d, y: this.p.y + Math.sin(a) * d, t: 0 });
     } else if (Math.random() < (b.chest || 0.004)) {
       this.pickups.push({ kind: 'chest', x: e.x + 10, y: e.y, t: 0 });
-    } else if (Math.random() < 0.03) {
+    } else if (Math.random() < 0.012) {
       this.pickups.push({ kind: 'heart', x: e.x, y: e.y, t: 0 });
     }
     if (this.kills % 5 === 0) SFX.tone(500, 0.06, { type: 'triangle', vol: 0.03 });
@@ -838,7 +838,7 @@ Screens.survival = {
         it.got = true;
         if (it.kind === 'gem') { this.gems += it.val; SFX.tone(1300 + Math.random() * 300, 0.04, { type: 'sine', vol: 0.03 }); }
         if (it.kind === 'heart') {
-          const h = Math.round(p.max * 0.25);
+          const h = Math.round(p.max * 0.12);
           p.hp = Math.min(p.max, p.hp + h);
           this.texts.push({ x: p.x, y: p.y - 44, text: '+' + h, life: 0.8, max: 0.8, color: '#6dff8a', size: 24 });
           this.fx.push({ kind: 'ring', x: p.x, y: p.y, r0: 10, r1: 80, life: 0.4, max: 0.4, color: '#6dff8a', width: 6 });
@@ -890,7 +890,7 @@ Screens.survival = {
     this.held.clear();
     SFX.levelup();
     const cards = this.choices.map((id, i) => {
-      if (id === 'heal') return `<button class="sv-choice" data-i="${i}"><span class="mc-key">${i + 1}</span><div class="svc-icon">❤️</div><div class="svc-name">ぜんかいふく</div><div class="svc-desc">武器はぜんぶ MAX！ HP を全回復</div></button>`;
+      if (id === 'heal') return `<button class="sv-choice" data-i="${i}"><span class="mc-key">${i + 1}</span><div class="svc-icon">❤️</div><div class="svc-name">かいふく</div><div class="svc-desc">武器はぜんぶ MAX！ HP を 40% 回復</div></button>`;
       const w = SV_WEAPONS[id];
       const cur = this.weapons[id];
       const tag = cur ? `Lv.${cur.lv} → <b>Lv.${cur.lv + 1}</b>` : '<b class="new">NEW!</b>';
@@ -905,7 +905,7 @@ Screens.survival = {
   choose(i) {
     const id = this.choices[i];
     if (!id) return;
-    if (id === 'heal') this.p.hp = this.p.max;
+    if (id === 'heal') this.p.hp = Math.min(this.p.max, this.p.hp + this.p.max * 0.4);
     else if (this.weapons[id]) this.weapons[id].lv++;
     else this.weapons[id] = { lv: 1, t: 0.3 };
     this.overlay('');
