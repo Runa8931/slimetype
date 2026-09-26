@@ -4,7 +4,7 @@
 //  このゲーム向けに簡略化したもの
 // ============================================================
 
-const MAX_LV = 99;
+const MAX_LV = 120; // うらの せかい (Lv101〜120) に あわせて 99 から 上げた
 const BATTLE_HP_SCALE = 3;       // バトルを長めに楽しめるよう HP を 3 倍にする
 const ENEMY_HP_SCALE = 3.6;      // 敵はさらに少し多め
 
@@ -27,6 +27,15 @@ function calcStats(base, L) {
 function calcDamage(L, power, atk, def) {
   return ((2 * L / 5 + 2) * power * atk / def) / 50 + 2;
 }
+
+// バトルの 難易度。k: 敵の 攻撃力 ×k、HP ×k^0.7、攻撃の 間かく ÷k^0.25
+// (それぞれ「向いている 打鍵数」で 遊ぶと、敵と 同じ レベルで ふつうの 敵に 約 8 わり・のこり HP 約 35%、ボスに 約 55% 勝てる)
+const BATTLE_DIFFS = {
+  beg: { name: '初心者', k: 1, reward: 1, kpm: 220, color: '#69db7c' },
+  mid: { name: '中級者', k: 1.25, reward: 1.3, kpm: 300, color: '#ffd43b' },
+  adv: { name: '上級者', k: 1.55, reward: 1.7, kpm: 400, color: '#ff6b6b' },
+};
+const BATTLE_DIFF_KEYS = Object.keys(BATTLE_DIFFS);
 
 // レベル差による経験値の倍率 (ポケモン第 5 世代の式を もっと きびしくしたもの)
 //   ((2×敵Lv + 10) / (敵Lv + 自分Lv + 10)) ^ 6
@@ -102,23 +111,23 @@ const CHARACTERS = {
     forms: [
       {
         trait: { name: 'でんこうせっか', desc: 'お題を速く打ち切るほど会心率アップ (最大 55%・会心 1.5 倍)', critMax: 0.55, critMult: 1.5, dodge: 0, shockImmune: false },
-        skill: { name: 'サンダーボルト', desc: '威力 300 のかみなりを落とす', power: 300, resetGauge: false, charge: 1 },
+        skill: { name: 'サンダーボルト', desc: '威力 230 のかみなりを落とす', power: 230, resetGauge: false, charge: 1 },
       },
       {
         trait: { name: 'でんこうせっか+', desc: '会心率 最大 62%・会心 1.6 倍。10% の確率で攻撃をよける', critMax: 0.62, critMult: 1.6, dodge: 0.1, shockImmune: false },
-        skill: { name: 'ギガボルト', desc: '威力 420 の大いなずま。ゲージ +5%', power: 420, resetGauge: false, charge: 1.05 },
+        skill: { name: 'ギガボルト', desc: '威力 300 の大いなずま。ゲージ +5%', power: 300, resetGauge: false, charge: 1.05 },
       },
       {
         trait: { name: 'ライジン', desc: '会心率 最大 68%・会心 1.7 倍。20% でよける。しびれが きかない', critMax: 0.68, critMult: 1.7, dodge: 0.2, shockImmune: true },
-        skill: { name: 'ライジンサンダー', desc: '威力 540。敵の攻撃ゲージを 0 にもどす。ゲージ +10%', power: 540, resetGauge: true, charge: 1.1 },
+        skill: { name: 'ライジンサンダー', desc: '威力 370。敵の攻撃ゲージを 0 にもどす。ゲージ +10%', power: 370, resetGauge: true, charge: 1.1 },
       },
       {
         trait: { name: 'らいめいのはやさ', desc: '会心率 最大 72%・会心 1.8 倍。25% でよける。しびれが きかない', critMax: 0.72, critMult: 1.8, dodge: 0.25, shockImmune: true },
-        skill: { name: 'ボルテックス', desc: '威力 640。攻撃ゲージを 0 に。ゲージ +15%', power: 640, resetGauge: true, charge: 1.15 },
+        skill: { name: 'ボルテックス', desc: '威力 440。攻撃ゲージを 0 に。ゲージ +15%', power: 440, resetGauge: true, charge: 1.15 },
       },
       {
         trait: { name: 'かみなりのかみ', desc: '会心率 最大 76%・会心 1.9 倍。30% でよける。しびれが きかない', critMax: 0.76, critMult: 1.9, dodge: 0.3, shockImmune: true },
-        skill: { name: 'ゼウスのいかずち', desc: '威力 760。攻撃ゲージを 0 に。ゲージ +20%', power: 760, resetGauge: true, charge: 1.2 },
+        skill: { name: 'ゼウスのいかずち', desc: '威力 510。攻撃ゲージを 0 に。ゲージ +20%', power: 510, resetGauge: true, charge: 1.2 },
       },
     ],
   },
@@ -414,9 +423,9 @@ const ENEMY_POWER = {
   skybird: 102, cloud: 109, wbat: 95, skygolem: 123, wyvern: 126, skydragon: 89,
   alien: 126, ufo: 96, meteor: 160, star: 96, galaxyrobo: 146, alienking: 81,
   imp: 102, hellhound: 104, mgolem: 156, darkknight: 144, salamander: 130, demon: 105,
-  // うらの せかい (自分 Lv99・220 打鍵で ふつう 7〜8 わり、ボス 4.5〜6 わり)
-  v_bat: 81, v_mush: 106, v_goblin: 89, v_jelly: 89, v_golem: 94, v_dragon: 45,
-  v_penguin: 108, v_yukionna: 91, v_raijin: 73, v_wyvern: 79, v_galaxyrobo: 86, v_demon: 21,
+  // うらの せかい (敵と 同じ レベル・220 打鍵で ふつう 7〜8 わり、ボス 4.5〜6 わり)
+  v_bat: 86, v_mush: 121, v_goblin: 96, v_jelly: 107, v_golem: 119, v_dragon: 74,
+  v_penguin: 137, v_yukionna: 124, v_raijin: 92, v_wyvern: 113, v_galaxyrobo: 145, v_demon: 49,
 };
 
 // E(id, 名前, 体つき, 攻撃間隔ms, 特殊能力, 能力の説明, 敵の説明, その他)

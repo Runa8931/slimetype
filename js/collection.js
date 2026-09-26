@@ -89,6 +89,10 @@ const ACHIEVEMENTS = [
   { id: 'all_clear', name: 'でんせつの ゆうしゃ', desc: 'まおうを たおす', check: () => Save.data.cleared > ENEMIES.findIndex(e => e.final) },
   { id: 'world12', name: 'かげを こえし もの', desc: 'ワールド 12「かげのもり」の ボスを たおす', check: () => Save.data.cleared > worldStages(11).slice(-1)[0] },
   { id: 'world13', name: 'ほしのはての ゆうしゃ', desc: 'しんまおうを たおして ぜんぶ クリア', check: () => Save.data.cleared >= ENEMIES.length },
+  { id: 'mid_boss', name: 'ちゅうきゅうの あかし', desc: '中級者で ワールドの ボスを たおす', check: r => r && r.mode === 'battle' && r.won && r.bdiff !== 'beg' && r.bdiff && ENEMIES[r.enemyIdx].boss },
+  { id: 'adv_win', name: 'じょうきゅうへの いっぽ', desc: '上級者で バトルに 勝つ', check: r => r && r.mode === 'battle' && r.won && r.bdiff === 'adv' },
+  { id: 'adv_demon', name: 'しんの ゆうしゃ', desc: '上級者で まおうを たおす', check: r => r && r.mode === 'battle' && r.won && r.bdiff === 'adv' && ENEMIES[r.enemyIdx].final },
+  { id: 'adv_last', name: 'でんせつを こえし もの', desc: '上級者で しんまおうを たおす', check: r => r && r.mode === 'battle' && r.won && r.bdiff === 'adv' && ENEMIES[r.enemyIdx].last },
   { id: 'wins50', name: 'ベテラン', desc: 'バトルに 合計 50 回 勝つ', check: () => Save.data.totals.wins >= 50 },
   { id: 'wins200', name: 'バトルマスター', desc: 'バトルに 合計 200 回 勝つ', check: () => Save.data.totals.wins >= 200 },
   // サバイバル
@@ -101,6 +105,7 @@ const ACHIEVEMENTS = [
   { id: 'lv20', name: 'しんかの はじまり', desc: 'だれかを Lv20 にする', check: () => maxCharLv() >= 20 },
   { id: 'lv60', name: 'つばさを えた もの', desc: 'だれかを Lv60 にする', check: () => maxCharLv() >= 60 },
   { id: 'lv99', name: 'レベルマスター', desc: 'だれかを Lv99 にする', check: () => maxCharLv() >= 99 },
+  { id: 'lv120', name: 'でんせつの スライム', desc: 'だれかを Lv120 にする', check: () => maxCharLv() >= 120 },
   { id: 'team20', name: 'なかま思い', desc: 'さいしょの 6 たい 全員を Lv20 以上に する', check: () => STARTERS.every(id => charInfo(id).L >= 20) },
   // ずかん・そのほか
   { id: 'dex_half', name: 'ずかん はかせ見習い', desc: 'ずかんに 33 しゅるい とうろく', check: () => dexCount() >= 33 },

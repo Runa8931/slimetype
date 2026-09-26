@@ -44,6 +44,16 @@ const Save = {
   },
 };
 
+// いま えらんでいる バトルの 難易度
+function battleDiffKey() { const k = Save.data.settings.bdiff; return BATTLE_DIFFS[k] ? k : 'beg'; }
+function setBattleDiff(k) { if (BATTLE_DIFFS[k]) { Save.data.settings.bdiff = k; Save.save(); SFX.select(); } }
+// ステージごとに クリアした いちばん 上の 難易度 (0 = まだ / 1 = 初心者 / 2 = 中級者 / 3 = 上級者)
+function stageBest(i) { return (Save.data.bbest || {})[i] || 0; }
+function diffBadges(i) {
+  const b = stageBest(i);
+  return BATTLE_DIFF_KEYS.map((k, j) => `<span class="dmark ${b > j ? 'on' : ''}" style="--dc:${BATTLE_DIFFS[k].color}" title="${BATTLE_DIFFS[k].name}">${BATTLE_DIFFS[k].name[0]}</span>`).join('');
+}
+
 // ガチャ限定キャラは ガチャで 出るまで つかえない
 function hasChar(id) { return !CHARACTERS[id].gacha || !!(Save.data.gacha && Save.data.gacha.chars[id]); }
 // せんざいかくせいの ★ の数 (0〜4)

@@ -23,12 +23,15 @@ Screens.battle = {
     this.bid++;
     this.idx = idx;
     this.ed = ENEMIES[idx];
+    this.dk = battleDiffKey();
+    this.bd = BATTLE_DIFFS[this.dk];
     const ch = charInfo(Save.data.active);
     this.ch = ch;
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
     this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
-    this.e = { hp: Math.round(es.hp * ENEMY_HP_SCALE), max: Math.round(es.hp * ENEMY_HP_SCALE), stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0 };
+    const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.bd.k, 0.7)); // 難易度で HP が ふえる
+    this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
     this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0;
@@ -72,7 +75,23 @@ Screens.battle = {
       <div class="vs-row"><div class="sprite">${slimeSVG(ch.id, ch.stage)}</div><div class="vs-text">VS</div><div class="sprite enemy-mini">${enemySVG(this.ed.id)}</div></div>
       <div class="ov-title">${this.ed.name} があらわれた！</div>
       <div class="ov-sub">${this.ed.abilityDesc}</div>
+      <div class="ov-diff" id="b-diff"></div>
       <div class="ov-key"><kbd>Space</kbd> でバトル開始</div></div>`);
+    this.renderDiff();
+  },
+
+  // バトル前に 難易度を えらぶ (1 / 2 / 3)
+  renderDiff() {
+    const box = $('#b-diff');
+    if (!box) return;
+    box.innerHTML = `<span>難易度</span>${BATTLE_DIFF_KEYS.map((k, i) => `<button class="${k === this.dk ? 'on' : ''}" data-k="${k}" style="--dc:${BATTLE_DIFFS[k].color}"><kbd>${i + 1}</kbd> ${BATTLE_DIFFS[k].name}</button>`).join('')}
+      <small>${this.bd.k > 1 ? `敵の 攻撃 ×${this.bd.k}・HP ×${Math.pow(this.bd.k, 0.7).toFixed(2)}・経験値と コイン ×${this.bd.reward}` : 'ふつうの 強さ'} (1 分 ${this.bd.kpm} 打鍵くらい 向け)</small>`;
+    box.querySelectorAll('button').forEach(b => { b.onclick = () => this.pickDiff(b.dataset.k); });
+  },
+  pickDiff(k) {
+    if (this.state !== 'ready' || k === this.dk) return;
+    setBattleDiff(k);
+    this.enter(this.idx); // 敵の HP を 作りなおす
   },
 
   leave() { this.state = 'off'; this.bid++; cancelAnimationFrame(this.raf); },
@@ -112,7 +131,7 @@ Screens.battle = {
   },
 
   interval() {
-    let iv = this.ed.interval;
+    let iv = this.ed.interval / Math.pow(this.bd.k, 0.25); // 難易度で 攻撃が 速くなる
     if (this.e.angry) iv *= this.has('dragon') ? 0.72 : 0.7;
     return iv;
   },
@@ -353,6 +372,8 @@ Screens.battle = {
 
   onKey(e) {
     if (this.state === 'ready') {
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= BATTLE_DIFF_KEYS.length) { this.pickDiff(BATTLE_DIFF_KEYS[n - 1]); return; }
       if (e.key === ' ') this.countdown();
       if (e.key === 'Escape') App.show('stages');
       return;
@@ -686,7 +707,7 @@ Screens.battle = {
     const breath = this.has('dragon') && this.e.angry && this.e.attacks % 3 === 0;
     const charged = this.has('charge') && this.e.attacks % 3 === 0;
     this.chargeWarned = false;
-    let dmg = calcDamage(ed.lv, ed.power, this.e.stats.atk, this.ch.stats.def) * (0.85 + Math.random() * 0.15);
+    let dmg = calcDamage(ed.lv, ed.power, this.e.stats.atk, this.ch.stats.def) * this.bd.k * (0.85 + Math.random() * 0.15);
     if (breath) dmg *= 1.5;
     if (charged) dmg *= 1.8;
     if (this.ch.id === 'gotsun') dmg *= 1 - this.ch.trait.cut;
@@ -884,8 +905,13 @@ Screens.battle = {
     const secs = Math.max(1, this.elapsed / 1000);
     // 格下をたおしたときは 経験値がへる (レベル差の補正)
     const gap = levelGapMult(this.ed.lv, this.ch.L);
-    const typing = Math.round(typingExp(this.correct, this.miss, secs, 1, this.ch.L) * 0.5 * gap);
-    const bonus = won ? Math.floor(this.ed.exp * this.ed.lv / 5 * gap) : 0;
+    const rw = this.bd.reward; // 難易度が 高いほど 経験値と コインが ふえる
+    const typing = Math.round(typingExp(this.correct, this.miss, secs, 1, this.ch.L) * 0.5 * gap * rw);
+    const bonus = won ? Math.floor(this.ed.exp * this.ed.lv / 5 * gap * rw) : 0;
+    if (won) {
+      Save.data.bbest = Save.data.bbest || {};
+      Save.data.bbest[this.idx] = Math.max(stageBest(this.idx), BATTLE_DIFF_KEYS.indexOf(this.dk) + 1);
+    }
     const firstClear = won && this.idx === Save.data.cleared;
     if (firstClear) Save.data.cleared = Math.min(ENEMIES.length, this.idx + 1);
     if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); } // ずかん: たおした
@@ -893,7 +919,7 @@ Screens.battle = {
     const expRes = grantExp(this.ch.id, typing + bonus);
     // コイン: 勝つと もらえる (格下では へる)。はじめて たおすと ボーナス
     const coinGap = Math.min(1.2, gap);
-    const winCoins = won ? Math.round((30 + this.idx * 2) * coinGap) : Math.round(this.correct / 15 * Math.min(1, gap));
+    const winCoins = Math.round((won ? (30 + this.idx * 2) * coinGap : this.correct / 15 * Math.min(1, gap)) * rw);
     const firstCoins = firstClear ? (this.ed.boss ? 200 : 50) : 0;
     const coins = grantCoins(winCoins + firstCoins);
     const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
@@ -903,8 +929,9 @@ Screens.battle = {
       correct: this.correct, miss: this.miss, acc,
       kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs),
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
-      coins, coinNote: `${won ? `勝利 ${winCoins}` : `打鍵 ${winCoins}`}${firstCoins ? ` + はじめて たおした ${firstCoins}` : ''}${gap < 1 ? '・格下なので へった' : ''}`,
+      bdiff: this.dk, coins, coinNote: `${won ? `勝利 ${winCoins}` : `打鍵 ${winCoins}`}${rw > 1 ? ` (${this.bd.name} ×${rw})` : ''}${firstCoins ? ` + はじめて たおした ${firstCoins}` : ''}${gap < 1 ? '・格下なので へった' : ''}`,
       expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (敵の基礎EXP ${this.ed.exp} × Lv.${this.ed.lv} ÷ 5)` : '勝利ボーナスなし',
+        ...(rw > 1 ? [`難易度 ${this.bd.name} ×${rw}`] : []),
         `レベル差の補正 ×${gap.toFixed(2)} (敵 Lv.${this.ed.lv} / 自分 Lv.${this.ch.L}${gap < 1 ? '・格下なので へった' : gap > 1 ? '・格上なので ふえた' : ''})`],
     });
   },

@@ -599,9 +599,9 @@ Screens.stages = {
       : gap < 0.8 ? `<div class="mi-low">格下の あいて: もらえる経験値 ×${gap.toFixed(2)}</div>` : '';
     info.innerHTML = `<div class="mi-sprite">${enemySVG(e.id)}</div>
       <div class="mi-body">
-        <div class="mi-name">${e.name} <small>Lv.${e.lv}</small> ${e.boss ? '<span class="badge boss">BOSS</span>' : ''} ${cleared ? '<span class="mi-clear">CLEAR</span>' : ''}</div>
+        <div class="mi-name">${e.name} <small>Lv.${e.lv}</small> ${e.boss ? '<span class="badge boss">BOSS</span>' : ''} ${cleared ? '<span class="mi-clear">CLEAR</span>' : ''} <span class="dmarks">${diffBadges(g)}</span></div>
         <div class="mi-desc">${e.abilityDesc}</div>${warn}
-        <div class="mi-go"><kbd>Space</kbd> で たたかう</div>
+        <div class="mi-go"><kbd>Space</kbd> で たたかう　難易度 <b style="color:${BATTLE_DIFFS[battleDiffKey()].color}">${BATTLE_DIFFS[battleDiffKey()].name}</b> <small>(<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> で かえる)</small></div>
       </div>`;
     replayAnim(info, 'pop-in', 300);
   },
@@ -766,6 +766,8 @@ Screens.stages = {
       return;
     }
     if (e.key === 'Escape') { App.show('home'); return; }
+    const dn = parseInt(e.key, 10);
+    if (dn >= 1 && dn <= BATTLE_DIFF_KEYS.length) { setBattleDiff(BATTLE_DIFF_KEYS[dn - 1]); this.updateInfo(); return; }
     if (KEY_DIR[k]) { this.held.add(k); e.preventDefault(); this.tryMove(KEY_DIR[k]); return; }
     if ((e.key === ' ' || e.key === 'Enter') && !this.moving && this.pos >= 0 && this.pos < this.stages().length) {
       this.startBattle(this.stages()[this.pos]);

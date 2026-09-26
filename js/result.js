@@ -32,6 +32,7 @@ Screens.result = {
       const e = ENEMIES[r.enemyIdx];
       head = `<div class="res-head ${r.won ? 'won' : 'lost'}">
         <div class="res-title">${r.won ? `${e.name} をたおした！` : `${ch.name} はたおれてしまった…`}</div>
+        ${r.bdiff ? `<div class="res-diff" style="color:${BATTLE_DIFFS[r.bdiff].color}">難易度: ${BATTLE_DIFFS[r.bdiff].name}</div>` : ''}
         <div class="res-enemy ${r.won ? '' : 'gray'}">${enemySVG(e.id)}</div>
         ${r.firstClear && r.enemyIdx + 1 < ENEMIES.length ? (ENEMIES[r.enemyIdx + 1].world !== e.world
           ? `<div class="unlock">ワールド ${e.world + 2}「${WORLDS[e.world + 1].name}」への ゲートが ひらいた！</div>`

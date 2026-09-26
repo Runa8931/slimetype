@@ -1183,3 +1183,15 @@ body.lite .sky { display: none; }
 /* へんい種: あしもとに あやしい 光 */
 .fighter.enemy.variant .sprite::before { content: ''; position: absolute; left: 10%; right: 10%; bottom: -4%; height: 22%; border-radius: 50%; background: radial-gradient(ellipse, var(--vc, #da77f2), transparent 70%); opacity: .7; animation: gc-breathe 1.8s ease-in-out infinite; }
 .fighter.enemy.v-void { --vc: #66d9e8; }
+
+/* ---- バトルの 難易度 (v4.5) ---- */
+.ov-diff { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
+.ov-diff > span { font-weight: 800; color: var(--sub); }
+.ov-diff button { border: 2px solid color-mix(in srgb, var(--dc) 50%, transparent); background: rgba(255,255,255,.06); border-radius: 12px; padding: 6px 14px; font-weight: 800; }
+.ov-diff button.on { border-color: var(--dc); background: color-mix(in srgb, var(--dc) 28%, transparent); color: #fff; box-shadow: 0 0 14px color-mix(in srgb, var(--dc) 50%, transparent); }
+.ov-diff small { flex-basis: 100%; text-align: center; color: var(--sub); }
+.dmarks { display: inline-flex; gap: 3px; vertical-align: middle; }
+.dmark { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; border: 1.5px solid rgba(255,255,255,.25); color: rgba(255,255,255,.3); }
+.dmark.on { background: var(--dc); border-color: var(--dc); color: #1a1a2e; }
+.mi-go small { color: var(--sub); }
+.mi-go small kbd { font-size: .75em; }

@@ -65,7 +65,7 @@ const SFX = {
   crit() { this.noise(0.18, { vol: 0.05, filter: 2400 }); this.tone(660, 0.16, { vol: 0.03, slide: 1320 }); },
   hurt() { this.noise(0.2, { vol: 0.14, filter: 700 }); this.tone(140, 0.2, { type: 'sawtooth', vol: 0.05, slide: 60 }); },
   heal() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.18, { type: 'sine', vol: 0.06, delay: i * 0.07 })); },
-  thunder() { this.noise(0.6, { vol: 0.25, filter: 4000 }); this.tone(90, 0.5, { type: 'sawtooth', vol: 0.06, slide: 40 }); },
+  thunder() { this.noise(0.5, { vol: 0.08, filter: 3000 }); this.tone(90, 0.4, { type: 'sawtooth', vol: 0.03, slide: 40 }); },
   guard() { this.tone(300, 0.1, { vol: 0.06 }); this.tone(600, 0.2, { type: 'triangle', vol: 0.06, delay: 0.05 }); },
   charge() { this.tone(400, 0.25, { type: 'sine', vol: 0.05, slide: 1200 }); },
   levelup() { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => this.tone(f, 0.16, { vol: 0.05, delay: i * 0.09 })); },
