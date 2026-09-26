@@ -145,13 +145,13 @@ Screens.survival = {
     const max = Math.round(st.hp * 2.5 + 40);
     let speed = 175 * (0.85 + base.spd / 300);
     // とくせいは 進化すると強くなる
-    if (this.ch.id === 'piriri') speed *= [1.15, 1.18, 1.21, 1.24, 1.27][this.ch.stage];
+    if (this.ch.id === 'piriri') speed *= SV_CHAR.piriri.speed[this.ch.stage];
     this.p = { x: 0, y: 0, hp: max, max, speed, face: 1, dir: { x: 1, y: 0 }, inv: 0, regenT: 0, moving: false, slowUntil: 0 };
     this.dmgMult = 1 + (st.atk - 5) / 60;
     // ほむら: 武器のダメージが上がる (進化で もっと上がる)
-    if (this.ch.id === 'homura') this.dmgMult *= [1.1, 1.14, 1.18, 1.22, 1.26][this.ch.stage];
+    if (this.ch.id === 'homura') this.dmgMult *= SV_CHAR.homura.dmg[this.ch.stage];
     // きらり: 武器を うつ間かくが みじかい
-    this.cdMult = this.ch.id === 'kirari' ? [0.9, 0.88, 0.86, 0.84, 0.82][this.ch.stage] : 1;
+    this.cdMult = this.ch.id === 'kirari' ? SV_CHAR.kirari.cd[this.ch.stage] : 1;
     this.weapons = { [SV_START_WEAPON[this.ch.id]]: { lv: 1, t: 0.5 } };
 
     this.enemies = []; this.shots = []; this.eshots = []; this.pickups = [];
@@ -352,7 +352,7 @@ Screens.survival = {
     if (p.inv > 0) p.inv -= dt;
     if (this.ch.id === 'purun' || this.ch.id === 'moririn') {
       p.regenT += dt;
-      const regenIv = this.ch.id === 'moririn' ? [2.6, 2.3, 2.0, 1.7, 1.4] : [3.5, 3.2, 2.9, 2.6, 2.3];
+      const regenIv = SV_CHAR[this.ch.id].regen;
       if (p.regenT >= regenIv[this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
     }
 
@@ -742,11 +742,11 @@ Screens.survival = {
   hitPlayer(dmg, slow = false) {
     const p = this.p;
     let d = dmg * 40 / (40 + this.ch.stats.def);
-    if (this.ch.id === 'gotsun') d *= [0.75, 0.72, 0.69, 0.66, 0.63][this.ch.stage];
+    if (this.ch.id === 'gotsun') d *= SV_CHAR.gotsun.hurt[this.ch.stage];
     d = Math.max(1, Math.round(d));
     p.hp -= d;
     // かげまる: 攻撃をうけたあと 長めに むてき
-    p.inv = this.ch.id === 'kagemaru' ? [1.0, 1.1, 1.2, 1.3, 1.4][this.ch.stage] : 0.8;
+    p.inv = this.ch.id === 'kagemaru' ? SV_CHAR.kagemaru.inv[this.ch.stage] : 0.8;
     if (slow) p.slowUntil = this.time + 1.2;
     this.texts.push({ x: p.x, y: p.y - 40, text: d, life: 0.7, max: 0.7, color: '#ff5d5d', size: 26 });
     this.burst(p.x, p.y, ['#ff5d5d', '#fff'], 12, 200, false);

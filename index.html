@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260926m">
+  <link rel="stylesheet" href="css/style.css?v=20260926n">
 </head>
 <body>
   <div class="sky"></div>
@@ -27,6 +27,7 @@
   <section class="screen" id="scr-select">
     <h2 class="screen-title">いっしょに冒険するスライムをえらぼう</h2>
     <p class="screen-desc">スライムごとにレベルは別々に記録されます。あとから何度でも変えられます。</p>
+    <details class="base-rules select-rules"><summary>ふつうの キャラの 基本 (くらべる ための 数字)</summary><ul id="base-rules"></ul></details>
     <div class="select-grid" id="select-grid"></div>
     <div class="bottom-bar"><button class="btn ghost" id="btn-select-back">もどる <kbd>Esc</kbd></button></div>
   </section>
@@ -256,6 +257,7 @@
         <button class="btn gc-btn" id="gc-one"><span class="mc-key">1</span>1 かい 引く<small>🪙 100</small></button>
         <button class="btn big gc-btn" id="gc-ten"><span class="mc-key">2</span>10 かい 引く<small>🪙 1000・SR以上 1つ かくてい</small></button>
       </div>
+      <button class="icon-btn gc-rates-btn" id="gc-rates-btn">📊 はいしゅつ かくりつを 見る <kbd>5</kbd></button>
       <div class="gc-last" id="gc-last"></div>
     </div>
     <div class="gc-panel panel" id="gc-panel"></div>
@@ -286,21 +288,22 @@
     <div class="result-wrap" id="result-wrap"></div>
   </section>
 
-  <script src="js/romaji.js?v=20260926m"></script>
-  <script src="js/data.js?v=20260926m"></script>
-  <script src="js/words.js?v=20260926m"></script>
-  <script src="js/sprites.js?v=20260926m"></script>
-  <script src="js/enemies2.js?v=20260926m"></script>
-  <script src="js/effects.js?v=20260926m"></script>
-  <script src="js/audio.js?v=20260926m"></script>
-  <script src="js/main.js?v=20260926m"></script>
-  <script src="js/practice.js?v=20260926m"></script>
-  <script src="js/map.js?v=20260926m"></script>
-  <script src="js/battle.js?v=20260926m"></script>
-  <script src="js/survival.js?v=20260926m"></script>
-  <script src="js/collection.js?v=20260926m"></script>
-  <script src="js/gacha.js?v=20260926m"></script>
-  <script src="js/result.js?v=20260926m"></script>
+  <script src="js/romaji.js?v=20260926n"></script>
+  <script src="js/data.js?v=20260926n"></script>
+  <script src="js/describe.js?v=20260926n"></script>
+  <script src="js/words.js?v=20260926n"></script>
+  <script src="js/sprites.js?v=20260926n"></script>
+  <script src="js/enemies2.js?v=20260926n"></script>
+  <script src="js/effects.js?v=20260926n"></script>
+  <script src="js/audio.js?v=20260926n"></script>
+  <script src="js/main.js?v=20260926n"></script>
+  <script src="js/practice.js?v=20260926n"></script>
+  <script src="js/map.js?v=20260926n"></script>
+  <script src="js/battle.js?v=20260926n"></script>
+  <script src="js/survival.js?v=20260926n"></script>
+  <script src="js/collection.js?v=20260926n"></script>
+  <script src="js/gacha.js?v=20260926n"></script>
+  <script src="js/result.js?v=20260926n"></script>
   <script>App.boot();</script>
 </body>
 </html>

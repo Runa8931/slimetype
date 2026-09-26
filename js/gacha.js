@@ -180,6 +180,19 @@ function pullGacha(times) {
   return res;
 }
 
+// 1 回 引いたときに その ものが 出る 確率
+function itemRate(it) {
+  if (it.kind === 'char') {
+    const gacha = !!CHARACTERS[it.char].gacha;
+    const n = CHAR_ITEMS.filter(c => !!CHARACTERS[c.char].gacha === gacha).length;
+    return (gacha ? GACHA_RATES.newChar : GACHA_RATES.starterChar) / n;
+  }
+  if (it.special) return 0;
+  const share = 1 - GACHA_RATES.newChar - GACHA_RATES.starterChar;
+  const r = ITEM_RATES.find(([k]) => k === it.rarity)[1];
+  return share * r / POOL_ITEMS.filter(x => x.rarity === it.rarity).length;
+}
+
 // 結果の カード 1 まい
 function resultCard(r, delay = 0) {
   const it = r.it;
@@ -246,6 +259,7 @@ Screens.gacha = {
     this.confirm = null;
     $('#gc-one').onclick = () => this.pull(1);
     $('#gc-ten').onclick = () => this.pull(10);
+    $('#gc-rates-btn').onclick = () => this.setTab('list');
     document.querySelectorAll('#gc-tabs button').forEach(b => { b.onclick = () => this.setTab(b.dataset.v); });
     $('#btn-gacha-back').onclick = () => App.show('home');
     this.render();
@@ -331,20 +345,34 @@ Screens.gacha = {
 
   // ラインナップ (ガチャずかん)
   listHtml() {
-    const rate = (k, p) => `<span class="gc-rate" style="--rc:${RARITY[k].color}">${k} ${(p * 100).toFixed(1)}%</span>`;
-    const itemShare = 1 - GACHA_RATES.newChar - GACHA_RATES.starterChar;
+    const f = p => `${+(p * 100).toFixed(2)}%`;
+    const kinds = ['char', 'color', 'hat', 'fx'];
+    const rars = ['SSR', 'SR', 'R', 'N'];
+    const all = [...CHAR_ITEMS, ...POOL_ITEMS];
+    // レア度 × しゅるいの 表
+    const sum = (rar, kind) => all.filter(it => (!rar || it.rarity === rar) && (!kind || it.kind === kind)).reduce((t, it) => t + itemRate(it), 0);
+    const table = `<table class="gc-rate-table">
+      <tr><th></th>${kinds.map(k => `<th>${KIND_NAME[k]}</th>`).join('')}<th>合計</th></tr>
+      ${rars.map(r => `<tr><th style="color:${RARITY[r].color}">${r}</th>${kinds.map(k => `<td>${sum(r, k) ? f(sum(r, k)) : '—'}</td>`).join('')}<td><b style="color:${RARITY[r].color}">${f(sum(r))}</b></td></tr>`).join('')}
+      <tr><th>合計</th>${kinds.map(k => `<td>${f(sum(null, k))}</td>`).join('')}<td><b>${f(sum())}</b></td></tr></table>`;
+    const g10 = all.filter(it => it.rarity === 'SSR' || it.rarity === 'SR').reduce((t, it) => t + itemRate(it), 0);
     const sec = (kind, list) => `<h4>${KIND_NAME[kind]}</h4><div class="gc-list">${list.map(it => {
       const own = it.kind === 'char' ? hasChar(it.char) : hasItem(it.id);
       return `<div class="gc-cell ${own ? 'own' : 'none'}" style="--rc:${RARITY[it.rarity].color}" title="${own ? it.name : '？？？'}">
         <span class="gc-rar-s">${it.rarity}</span>${own ? itemIcon(it) : '<div class="gc-q">？</div>'}<div class="gc-name">${own ? it.name : '？？？'}</div>
+        <div class="gc-pct">${f(itemRate(it))}</div>
         ${it.kind === 'char' && hasChar(it.char) && awakenOf(it.char) ? `<div class="gc-stars">${starText(awakenOf(it.char))}</div>` : ''}</div>`;
     }).join('')}</div>`;
     return `<div class="gc-rates">
-        <div>キャラ: ガチャ限定 ${(GACHA_RATES.newChar * 100).toFixed(0)}% ・ いつものキャラ ${(GACHA_RATES.starterChar * 100).toFixed(0)}%</div>
-        <div>アイテム: ${ITEM_RATES.map(([k, p]) => rate(k, p * itemShare)).join(' ')}</div>
-        <div class="gc-help">10 回 引くと SR 以上が 1 つ かくてい</div></div>
-      ${sec('char', CHAR_ITEMS)}${sec('color', POOL_ITEMS.filter(i => i.kind === 'color'))}${sec('hat', POOL_ITEMS.filter(i => i.kind === 'hat'))}${sec('fx', POOL_ITEMS.filter(i => i.kind === 'fx'))}`;
+        <h4>はいしゅつ かくりつ (1 回 あたり)</h4>
+        ${table}
+        <div class="gc-help">10 回 引いて 9 回目までに SR 以上が 出なかったときは、10 回目は SR・SSR だけから 出る
+          (SSR ${f(sum('SSR') / g10)}・SR ${f(sum('SR') / g10)}。1 つ ずつの 確率は 上の ${+(1 / g10).toFixed(2)} 倍)</div>
+        <div class="gc-help">同じ レア度・同じ わく の 中は どれも 同じ 確率。キャラ枠: ガチャ限定 ${pct(GACHA_RATES.newChar)}・いつものキャラ ${pct(GACHA_RATES.starterChar)}。
+          のこり ${pct(1 - GACHA_RATES.newChar - GACHA_RATES.starterChar)} が アイテム (その中で ${ITEM_RATES.map(([k, p]) => `${k} ${pct(p)}`).join('・')})</div></div>
+      ${kinds.map(k => sec(k, k === 'char' ? CHAR_ITEMS : POOL_ITEMS.filter(i => i.kind === k))).join('')}`;
   },
+
 
   async pull(times) {
     if (this.busy) return;

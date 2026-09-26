@@ -373,6 +373,17 @@ const AWAKEN_BONUS = {
   kirari: { desc: 'リズムの上限 +3%', apply: (t, n) => ({ ...t, streakMax: t.streakMax + 0.03 * n }) },
 };
 
+// サバイバルでの とくせい (進化の 段階ごと)。説明文も ここから 作る
+const SV_CHAR = {
+  purun: { regen: [3.5, 3.2, 2.9, 2.6, 2.3] },    // 何秒ごとに HP 1 回復
+  moririn: { regen: [2.6, 2.3, 2.0, 1.7, 1.4] },
+  piriri: { speed: [1.15, 1.18, 1.21, 1.24, 1.27] }, // 足の速さ
+  homura: { dmg: [1.1, 1.14, 1.18, 1.22, 1.26] },    // 武器の ダメージ
+  gotsun: { hurt: [0.75, 0.72, 0.69, 0.66, 0.63] },  // うける ダメージの 倍率
+  kagemaru: { inv: [1.0, 1.1, 1.2, 1.3, 1.4] },      // うけたあとの むてき時間 (ふつうは 0.8 秒)
+  kirari: { cd: [0.9, 0.88, 0.86, 0.84, 0.82] },     // 武器を うつ 間かく
+};
+
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく
 for (const c of Object.values(CHARACTERS)) { c.trait = c.forms[0].trait; c.skill = c.forms[0].skill; }
 

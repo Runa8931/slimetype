@@ -165,8 +165,8 @@ Screens.result = {
     cutin(`${ex.after.name} に進化！`, `${ex.before.name} のようすが…？`, ex.after.def.colors.main, slimeSVG(ex.after.id, ex.after.stage));
     // とくせい・ひっさつの パワーアップを知らせる
     $('#re-up').insertAdjacentHTML('beforeend', `<div class="evo-up">
-      <div><b>とくせい</b> ${ex.before.trait.name} → <em>${ex.after.trait.name}</em><small>${ex.after.trait.desc}</small></div>
-      <div><b>ひっさつ</b> ${ex.before.skill.name} → <em>${ex.after.skill.name}</em><small>${ex.after.skill.desc}</small></div></div>`);
+      <div><b>とくせい</b> ${ex.before.trait.name} → <em>${ex.after.trait.name}</em><small>${traitLines(ex.after.id, ex.after.trait).join(' / ')}</small></div>
+      <div><b>ひっさつ</b> ${ex.before.skill.name} → <em>${ex.after.skill.name}</em><small>${skillLines(ex.after.id, ex.after.skill, ex.after.def).join(' / ')}</small></div></div>`);
   },
 
   again() {

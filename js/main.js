@@ -240,6 +240,7 @@ function statBars(stats, max) {
 Screens.select = {
   enter() {
     const ids = Object.keys(CHARACTERS);
+    $('#base-rules').innerHTML = BASE_RULES.map(x => `<li>${x}</li>`).join('');
     $('#select-grid').innerHTML = ids.map((id, i) => {
       const c = charInfo(id);
       const d = c.def;
@@ -260,8 +261,7 @@ Screens.select = {
         <div class="badges"><span class="badge type-${id}">${d.type}</span><span class="badge">${d.role}</span></div>
         <p class="cc-desc">${d.desc}</p>
         <div class="stats">${statBars(d.base, 100)}</div>
-        <div class="ability"><b>とくせい「${c.trait.name}」</b><span>${c.trait.desc}</span></div>
-        <div class="ability"><b>ひっさつ「${c.skill.name}」</b><span>${c.skill.desc}</span></div>
+        ${abilityHtml(c)}
         <div class="evo-note">Lv.20・40・60・80 で進化すると とくせい・ひっさつも パワーアップ</div>
       </button>`;
     }).join('');
@@ -357,11 +357,14 @@ Screens.home = {
         </div>
       </div>
       <div class="stats">${statBars(c.stats, Math.max(60, c.stats.hp))}</div>
-      <div class="ability"><b>とくせい「${c.trait.name}」</b><span>${c.trait.desc}</span></div>
-      <div class="ability"><b>ひっさつ「${c.skill.name}」</b><span>${c.skill.desc}</span></div>
-      ${c.stage < EVO_LEVELS.length ? `<div class="next-evo"><b>Lv.${EVO_LEVELS[c.stage]} で「${d.names[c.stage + 1]}」に進化すると…</b>
-        <span>とくせい「${d.forms[c.stage + 1].trait.name}」: ${d.forms[c.stage + 1].trait.desc}</span>
-        <span>ひっさつ「${d.forms[c.stage + 1].skill.name}」: ${d.forms[c.stage + 1].skill.desc}</span></div>` : ''}`;
+      ${abilityHtml(c)}
+      ${c.stage < EVO_LEVELS.length ? (() => {
+        // 進化したときの すがた (かくせいの ぶんも ふくめる)
+        const nt = d.forms[c.stage + 1].trait;
+        const next = { ...c, stage: c.stage + 1, trait: c.awaken ? AWAKEN_BONUS[c.id].apply(nt, c.awaken) : nt, skill: d.forms[c.stage + 1].skill };
+        return `<div class="next-evo"><b>Lv.${EVO_LEVELS[c.stage]} で「${d.names[c.stage + 1]}」に進化すると…</b>${abilityHtml(next)}</div>`;
+      })() : ''}
+      <details class="base-rules"><summary>ふつうの キャラの 基本 (くらべる ための 数字)</summary><ul>${BASE_RULES.map(x => `<li>${x}</li>`).join('')}</ul></details>`;
 
     $('#dex-count').textContent = `${dexCount()}/${ENEMIES.length}`;
     $('#ach-count').textContent = `${achCount()}/${ACHIEVEMENTS.length}`;
