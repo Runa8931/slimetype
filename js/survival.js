@@ -89,8 +89,11 @@ const SV_WEAPONS = {
   laser: { name: 'レーザー', icon: '🔆', color: '#ff5dd6', desc: '進む方向に 太いビームを 発射する' },
   meteor: { name: 'メテオ', icon: '☄️', color: '#ff6a00', desc: '空から いんせきを落として 大ばくはつ' },
   tornado: { name: 'たつまき', icon: '🌪️', color: '#96f2d7', desc: '敵を まきこむ たつまきを 生みだす' },
+  icicle: { name: 'つららのあめ', icon: '🧊', color: '#74c0fc', desc: '近くの敵に つららを 落として おそくする' },
+  wind: { name: 'かまいたち', icon: '🍃', color: '#63e6be', desc: '風の刃を まわり ぜんぶに とばす (つらぬく)' },
+  drill: { name: 'ドリル', icon: '🔩', color: '#adb5bd', desc: '近くの敵へ ドリルを うちだす。どこまでも つらぬく' },
 };
-const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser' };
+const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill' };
 
 function svWeaponStat(id, lv) {
   const i = lv - 1;
@@ -104,6 +107,9 @@ function svWeaponStat(id, lv) {
     case 'ice': return { cd: 2.3 - 0.15 * i, count: [8, 10, 12, 14, 16][i], dmg: 10 + 3 * i, slow: 1.4 + 0.2 * i };
     case 'laser': return { cd: 2.8 - 0.25 * i, dmg: 34 + 9 * i, width: 26 + 5 * i, len: 720 };
     case 'meteor': return { cd: 3.2 - 0.3 * i, count: [1, 1, 2, 2, 3][i], dmg: 60 + 16 * i, radius: 95 + 8 * i };
+    case 'icicle': return { cd: 1.6 - 0.12 * i, count: [2, 3, 3, 4, 5][i], dmg: 18 + 5 * i, area: 42 + 4 * i, slow: 1.2 + 0.2 * i };
+    case 'wind': return { cd: 1.3 - 0.08 * i, count: [3, 4, 5, 6, 8][i], dmg: 11 + 3 * i, pierce: 3 };
+    case 'drill': return { cd: 2.0 - 0.15 * i, count: [1, 1, 2, 2, 3][i], dmg: 30 + 8 * i };
     case 'tornado': return { cd: 3.4 - 0.25 * i, count: [1, 1, 2, 2, 3][i], dmg: 7 + 2 * i, radius: 52 + 5 * i, life: 3 + 0.3 * i };
   }
   return {};
@@ -142,7 +148,8 @@ Screens.survival = {
   reset() {
     const st = this.ch.stats;
     const base = this.ch.def.base;
-    const max = Math.round(st.hp * 2.5 + 40);
+    // メタルン: 最大HP アップ
+    const max = Math.round((st.hp * 2.5 + 40) * (this.ch.id === 'metarun' ? SV_CHAR.metarun.hp[this.ch.stage] : 1));
     let speed = 175 * (0.85 + base.spd / 300);
     // とくせいは 進化すると強くなる
     if (this.ch.id === 'piriri') speed *= SV_CHAR.piriri.speed[this.ch.stage];
@@ -152,6 +159,9 @@ Screens.survival = {
     if (this.ch.id === 'homura') this.dmgMult *= SV_CHAR.homura.dmg[this.ch.stage];
     // きらり: 武器を うつ間かくが みじかい
     this.cdMult = this.ch.id === 'kirari' ? SV_CHAR.kirari.cd[this.ch.stage] : 1;
+    // こおりん: 敵が おそい / ふわり: ジェムを 遠くから すいよせる
+    this.eslow = this.ch.id === 'koorin' ? SV_CHAR.koorin.eslow[this.ch.stage] : 1;
+    this.magnetK = this.ch.id === 'fuwari' ? SV_CHAR.fuwari.magnet[this.ch.stage] : 1;
     this.weapons = { [SV_START_WEAPON[this.ch.id]]: { lv: 1, t: 0.5 } };
 
     this.enemies = []; this.shots = []; this.eshots = []; this.pickups = [];
@@ -575,6 +585,36 @@ Screens.survival = {
       }
       return true;
     }
+    if (id === 'icicle') {
+      if (!this.randomNear(460)) return false;
+      for (let i = 0; i < s.count; i++) {
+        const e = this.randomNear(460);
+        if (!e) break;
+        this.fx.push({ kind: 'icicle', x: e.x + (Math.random() - 0.5) * 20, y: e.y, r: s.area, dmg: s.dmg, slow: s.slow, life: 0.3 + i * 0.08, max: 0.3 + i * 0.08 });
+      }
+      SFX.tone(2400, 0.1, { type: 'sine', vol: 0.03, slide: 1200 });
+      return true;
+    }
+    if (id === 'wind') {
+      this.windAng = (this.windAng || 0) + 0.4;
+      for (let i = 0; i < s.count; i++) {
+        const a = this.windAng + (i / s.count) * Math.PI * 2;
+        this.shots.push({ kind: 'wind', x: p.x, y: p.y, vx: Math.cos(a) * 480, vy: Math.sin(a) * 480, r: 16, dmg: s.dmg, pierce: s.pierce, life: 0.75, hit: new Set(), ang: a });
+      }
+      SFX.noise(0.12, { vol: 0.04, filter: 2200 });
+      return true;
+    }
+    if (id === 'drill') {
+      const targets = this.nearest(s.count, 700);
+      if (!targets.length) return false;
+      for (let i = 0; i < s.count; i++) {
+        const e = targets[i % targets.length];
+        const a = Math.atan2(e.y - p.y, e.x - p.x);
+        this.shots.push({ kind: 'drill', x: p.x, y: p.y, vx: Math.cos(a) * 330, vy: Math.sin(a) * 330, r: 17, dmg: s.dmg, pierce: Infinity, life: 1.8, hit: new Set(), ang: a, spin: 0 });
+      }
+      SFX.tone(160, 0.25, { type: 'sawtooth', vol: 0.03, slide: 320 });
+      return true;
+    }
     if (id === 'tornado') {
       for (let i = 0; i < s.count; i++) {
         const a = Math.random() * Math.PI * 2;
@@ -655,7 +695,7 @@ Screens.survival = {
       if (e.dead) continue;
       const dx = p.x - e.x, dy = p.y - e.y;
       const d = Math.hypot(dx, dy) || 1;
-      let spd = e.spd * (e.slowUntil > this.time ? 0.4 : 1);
+      let spd = e.spd * (e.slowUntil > this.time ? 0.4 : 1) * this.eslow;
       if (e.boss) this.bossAI(e, dt, dx / d, dy / d);
       if (e.boss && e.dash > 0) spd *= 5;
       if (e.boss && e.warn > 0) spd = 0;
@@ -782,6 +822,7 @@ Screens.survival = {
         }
         this.parts.push({ x: s.x, y: s.y, vx: 0, vy: 0, life: 0.3, max: 0.3, color: '#ffd43b', size: 4, glow: true });
       }
+      if (s.kind === 'drill') s.spin += dt * 30;
       if (s.kind === 'water' && Math.random() < 0.5) this.parts.push({ x: s.x, y: s.y, vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40, life: 0.3, max: 0.3, color: '#b5e3ff', size: 3 });
       if (s.kind === 'tornado') {
         s.spin += dt * 12;
@@ -814,8 +855,8 @@ Screens.survival = {
         } else {
           if (s.hit.has(e)) continue;
           s.hit.add(e);
-          const col = { water: '#4fb3ff', star: '#ffd43b', ice: '#a5d8ff' }[s.kind];
-          this.hurt(e, s.dmg, s.vx * 0.25, s.vy * 0.25, col);
+          const col = { water: '#4fb3ff', star: '#ffd43b', ice: '#a5d8ff', wind: '#63e6be', drill: '#dee2e6' }[s.kind];
+          this.hurt(e, s.dmg, s.vx * (s.kind === 'drill' ? 0.6 : 0.25), s.vy * (s.kind === 'drill' ? 0.6 : 0.25), col);
           if (s.kind === 'ice') e.slowUntil = this.time + s.slow;
           if (s.kind === 'water') this.fx.push({ kind: 'ring', x: s.x, y: s.y, r0: 4, r1: 30, life: 0.25, max: 0.25, color: '#b5e3ff', width: 4 });
           if (s.kind === 'star') this.burst(s.x, s.y, ['#ffd43b', '#fff'], 8, 200, true);
@@ -847,7 +888,7 @@ Screens.survival = {
     for (const it of this.pickups) {
       it.t += dt;
       const dx = p.x - it.x, dy = p.y - it.y, d = Math.hypot(dx, dy);
-      const magnet = it.kind === 'gem' ? 130 : 90;
+      const magnet = (it.kind === 'gem' ? 130 : 90) * this.magnetK;
       if (d < magnet) { it.x += dx / d * 420 * dt; it.y += dy / d * 420 * dt; }
       if (d < 26) {
         it.got = true;
@@ -876,6 +917,12 @@ Screens.survival = {
     for (const f of this.fx) {
       f.life -= dt;
       if (f.kind === 'meteor' && f.life <= 0 && !f.done) { f.done = true; this.explode(f); }
+      if (f.kind === 'icicle' && f.life <= 0 && !f.done) {
+        f.done = true;
+        this.fx.push({ kind: 'ring', x: f.x, y: f.y, r0: 6, r1: f.r * 1.3, life: 0.3, max: 0.3, color: '#d0ebff', width: 6 });
+        this.burst(f.x, f.y, ['#e7f5ff', '#a5d8ff', '#fff'], 12, 220, true);
+        for (const e of this.enemies) if (Math.hypot(e.x - f.x, e.y - f.y) < f.r + e.r) { this.hurt(e, f.dmg, 0, 0, '#a5d8ff'); e.slowUntil = this.time + f.slow; }
+      }
     }
     this.fx = this.fx.filter(f => f.life > 0);
     for (const d of this.decals) d.life -= dt;
@@ -1064,6 +1111,15 @@ Screens.survival = {
         ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, Math.PI * 2); ctx.stroke();
         ctx.globalAlpha = 1;
       }
+      if (f.kind === 'icicle') {
+        const y = f.y - 170 * k;
+        ctx.save(); ctx.translate(f.x, y);
+        ctx.fillStyle = '#e7f5ff'; ctx.strokeStyle = '#4dabf7'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-9, -30); ctx.lineTo(9, -30); ctx.lineTo(0, 16); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+        ctx.globalAlpha = 0.35 * (1 - k); ctx.fillStyle = '#1864ab';
+        ctx.beginPath(); ctx.ellipse(f.x, f.y + 10, f.r * 0.6, f.r * 0.25, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+      }
       if (f.kind === 'bolt') {
         ctx.globalAlpha = k;
         for (const [w, c] of [[14, 'rgba(255,240,120,.35)'], [7, '#fff27a'], [3, '#fff']]) {
@@ -1166,6 +1222,22 @@ Screens.survival = {
       ctx.strokeStyle = '#4dabf7'; ctx.lineWidth = 2;
       ctx.fillStyle = '#f1f9ff';
       ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-6, -7); ctx.lineTo(-13, 0); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    } else if (s.kind === 'wind') {
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang);
+      ctx.globalAlpha = Math.min(1, s.life / 0.25);
+      ctx.strokeStyle = '#c3fae8'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(-6, 0, 16, -1.1, 1.1); ctx.stroke();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(-2, 0, 13, -0.9, 0.9); ctx.stroke();
+      ctx.restore();
+    } else if (s.kind === 'drill') {
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang);
+      ctx.fillStyle = '#ced4da'; ctx.strokeStyle = '#495057'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-10, -13); ctx.lineTo(-10, 13); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#868e96';
+      for (let i = 0; i < 3; i++) { const x = -4 + i * 8 - (s.spin % 8); ctx.beginPath(); ctx.moveTo(x, -10 + i * 3); ctx.lineTo(x + 6, 10 - i * 3); ctx.stroke(); }
+      ctx.fillStyle = '#ffd43b'; ctx.fillRect(-16, -8, 6, 16);
       ctx.restore();
     } else if (s.kind === 'tornado') {
       const k = Math.min(1, s.life / 0.4, (s.max - s.life) / 0.2 + 0.2);

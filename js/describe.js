@@ -67,6 +67,21 @@ function traitLines(id, t) {
       L.push('ミスした お題を 打ち切ると 0 に もどる');
       break;
     }
+    case 'koorin':
+      L.push(`攻撃を うけると ${pct(t.counter)} の 確率で やりかえし、敵の 攻撃ゲージを ${pct(t.pushback)} もどす (つぎの 攻撃が おそくなる)`);
+      L.push(statusLine(t.statusCut));
+      break;
+    case 'fuwari':
+      L.push(`お題を 打ち切ると ${pct(t.double)} の 確率で もう 1 回 おいうち (ダメージは 半分)`);
+      L.push(statusLine(t.statusCut));
+      break;
+    case 'metarun': {
+      const full = t.longFrom + Math.ceil(t.longMax / t.longStep - 1e-9);
+      L.push(`${t.longFrom + 1} キー 以上の お題は、1 キー ふえるごとに 攻撃 +${pct(t.longStep)} (${full} キー 以上で 最大 +${pct(t.longMax)})`);
+      if (t.pierce) L.push('よろい (ふつう ×0.5 → ×0.75)・ガード (×0.3 → ×0.6) を 半分 つらぬく');
+      L.push(statusLine(t.statusCut));
+      break;
+    }
   }
   return L.filter(Boolean);
 }
@@ -111,6 +126,18 @@ function skillLines(id, s, def) {
       L.push('とくせいの リズムの ボーナスも のる');
       if (s.barrier) L.push(`ひかりのかべ: 敵の 攻撃を ${s.barrier} 回 まるごと ふせぐ`);
       break;
+    case 'koorin':
+      L.push(`こおりで ${pw}`);
+      L.push(`敵を ${s.chill} 秒 こごえさせる: その間 敵の 攻撃ゲージが 半分の 速さ`);
+      break;
+    case 'fuwari':
+      L.push(`かぜの 刃で ${pw}`);
+      L.push(`つぎの 敵の 攻撃を ${s.evade} 回 かわす`);
+      break;
+    case 'metarun':
+      L.push(`てつの こぶしで ${pw}`);
+      L.push(`敵を ${s.brk} 秒 ブレイク: その間 敵が うける ダメージ +30%`);
+      break;
   }
   // ゲージの たまりかた
   const per = (0.7 + def.base.spd / 200) * s.charge;
@@ -130,6 +157,9 @@ function survivalLine(id, stage, t) {
   if (id === 'kagemaru') x = `攻撃を うけたあと ${sv.inv[stage]} 秒 むてき (ふつうは 0.8 秒)`;
   if (id === 'ryumaru') x = `HP が ${pct(t.rageAt)} より 少ないと 武器の ダメージ ${times(t.rageMult)}`;
   if (id === 'kirari') x = `武器を うつ 間かくが ${pct(1 - sv.cd[stage])} みじかい`;
+  if (id === 'koorin') x = `敵の 動きが ${pct(1 - sv.eslow[stage])} おそい`;
+  if (id === 'fuwari') x = `ジェムを すいよせる 範囲 ${times(sv.magnet[stage])}`;
+  if (id === 'metarun') x = `最大HP ${times(sv.hp[stage])}`;
   return `${x}${w ? `。さいしょの 武器「${w.name}」` : ''}`;
 }
 

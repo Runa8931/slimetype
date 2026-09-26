@@ -22,16 +22,17 @@ Screens.battle = {
   enter(idx) {
     this.bid++;
     this.idx = idx;
-    this.ed = ENEMIES[idx];
     this.dk = battleDiffKey();
     this.bd = BATTLE_DIFFS[this.dk];
+    // 上級者は 敵の レベルが 上がる
+    this.ed = this.bd.lv ? { ...ENEMIES[idx], lv: Math.max(ENEMIES[idx].lv, this.bd.lv) } : ENEMIES[idx];
     const ch = charInfo(Save.data.active);
     this.ch = ch;
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
-    this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
+    this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, evade: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
     const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.bd.k, 0.7)); // 難易度で HP が ふえる
-    this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0 };
+    this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
     this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0;
@@ -85,7 +86,7 @@ Screens.battle = {
     const box = $('#b-diff');
     if (!box) return;
     box.innerHTML = `<span>難易度</span>${BATTLE_DIFF_KEYS.map((k, i) => `<button class="${k === this.dk ? 'on' : ''}" data-k="${k}" style="--dc:${BATTLE_DIFFS[k].color}"><kbd>${i + 1}</kbd> ${BATTLE_DIFFS[k].name}</button>`).join('')}
-      <small>${this.bd.k > 1 ? `敵の 攻撃 ×${this.bd.k}・HP ×${Math.pow(this.bd.k, 0.7).toFixed(2)}・経験値と コイン ×${this.bd.reward}` : 'ふつうの 強さ'} (1 分 ${this.bd.kpm} 打鍵くらい 向け)</small>`;
+      <small>${this.bd.k > 1 ? `敵の 攻撃 ×${this.bd.k}・HP ×${Math.pow(this.bd.k, 0.7).toFixed(2)}・経験値と コイン ×${this.bd.reward}` : 'ふつうの 強さ'} (${this.bd.note})</small>`;
     box.querySelectorAll('button').forEach(b => { b.onclick = () => this.pickDiff(b.dataset.k); });
   },
   pickDiff(k) {
@@ -144,7 +145,8 @@ Screens.battle = {
     this.elapsed += dt;
 
     // かげまる: ひっさつで しばっている間は 敵の攻撃ゲージが止まる / とくせいで 少しおそくなる
-    if (!(this.e.bindUntil > this.elapsed)) this.e.gauge += dt / this.interval() * (1 - (this.ch.trait.slow || 0));
+    // こおりん: ひっさつで こごえた 敵は 攻撃ゲージが 半分の 速さ
+    if (!(this.e.bindUntil > this.elapsed)) this.e.gauge += dt / this.interval() * (1 - (this.ch.trait.slow || 0)) * (this.e.chillUntil > this.elapsed ? 0.5 : 1);
     if (this.e.gauge >= 1) { this.e.gauge = 0; this.enemyAttack(); }
     $('#b-atk').style.transform = `scaleX(${this.e.gauge})`;
     $('#b-atk').classList.toggle('danger', this.e.gauge > 0.8);
@@ -162,6 +164,7 @@ Screens.battle = {
       this.frozenUntil > this.elapsed ? '<i class="st frozen">こごえ</i>' : '',
       this.p.shield > 0 ? `<i class="st shield">シールド×${this.p.shield}</i>` : '',
       this.p.barrier > 0 ? `<i class="st barrier">バリア×${this.p.barrier}</i>` : '',
+      this.p.evade > 0 ? `<i class="st evade">かわす×${this.p.evade}</i>` : '',
       this.p.boost > 1 ? '<i class="st boost">こうげきUP</i>' : '',
       this.raging() ? '<i class="st rage">いかり</i>' : '',
       this.streakBonus() > 0 ? `<i class="st boost">リズム+${Math.round(this.streakBonus() * 100)}%</i>` : '',
@@ -193,6 +196,8 @@ Screens.battle = {
     const estatus = [
       this.e.burnUntil > this.elapsed ? '<i class="st burn">やけど</i>' : '',
       this.e.bindUntil > this.elapsed ? '<i class="st bind">しばり</i>' : '',
+      this.e.chillUntil > this.elapsed ? '<i class="st frozen">こごえ</i>' : '',
+      this.e.breakUntil > this.elapsed ? '<i class="st break">ブレイク</i>' : '',
     ].join('');
     if (estatus !== this._estatus) { this._estatus = estatus; $('#b-estatus').innerHTML = estatus; }
     $('#b-enemy').classList.toggle('bound', this.e.bindUntil > this.elapsed);
@@ -459,6 +464,8 @@ Screens.battle = {
       this.streak = perfect ? this.streak + 1 : 0;
       dmg *= 1 + this.streakBonus();
     }
+    // メタルン: ながい お題ほど 強い
+    if (this.ch.id === 'metarun' && keys > this.ch.trait.longFrom) dmg *= 1 + Math.min(this.ch.trait.longMax, (keys - this.ch.trait.longFrom) * this.ch.trait.longStep);
 
     // 会心: ぴりりは速く打つほど出やすい (進化すると上限と倍率が上がる)
     let critRate = 0.06, critMult = 1.5;
@@ -472,9 +479,9 @@ Screens.battle = {
     // ゴーレムのよろい
     let armorMsg = '';
     if (this.has('armor')) {
-      if (this.combo < 30) { dmg *= 0.5; armorMsg = 'block'; } else armorMsg = 'break';
+      if (this.combo < 30) { dmg *= this.ch.trait.pierce ? 0.75 : 0.5; armorMsg = 'block'; } else armorMsg = 'break';
     }
-    if (this.shellUntil > this.elapsed) { dmg *= 0.3; armorMsg = 'shell'; }
+    if (this.shellUntil > this.elapsed) { dmg *= this.ch.trait.pierce ? 0.6 : 0.3; armorMsg = 'shell'; }
     dmg = Math.max(1, Math.round(dmg * (0.9 + Math.random() * 0.1)));
 
     // うるおいボディ
@@ -488,6 +495,10 @@ Screens.battle = {
     }
 
     this.playerAttackFx(dmg, { crit, boosted, armorMsg, perfect });
+    // ふわり: ときどき もう 1 回 おいうち
+    if (this.ch.id === 'fuwari' && Math.random() < this.ch.trait.double) {
+      this.after(() => { if (this.state === 'run') { this.playerAttackFx(Math.max(1, Math.round(dmg * 0.5)), { crit: false, boosted: false, armorMsg: '', perfect: false }); this.log('おいかぜで おいうち！', 'good'); } }, 180);
+    }
     this.nextWord();
   },
 
@@ -508,6 +519,9 @@ Screens.battle = {
       gotsun: { color: col.dark, size: 14, arc: -100, frames: 26 },
       ryumaru: { color: '#ff922b', size: 13, arc: -40, frames: 18 },
       kirari: { color: '#fff3bf', size: 9, arc: -90, frames: 16 },
+      koorin: { color: '#d0ebff', size: 10, arc: -50, frames: 18 },
+      fuwari: { color: '#96f2d7', size: 8, arc: 40, frames: 12 },
+      metarun: { color: '#868e96', size: 14, arc: -20, frames: 22 },
     };
     // きせかえの エフェクト: 攻撃の 弾が その形の 尾を ひいて 飛び、当たると はじける
     const f = fxStyle(this.ch.id);
@@ -529,6 +543,7 @@ Screens.battle = {
   },
 
   hitEnemy(dmg, { crit = false, colors = ['#fff'], big = false } = {}) {
+    if (this.e.breakUntil > this.elapsed) dmg = Math.round(dmg * 1.3); // メタルンの ブレイク
     const es = $('#b-esprite');
     const c = FX.center(es);
     this.e.hp -= dmg;
@@ -650,7 +665,7 @@ Screens.battle = {
     }
 
     // ほむら・もりりん・かげまる・りゅうまる・きらり: 攻撃 + それぞれの効果
-    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari'].includes(ch.id)) {
+    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun'].includes(ch.id)) {
       this.after(() => {
         if (this.state !== 'run') return;
         const ec = FX.center($('#b-esprite'));
@@ -660,7 +675,8 @@ Screens.battle = {
         if (ch.id === 'kirari') dmg *= 1 + this.streakBonus();
         dmg = Math.round(dmg);
         const fxCol = { homura: ['#ff6b35', '#ffe066', '#fff'], moririn: ['#51cf66', '#d3f9d8', '#fff'], kagemaru: ['#7048e8', '#1a1a2e', '#e5dbff'],
-          ryumaru: ['#ff922b', '#ffd43b', '#fff'], kirari: ['#f783ac', '#fff3bf', '#99e9f2'] }[ch.id];
+          ryumaru: ['#ff922b', '#ffd43b', '#fff'], kirari: ['#f783ac', '#fff3bf', '#99e9f2'],
+          koorin: ['#a5d8ff', '#e7f5ff', '#fff'], fuwari: ['#96f2d7', '#e6fcf5', '#fff'], metarun: ['#adb5bd', '#ffd43b', '#fff'] }[ch.id];
         for (let i = 0; i < 16; i++) {
           this.after(() => this.proj({ x: pc.x + 20, y: pc.y + (Math.random() - 0.5) * 40 }, { x: ec.x + (Math.random() - 0.5) * 60, y: ec.y + (Math.random() - 0.5) * 60 },
             { color: fxCol[i % 3], size: 5 + Math.random() * 7, frames: 16, arc: (Math.random() - 0.5) * 100, trail: false }), i * 20);
@@ -678,6 +694,9 @@ Screens.battle = {
             this.updateBars();
           }
           if (ch.id === 'ryumaru') this.log(`${sk.name}！ ${dmg} のダメージ！`, 'good');
+          if (ch.id === 'koorin') { this.e.chillUntil = this.elapsed + sk.chill * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.chill} 秒 こごえさせた！`, 'good'); }
+          if (ch.id === 'fuwari') { this.p.evade = sk.evade; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの 攻撃を ${sk.evade} 回 かわす！`, 'good'); }
+          if (ch.id === 'metarun') { this.e.breakUntil = this.elapsed + sk.brk * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.brk} 秒 ブレイク！`, 'good'); }
           if (ch.id === 'kirari') {
             if (sk.barrier) { this.p.barrier = Math.max(this.p.barrier, sk.barrier); $('#b-player').classList.add('bubbled'); }
             this.log(`${sk.name}！ ${dmg} のダメージ！${sk.barrier ? ' ひかりのかべを はった！' : ''}`, 'good');
@@ -798,6 +817,14 @@ Screens.battle = {
       floatText(pc.x, pc.y - 50, 'バリア！', 'guard');
       return;
     }
+    // ふわり: ひっさつで 攻撃を かわす
+    if (this.p.evade > 0) {
+      this.p.evade--;
+      replayAnim($('#b-psprite'), 'dodge', 400);
+      floatText(pc.x, pc.y - 50, 'かわした！', 'guard');
+      SFX.tone(1600, 0.08, { type: 'triangle', vol: 0.04, slide: 2400 });
+      return;
+    }
     // ぴりり: すばやく よける
     if (this.ch.id === 'piriri' && Math.random() < this.ch.trait.dodge) {
       replayAnim($('#b-psprite'), 'dodge', 400);
@@ -828,6 +855,13 @@ Screens.battle = {
       return;
     }
     this.damagePlayer(dmg, big ? 'big' : 'normal');
+    // こおりん: ときどき 敵を こおらせて 攻撃ゲージを もどす
+    if (this.ch.id === 'koorin' && this.state === 'run' && Math.random() < this.ch.trait.counter) {
+      this.e.gauge = Math.max(0, this.e.gauge - this.ch.trait.pushback);
+      const ec = FX.center($('#b-esprite'));
+      FX.burst(ec.x, ec.y, { colors: ['#d0ebff', '#fff', '#74c0fc'], count: 18, speed: 5, shape: 'snow', size: 6 });
+      this.log('ひんやり やりかえした！ 敵の 攻撃が おくれる', 'good');
+    }
     // 状態異常への強さ (進化で手に入る)
     const statusCut = this.ch.id === 'gotsun' ? (this.ch.trait.freezeImmune ? 1 : 0.4) : (this.ch.trait.statusCut || 0);
     const burnSafe = this.ch.trait.burnImmune && this.ed.statusName === 'やけど';

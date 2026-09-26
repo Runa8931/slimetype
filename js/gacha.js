@@ -18,7 +18,7 @@ const RARITY = {
 };
 
 // ガチャの確率: まず キャラ枠か アイテム枠かを きめ、アイテムは レア度で きめる
-const GACHA_RATES = { newChar: 0.03, starterChar: 0.17 };
+const GACHA_RATES = { newChar: 0.05, starterChar: 0.15 }; // ガチャ限定キャラは 5 たいで 5% (1 たい 1%)
 const ITEM_RATES = [['SSR', 0.03], ['SR', 0.12], ['R', 0.33], ['N', 0.52]];
 // かくせいが おわったキャラが かぶったときの かけら / こうかんに ひつような かけら
 const CHAR_SHARD = { gacha: 30, starter: 12 };
@@ -75,6 +75,9 @@ const AWAKEN_COLORS = {
   kagemaru: { name: 'しろいかげ', colors: { main: '#f1f3f5', light: '#ffffff', dark: '#343a40', accent: '#e03131' } },
   ryumaru: { name: 'せいりゅう', colors: { main: '#20c997', light: '#c3fae8', dark: '#054d3b', accent: '#ffd43b' } },
   kirari: { name: 'よぞら', colors: { main: '#364fc7', light: '#dbe4ff', dark: '#0b1a5c', accent: '#ffe066' } },
+  koorin: { name: 'オーロラ', colors: { main: '#b197fc', light: '#e3fafc', dark: '#087f5b', accent: '#63e6be' } },
+  fuwari: { name: 'はるかぜ', colors: { main: '#ffc9de', light: '#fff0f6', dark: '#a61e4d', accent: '#fff' } },
+  metarun: { name: 'ゴールドメタル', colors: { main: '#fcc419', light: '#fff9db', dark: '#8a5a00', accent: '#e03131' } },
 };
 for (const [id, a] of Object.entries(AWAKEN_COLORS)) {
   GACHA_ITEMS.push({ id: 'aw_' + id, kind: 'color', rarity: 'SSR', name: a.name, colors: a.colors, only: id, special: true });

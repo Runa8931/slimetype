@@ -594,8 +594,10 @@ Screens.stages = {
     const e = ENEMIES[g];
     const cleared = g < this.cleared;
     $('#map-world').innerHTML = `${head} - <b>${this.pos + 1}</b>`;
-    const gap = levelGapMult(e.lv, this.ch.L);
-    const warn = this.ch.L < e.lv - 2 ? `<div class="mi-warn">レベルが たりないかも (おすすめ Lv.${Math.min(e.lv, MAX_LV)})</div>`
+    const bd = BATTLE_DIFFS[battleDiffKey()];
+    const elv = bd.lv ? Math.max(e.lv, bd.lv) : e.lv; // 上級者は 敵の レベルが 上がる
+    const gap = levelGapMult(elv, this.ch.L);
+    const warn = bd.lv ? `<div class="mi-warn">上級者: 敵は Lv${elv}。Lv最大・かくせい★4 むけ</div>` : this.ch.L < e.lv - 2 ? `<div class="mi-warn">レベルが たりないかも (おすすめ Lv.${Math.min(e.lv, MAX_LV)})</div>`
       : gap < 0.8 ? `<div class="mi-low">格下の あいて: もらえる経験値 ×${gap.toFixed(2)}</div>` : '';
     info.innerHTML = `<div class="mi-sprite">${enemySVG(e.id)}</div>
       <div class="mi-body">

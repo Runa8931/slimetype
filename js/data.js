@@ -28,12 +28,14 @@ function calcDamage(L, power, atk, def) {
   return ((2 * L / 5 + 2) * power * atk / def) / 50 + 2;
 }
 
-// バトルの 難易度。k: 敵の 攻撃力 ×k、HP ×k^0.7、攻撃の 間かく ÷k^0.25
-// (それぞれ「向いている 打鍵数」で 遊ぶと、敵と 同じ レベルで ふつうの 敵に 約 8 わり・のこり HP 約 35%、ボスに 約 55% 勝てる)
+// バトルの 難易度。k: 敵の 攻撃力 ×k、HP ×k^0.7、攻撃の 間かく ÷k^0.25 / lv: 敵の レベルを ここまで 上げる
+// 初心者・中級者: 向いている 打鍵数なら 敵と 同じ レベルで ふつうの 敵に 約 8 わり (のこり HP 約 35%)、ボスに 約 55%
+// 上級者: 敵は ぜんぶ Lv125。1 分 300 打鍵で Lv124・かくせい★4 なら ふつう 約 5 わり・ボス 約 3 わり。
+//         Lv120・かくせい なしだと 約 2.5 わり (Lv最大・完凸 むけの やりこみ)
 const BATTLE_DIFFS = {
-  beg: { name: '初心者', k: 1, reward: 1, kpm: 220, color: '#69db7c' },
-  mid: { name: '中級者', k: 1.25, reward: 1.3, kpm: 300, color: '#ffd43b' },
-  adv: { name: '上級者', k: 1.55, reward: 1.7, kpm: 400, color: '#ff6b6b' },
+  beg: { name: '初心者', k: 1, reward: 1, kpm: 220, color: '#69db7c', note: '1 分 220 打鍵くらい 向け' },
+  mid: { name: '中級者', k: 1.25, reward: 1.3, kpm: 300, color: '#ffd43b', note: '1 分 300 打鍵くらい 向け' },
+  adv: { name: '上級者', k: 1.8, reward: 2, kpm: 300, lv: 125, color: '#ff6b6b', note: '敵は ぜんぶ Lv125。Lv最大・かくせい★4 むけ' },
 };
 const BATTLE_DIFF_KEYS = Object.keys(BATTLE_DIFFS);
 
@@ -362,6 +364,93 @@ const CHARACTERS = {
       },
     ],
   },
+  koorin: {
+    id: 'koorin',
+    gacha: true,
+    names: ['こおりん', 'こおりりん', 'フロストこおりん', 'ブリザードこおりん', 'ダイヤモンドこおりん'],
+    type: 'こおり',
+    role: 'カウンター型',
+    colors: { main: '#74c0fc', light: '#e7f5ff', dark: '#1864ab', accent: '#ffffff' },
+    stageColors: [
+      { main: '#74c0fc', light: '#e7f5ff', dark: '#1864ab', accent: '#ffffff' },
+      { main: '#66d9e8', light: '#e3fafc', dark: '#0b7285', accent: '#ffffff' },
+      { main: '#91a7ff', light: '#edf2ff', dark: '#364fc7', accent: '#e3fafc' },
+      { main: '#4dabf7', light: '#ffffff', dark: '#0b3d6b', accent: '#99e9f2' },
+      { main: '#e7f5ff', light: '#ffffff', dark: '#1971c2', accent: '#74c0fc' },
+    ],
+    base: { hp: 80, atk: 82, def: 75, spd: 68 },
+    desc: 'こおりの けっしょうから うまれた スライム。こうげきされると ひんやり やりかえす。',
+    forms: [
+      { trait: { name: 'ひんやりボディ', desc: '攻撃を うけると 25% で 敵の 攻撃ゲージを 35% もどす', counter: 0.25, pushback: 0.35, statusCut: 0 },
+        skill: { name: 'ダイヤモンドダスト', desc: '威力 200。敵を 4 秒 こごえさせ、攻撃ゲージが 半分の 速さに', power: 200, chill: 4, charge: 1 } },
+      { trait: { name: 'ひんやりボディ+', desc: '30% で 攻撃ゲージを 35% もどす。どく・やけどの時間が半分', counter: 0.3, pushback: 0.35, statusCut: 0.5 },
+        skill: { name: 'ダイヤモンドダスト+', desc: '威力 270。4.5 秒 こごえさせる。ゲージ +5%', power: 270, chill: 4.5, charge: 1.05 } },
+      { trait: { name: 'フロストアーマー', desc: '35% で 攻撃ゲージを 40% もどす。状態異常が きかない', counter: 0.35, pushback: 0.4, statusCut: 1 },
+        skill: { name: 'フロストノヴァ', desc: '威力 340。5 秒 こごえさせる。ゲージ +10%', power: 340, chill: 5, charge: 1.1 } },
+      { trait: { name: 'ブリザードアーマー', desc: '40% で 攻撃ゲージを 40% もどす。状態異常が きかない', counter: 0.4, pushback: 0.4, statusCut: 1 },
+        skill: { name: 'ブリザード', desc: '威力 410。5.5 秒 こごえさせる。ゲージ +15%', power: 410, chill: 5.5, charge: 1.15 } },
+      { trait: { name: 'えいきゅうとうど', desc: '45% で 攻撃ゲージを 45% もどす。状態異常が きかない', counter: 0.45, pushback: 0.45, statusCut: 1 },
+        skill: { name: 'アブソリュートゼロ', desc: '威力 480。6 秒 こごえさせる。ゲージ +20%', power: 480, chill: 6, charge: 1.2 } },
+    ],
+  },
+  fuwari: {
+    id: 'fuwari',
+    gacha: true,
+    names: ['ふわり', 'ふわりん', 'ウィンドふわり', 'ストームふわり', 'テンペストふわり'],
+    type: 'かぜ',
+    role: 'れんげき型',
+    colors: { main: '#96f2d7', light: '#f0fff9', dark: '#0ca678', accent: '#ffffff' },
+    stageColors: [
+      { main: '#96f2d7', light: '#f0fff9', dark: '#0ca678', accent: '#ffffff' },
+      { main: '#8ce99a', light: '#ebfbee', dark: '#2b8a3e', accent: '#fff3bf' },
+      { main: '#63e6be', light: '#e6fcf5', dark: '#087f5b', accent: '#e3fafc' },
+      { main: '#38d9a9', light: '#ffffff', dark: '#054d3b', accent: '#fff3bf' },
+      { main: '#c3fae8', light: '#ffffff', dark: '#0ca678', accent: '#ffd43b' },
+    ],
+    base: { hp: 70, atk: 86, def: 58, spd: 98 },
+    desc: 'かぜに のって ただよう スライム。すばやく 2 回 こうげきする ことが ある。',
+    forms: [
+      { trait: { name: 'おいかぜ', desc: 'お題を 打ち切ると 15% で もう 1 回 おいうち (50% の ダメージ)', double: 0.15, statusCut: 0 },
+        skill: { name: 'エアスラッシュ', desc: '威力 200。敵の 攻撃を 1 回 よける', power: 200, evade: 1, charge: 1 } },
+      { trait: { name: 'おいかぜ+', desc: '20% で おいうち', double: 0.2, statusCut: 0 },
+        skill: { name: 'エアスラッシュ+', desc: '威力 270。1 回 よける。ゲージ +5%', power: 270, evade: 1, charge: 1.05 } },
+      { trait: { name: 'しっぷう', desc: '25% で おいうち。どく・やけどの時間が半分', double: 0.25, statusCut: 0.5 },
+        skill: { name: 'ストームエッジ', desc: '威力 340。2 回 よける。ゲージ +10%', power: 340, evade: 2, charge: 1.1 } },
+      { trait: { name: 'はやて', desc: '30% で おいうち。どく・やけどの時間が半分', double: 0.3, statusCut: 0.5 },
+        skill: { name: 'テンペスト', desc: '威力 410。2 回 よける。ゲージ +15%', power: 410, evade: 2, charge: 1.15 } },
+      { trait: { name: 'かみかぜ', desc: '35% で おいうち。状態異常が きかない', double: 0.35, statusCut: 1 },
+        skill: { name: 'ゴッドウィンド', desc: '威力 480。3 回 よける。ゲージ +20%', power: 480, evade: 3, charge: 1.2 } },
+    ],
+  },
+  metarun: {
+    id: 'metarun',
+    gacha: true,
+    names: ['メタルン', 'メタルルン', 'アイアンメタルン', 'スチールメタルン', 'アダマンメタルン'],
+    type: 'はがね',
+    role: 'ためうち型',
+    colors: { main: '#adb5bd', light: '#f8f9fa', dark: '#495057', accent: '#ffd43b' },
+    stageColors: [
+      { main: '#adb5bd', light: '#f8f9fa', dark: '#495057', accent: '#ffd43b' },
+      { main: '#ced4da', light: '#ffffff', dark: '#343a40', accent: '#ff922b' },
+      { main: '#868e96', light: '#dee2e6', dark: '#212529', accent: '#4dabf7' },
+      { main: '#5c7cfa', light: '#dbe4ff', dark: '#1c2c80', accent: '#ffd43b' },
+      { main: '#e9ecef', light: '#ffffff', dark: '#5f3dc4', accent: '#ffd43b' },
+    ],
+    base: { hp: 86, atk: 90, def: 85, spd: 45 },
+    desc: 'てつで できた おもたい スライム。ながい お題を 打つほど パワーが たまる。',
+    forms: [
+      { trait: { name: 'ためうち', desc: '9 キー 以上の お題は 1 キー ふえるごとに +3% (最大 +30%)', longFrom: 8, longStep: 0.03, longMax: 0.3, pierce: false, statusCut: 0 },
+        skill: { name: 'メタルブレイク', desc: '威力 210。敵を 5 秒 ブレイク (うける ダメージ +30%)', power: 210, brk: 5, charge: 1 } },
+      { trait: { name: 'ためうち+', desc: '1 キー ごとに +3% (最大 +35%)', longFrom: 8, longStep: 0.03, longMax: 0.35, pierce: false, statusCut: 0.5 },
+        skill: { name: 'メタルブレイク+', desc: '威力 280。5.5 秒 ブレイク。ゲージ +5%', power: 280, brk: 5.5, charge: 1.05 } },
+      { trait: { name: 'てっけん', desc: '1 キー ごとに +3% (最大 +40%)。よろい・ガードを 半分 つらぬく', longFrom: 8, longStep: 0.03, longMax: 0.4, pierce: true, statusCut: 0.5 },
+        skill: { name: 'アイアンクラッシュ', desc: '威力 350。6 秒 ブレイク。ゲージ +10%', power: 350, brk: 6, charge: 1.1 } },
+      { trait: { name: 'こうてつ', desc: '1 キー ごとに +3% (最大 +45%)。よろい・ガードを 半分 つらぬく', longFrom: 8, longStep: 0.03, longMax: 0.45, pierce: true, statusCut: 1 },
+        skill: { name: 'スチールクラッシュ', desc: '威力 420。6.5 秒 ブレイク。ゲージ +15%', power: 420, brk: 6.5, charge: 1.15 } },
+      { trait: { name: 'アダマンタイト', desc: '1 キー ごとに +3% (最大 +50%)。よろい・ガードを 半分 つらぬく', longFrom: 8, longStep: 0.03, longMax: 0.5, pierce: true, statusCut: 1 },
+        skill: { name: 'アダマンブレイク', desc: '威力 490。7 秒 ブレイク。ゲージ +20%', power: 490, brk: 7, charge: 1.2 } },
+    ],
+  },
 };
 
 // さいしょから つかえるキャラ (ガチャ限定キャラを のぞく)
@@ -380,6 +469,9 @@ const AWAKEN_BONUS = {
   kagemaru: { desc: '敵の攻撃が さらに 1% おそく', apply: (t, n) => ({ ...t, slow: t.slow + 0.01 * n }) },
   ryumaru: { desc: 'いかりの こうげき +0.03 倍', apply: (t, n) => ({ ...t, rageMult: t.rageMult + 0.03 * n }) },
   kirari: { desc: 'リズムの上限 +3%', apply: (t, n) => ({ ...t, streakMax: t.streakMax + 0.03 * n }) },
+  koorin: { desc: 'やりかえす 確率 +2%', apply: (t, n) => ({ ...t, counter: t.counter + 0.02 * n }) },
+  fuwari: { desc: 'おいうちの 確率 +2%', apply: (t, n) => ({ ...t, double: t.double + 0.02 * n }) },
+  metarun: { desc: 'ためうちの 上限 +3%', apply: (t, n) => ({ ...t, longMax: t.longMax + 0.03 * n }) },
 };
 
 // サバイバルでの とくせい (進化の 段階ごと)。説明文も ここから 作る
@@ -391,6 +483,9 @@ const SV_CHAR = {
   gotsun: { hurt: [0.75, 0.72, 0.69, 0.66, 0.63] },  // うける ダメージの 倍率
   kagemaru: { inv: [1.0, 1.1, 1.2, 1.3, 1.4] },      // うけたあとの むてき時間 (ふつうは 0.8 秒)
   kirari: { cd: [0.9, 0.88, 0.86, 0.84, 0.82] },     // 武器を うつ 間かく
+  koorin: { eslow: [0.94, 0.92, 0.9, 0.88, 0.86] },  // 敵の 動く 速さ
+  fuwari: { magnet: [1.3, 1.4, 1.5, 1.6, 1.7] },     // ジェムを すいよせる 範囲
+  metarun: { hp: [1.15, 1.2, 1.25, 1.3, 1.35] },     // 最大HP
 };
 
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく

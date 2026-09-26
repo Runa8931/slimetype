@@ -50,6 +50,21 @@ function slimeSVG(id, stage = 0, look) {
       'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
       'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
     ],
+    koorin: [
+      'M60,32 C90,32 106,56 106,80 C106,98 94,104 82,104 L38,104 C26,104 14,98 14,80 C14,56 30,32 60,32 Z',
+      'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
+      'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
+    ],
+    fuwari: [
+      'M34,50 C30,36 46,28 56,36 C62,26 80,28 84,40 C98,38 106,52 100,62 C112,70 110,92 96,100 C92,106 84,104 80,104 L40,104 C28,106 12,98 16,82 C8,72 14,56 28,58 C26,54 28,52 34,50 Z',
+      'M30,48 C26,32 44,22 56,32 C62,20 84,22 88,36 C104,34 112,50 106,60 C118,70 116,94 100,102 C94,108 86,106 80,106 L40,106 C26,108 8,100 12,82 C2,70 10,52 26,56 C24,52 26,50 30,48 Z',
+      'M30,48 C26,32 44,22 56,32 C62,20 84,22 88,36 C104,34 112,50 106,60 C118,70 116,94 100,102 C94,108 86,106 80,106 L40,106 C26,108 8,100 12,82 C2,70 10,52 26,56 C24,52 26,50 30,48 Z',
+    ],
+    metarun: [
+      'M30,36 L90,36 C100,36 106,42 106,52 L106,94 C106,100 100,104 94,104 L26,104 C20,104 14,100 14,94 L14,52 C14,42 20,36 30,36 Z',
+      'M28,32 L92,32 C104,32 110,40 110,50 L110,96 C110,102 104,106 96,106 L24,106 C16,106 10,102 10,96 L10,50 C10,40 16,32 28,32 Z',
+      'M28,32 L92,32 C104,32 110,40 110,50 L110,96 C110,102 104,106 96,106 L24,106 C16,106 10,102 10,96 L10,50 C10,40 16,32 28,32 Z',
+    ],
     gotsun: [
       'M30,44 L50,32 L74,34 L94,48 L104,74 L100,100 L86,104 L34,104 L18,100 L16,72 Z',
       'M26,42 L48,28 L76,30 L98,46 L110,74 L104,102 L88,106 L32,106 L14,102 L10,72 Z',
@@ -122,6 +137,33 @@ function slimeSVG(id, stage = 0, look) {
       `<path transform="translate(${x},${y}) scale(${r / 10})" d="M0,-11 L3.2,-3.4 L11,-3.4 L4.8,1.8 L7,10 L0,5.2 L-7,10 L-4.8,1.8 L-11,-3.4 L-3.2,-3.4 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>`).join('')}</g>`;
   }
 
+  if (id === 'koorin') {
+    // あたまに こおりの けっしょう、ほっぺに ゆきの つぶ
+    behind += [[42, 38, -18, 0.8], [60, 32, 0, 1.1], [78, 38, 18, 0.8]].map(([x, y, r, k]) =>
+      `<path transform="translate(${x},${y}) rotate(${r}) scale(${k})" d="M0,-26 L7,-6 L0,4 L-7,-6 Z" fill="${c.light}" stroke="${c.dark}" stroke-width="2" stroke-linejoin="round"/>`).join('');
+    front += `<circle cx="36" cy="84" r="5" fill="#a5d8ff" opacity=".8"/><circle cx="84" cy="84" r="5" fill="#a5d8ff" opacity=".8"/>
+      <path d="M28,58 L32,62 M32,58 L28,62 M30,56 L30,64" stroke="#fff" stroke-width="1.5" opacity=".8"/>`;
+    if (stage >= 1) front += `<g class="orbit">${[[6, 44], [114, 50], [108, 22]].map(([x, y]) =>
+      `<g transform="translate(${x},${y})" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M0,-7 L0,7 M-6,-3.5 L6,3.5 M-6,3.5 L6,-3.5"/></g>`).join('')}</g>`;
+  }
+  if (id === 'fuwari') {
+    // よこに はね、おでこに うずまき
+    behind += `<path d="M16,66 C0,58 -6,72 4,78 C-4,86 8,94 16,86 Z" fill="${c.light}" stroke="${c.dark}" stroke-width="2"/>
+      <path d="M104,66 C120,58 126,72 116,78 C124,86 112,94 104,86 Z" fill="${c.light}" stroke="${c.dark}" stroke-width="2"/>`;
+    front += `<path d="M56,52 C56,46 64,46 64,52 C64,58 54,58 54,50 C54,42 68,42 68,52" fill="none" stroke="${c.dark}" stroke-width="2.2" stroke-linecap="round" opacity=".6"/>
+      <circle cx="36" cy="84" r="5" fill="#ffa8a8" opacity=".6"/><circle cx="84" cy="84" r="5" fill="#ffa8a8" opacity=".6"/>`;
+    if (stage >= 1) behind += `<g class="spark-soft" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"><path d="M-10,40 C6,34 16,40 26,36"/><path d="M96,30 C108,26 118,30 130,26"/></g>`;
+  }
+  if (id === 'metarun') {
+    // アンテナ・ねじ・かおの まど
+    behind += `<path d="M60,36 L60,16" stroke="${c.dark}" stroke-width="3"/><circle cx="60" cy="13" r="5" fill="${c.accent}" stroke="${c.dark}" stroke-width="2" class="spark-soft"/>`;
+    mid += `<rect x="30" y="58" width="60" height="28" rx="10" fill="#1d1d2b" opacity=".18"/>`;
+    front += `<circle cx="22" cy="48" r="3" fill="${c.dark}"/><circle cx="98" cy="48" r="3" fill="${c.dark}"/><circle cx="22" cy="96" r="3" fill="${c.dark}"/><circle cx="98" cy="96" r="3" fill="${c.dark}"/>
+      <path d="M20,44 L24,52 M96,44 L100,52" stroke="#fff" stroke-width="1" opacity=".6"/>
+      <circle cx="36" cy="84" r="5" fill="#ff8787" opacity=".5"/><circle cx="84" cy="84" r="5" fill="#ff8787" opacity=".5"/>`;
+    if (stage >= 1) behind += `<path d="M6,52 L16,44 L16,72 L6,66 Z M114,52 L104,44 L104,72 L114,66 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  }
+
   // ---- 1 段階目の進化: 見た目がはっきり変わる飾り ----
   if (stage >= 1) {
     if (id === 'purun') {
@@ -152,7 +194,7 @@ function slimeSVG(id, stage = 0, look) {
 
   // ---- 最終進化: 王冠 + オーラ ----
   if (stage >= 2) {
-    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8 }[id] ?? 6;
+    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10 }[id] ?? 6;
     // ぼうしを かぶっているときは 王冠を はずす
     if (!look.hat) front += `<g transform="translate(60,${crownY})">
       <path d="M-20,18 L-22,0 L-11,9 L0,-6 L11,9 L22,0 L20,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
@@ -234,7 +276,7 @@ function slimeSVG(id, stage = 0, look) {
 const RAINBOW = ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa', '#f783ac'];
 
 // 頭の てっぺんの 高さ [最初の すがた, 進化後]。ぼうしの 位置に つかう
-const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28] };
+const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32] };
 
 // ぼうし・アクセサリーの絵 (下のはしが y=0。eyes は 目の 高さに つける)
 const HAT_SVG = {

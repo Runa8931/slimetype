@@ -1195,3 +1195,5 @@ body.lite .sky { display: none; }
 .dmark.on { background: var(--dc); border-color: var(--dc); color: #1a1a2e; }
 .mi-go small { color: var(--sub); }
 .mi-go small kbd { font-size: .75em; }
+.badge.type-koorin { background: #1971c2; } .badge.type-fuwari { background: #0ca678; } .badge.type-metarun { background: #495057; }
+.st.evade { background: #0ca678; } .st.break { background: #e67700; }
