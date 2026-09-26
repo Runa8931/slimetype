@@ -62,7 +62,11 @@
   const addEn = {
     easy: EN(`dog | sun | moon | star | tree | fish | bird | cake | milk | rain | snow | wind | fire | king | frog | ring | map | key | box | hat |
       red | blue | gold | pink | jump | run | swim | fly | play | sing | book | desk | door | lamp | ship | road | rock | leaf | seed | bell |
-      apple | lemon | grape | peach | bread | juice | sword | magic | quest | hero | music | happy | light | dream | ocean | river | cloud | storm | tiger | panda`),
+      apple | lemon | grape | peach | bread | juice | sword | magic | quest | hero | music | happy | light | dream | ocean | river | cloud | storm | tiger | panda |
+      bear | duck | goat | lamb | owl | bee | ant | cow | pig | fox | cat | bat | hen | yak | seal | deer | mole | worm | crow | swan |
+      cup | pot | pan | fork | bowl | bed | sofa | rug | bag | coin | gem | axe | bow | shield | cape | boot | sock | coat | belt | glove |
+      home | park | shop | farm | hill | lake | pond | cave | nest | tent | cake | soup | rice | corn | bean | pie | tea | salt | honey | nut |
+      big | small | fast | slow | hot | cold | warm | cool | soft | hard | new | old | good | kind | brave | calm | quiet | loud | funny | lucky`),
     normal: EN(`treasure | dragon | wizard | castle | monster | journey | victory | crystal | lightning | rainbow |
       keyboard | computer | practice | homework | birthday | holiday | festival | umbrella | penguin | dolphin |
       butterfly | elephant | kangaroo | pineapple | chocolate | sandwich | spaghetti | pancake | strawberry | blueberry |

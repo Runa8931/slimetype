@@ -28,17 +28,11 @@ class WeakDeck {
       return { w, hits, score: hits / Math.sqrt(roma.length) };
     }).filter(o => o.hits >= 2);
     scored.sort((a, b) => b.score - a.score);
-    this.pool = scored.slice(0, 60).map(o => o.w);
-    if (this.pool.length < 10) this.pool = all;
-    this.deck = [];
+    let pool = scored.slice(0, 150).map(o => o.w);
+    if (pool.length < 10) pool = all;
+    this.deck = new NoRepeatDeck(pool); // 1 回の れんしゅうで 同じ お題を 出さない
   }
-  next() {
-    if (!this.deck.length) {
-      this.deck = this.pool.slice();
-      for (let i = this.deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]]; }
-    }
-    return this.deck.pop();
-  }
+  next() { return this.deck.next(); }
 }
 
 Screens.psetup = {

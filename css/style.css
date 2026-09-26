@@ -1201,3 +1201,20 @@ body.lite .sky { display: none; }
 /* キャラが ふえても タイトルで はみださない */
 .title-slimes { flex-wrap: wrap; max-width: min(96vw, 900px); gap: 6px 10px; margin-left: auto; margin-right: auto; }
 .title-slimes .sprite { width: clamp(64px, 8vw, 100px); height: clamp(64px, 8vw, 100px); }
+
+/* ---- 見えなくする 妨害は うすく。ローマ字か 日本語の どちらかは かならず 見える (v4.9.1) ---- */
+/* 墨: 半透明に して、ローマ字の 行は 墨より 上に 出す */
+.tp.inked .ink-layer i { opacity: .42; }
+.tp .tp-roma { position: relative; z-index: 4; }
+/* きり・どろ (ローマ字を かくす): 日本語が ある ときは うすく ぼかす。英語モードは 日本語が ないので かるく */
+.tp-roma.hidden-guide { filter: blur(5px); opacity: .4; }
+.tp.en .tp-roma.hidden-guide { filter: blur(2px); opacity: .65; }
+/* ふぶき・すなあらし (漢字と かなを かくす): すこし 見える くらいに */
+.tp.blizzard .tp-display, .tp.blizzard .tp-kana { filter: blur(6px); opacity: .35; }
+/* ふぶきと きりが かさなったら ローマ字は かくさない */
+.tp.blizzard .tp-roma.hidden-guide { filter: none; opacity: 1; }
+
+/* ステージ一覧・ずかんの ワールド見出し: 色の 指定が ない ワールドでも 文字が 見えるように */
+.drawer-world { background: rgba(255,255,255,.1); color: var(--text); border: none; }
+.drawer-world.w-shade, .dex-world.w-shade { background: rgba(123,44,191,.45); }
+.drawer-world.w-void, .dex-world.w-void { background: rgba(11,114,133,.5); }

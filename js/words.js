@@ -77,32 +77,58 @@ const WORDS_EN = {
 };
 
 // 言語と難しさに合わせたお題を返す。同じお題が続かないよう山札方式にする
-class WordDeck {
-  // theme: 'sea' / 'snow' / 'magma' のとき、そのワールドにちなんだお題も まぜる
-  constructor(lang, diffs, theme) {
-    this.lang = lang; this.diffs = diffs; this.theme = theme;
-    this.deck = [];
+// 1 回の 試合の あいだ、同じ お題 (同じ 読み) を 2 回 出さない 山札
+// ぜんぶ 出しきったときだけ 使いまわす (その ときも 直前の 10 こは さける)
+class NoRepeatDeck {
+  constructor(list) {
+    const seen = new Set();
+    this.pool = list.filter(w => { const key = w.k; if (seen.has(key)) return false; seen.add(key); return true; });
+    this.used = new Set();
+    this.recent = [];
+    this.order = [];
   }
-  buildPool() {
-    const pool = [];
-    for (const d of this.diffs) {
-      if (this.lang === 'en') pool.push(...WORDS_EN[d].map(w => ({ t: w, k: w })));
-      else pool.push(...WORDS_JA[d]);
-    }
-    const th = typeof WORDS_THEME !== 'undefined' && WORDS_THEME[this.theme];
-    // ワールドのお題は 全体の 2 わりくらい出るよう、3 回ずつ入れる
-    if (th) for (let i = 0; i < 3; i++) pool.push(...(this.lang === 'en' ? th.en.map(w => ({ t: w, k: w })) : th.ja));
-    return pool;
+  shuffle() {
+    this.order = this.pool.slice();
+    for (let i = this.order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.order[i], this.order[j]] = [this.order[j], this.order[i]]; }
   }
-  next() {
-    if (this.deck.length === 0) {
-      this.deck = this.buildPool();
-      for (let i = this.deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+  hasFresh() { return this.pool.some(w => !this.used.has(w.k)); }
+  next(skip = new Set()) {
+    if (!this.pool.length) return null;
+    if (!this.hasFresh()) { this.used = new Set(this.recent); if (!this.hasFresh()) this.used = new Set(); }
+    for (let tries = 0; tries < 2; tries++) {
+      if (!this.order.length) this.shuffle();
+      while (this.order.length) {
+        const w = this.order.pop();
+        if (this.used.has(w.k) || skip.has(w.k)) continue;
+        this.used.add(w.k);
+        this.recent.push(w.k); if (this.recent.length > 10) this.recent.shift();
+        return w;
       }
     }
-    return this.deck.pop();
+    return null;
+  }
+}
+
+class WordDeck {
+  // theme: ワールドの id のとき、そのワールドに ちなんだ お題も まぜる (約 2 わり)
+  constructor(lang, diffs, theme) {
+    this.lang = lang; this.diffs = diffs; this.theme = theme;
+    const main = [];
+    for (const d of diffs) {
+      if (lang === 'en') main.push(...WORDS_EN[d].map(w => ({ t: w, k: w })));
+      else main.push(...WORDS_JA[d]);
+    }
+    const th = typeof WORDS_THEME !== 'undefined' && WORDS_THEME[theme];
+    const themeList = th ? (lang === 'en' ? th.en.map(w => ({ t: w, k: w })) : th.ja) : [];
+    this.theme = new NoRepeatDeck(themeList);
+    this.main = new NoRepeatDeck(main);
+    this.given = new Set(); // この 試合で もう 出した 読み (両方の 山札を まとめて)
+  }
+  next() {
+    const useTheme = this.theme.pool.length && Math.random() < 0.2 && this.theme.hasFresh();
+    const w = (useTheme && this.theme.next(this.given)) || this.main.next(this.given) || this.main.next();
+    this.given.add(w.k);
+    return w;
   }
 }
 
