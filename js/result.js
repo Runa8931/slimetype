@@ -76,6 +76,12 @@ Screens.result = {
       </div>`;
     // しょうごう: 新しく とれたものを 知らせる
     const got = checkAchievements(r);
+    // ぼうけんのとびら: 新しく ひらいた ものを 知らせる
+    const doors = checkDoors();
+    if (doors.length) {
+      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="door-get">${doors.map(d => `<div>🚪 ぼうけんのとびらが ひらいた！「<b>${d.name}</b>」<small>${d.what}</small></div>`).join('')}</div>`);
+      setTimeout(() => { SFX.win(); FX.confetti(); }, 900);
+    }
     const have = $('#result-wrap .res-coin-have');
     if (have) have.textContent = Save.data.coins; // しょうごうの コインも ふくめる
     if (got.length) {

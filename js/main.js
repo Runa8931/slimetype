@@ -23,12 +23,15 @@ const Save = {
       coins: START_COINS,
       gacha: { items: {}, chars: {}, awaken: {}, shards: 0, pulls: 0, ssr: 0 },
       wear: {},
+      doors: {},
     };
   },
 
   load() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { /* 読めなければ新規 */ }
+    // ぼうけんのとびら より 前の セーブ: つかったことの ある ものは ひらいた ことに する
+    this.needDoorMigrate = !!d && !d.doors;
     const f = this.fresh();
     this.data = d ? {
       ...f, ...d,
@@ -55,7 +58,12 @@ function diffBadges(i) {
 }
 
 // ガチャ限定キャラは ガチャで 出るまで つかえない
-function hasChar(id) { return !CHARACTERS[id].gacha || !!(Save.data.gacha && Save.data.gacha.chars[id]); }
+// さいしょの キャラは ぷるんだけ。ほかは ぼうけんのとびら (または ガチャ) で ひらく
+function hasChar(id) {
+  const got = !!(Save.data.gacha && Save.data.gacha.chars[id]);
+  if (CHARACTERS[id].gacha) return got;
+  return id === 'purun' || got || doorOpen('ch_' + id);
+}
 // せんざいかくせいの ★ の数 (0〜4)
 function awakenOf(id) { return Math.min(AWAKEN_MAX, (Save.data.gacha && Save.data.gacha.awaken[id]) || 0); }
 
@@ -187,6 +195,7 @@ const App = {
 
   boot() {
     Save.load();
+    if (Save.needDoorMigrate) migrateDoors();
     SFX.enabled = Save.data.settings.sound;
     SFX.setVolume(Save.data.settings.volume);
     // 動作確認用: アドレスに ?mute=1 を付けたときは音を出さない (設定は保存しない)
@@ -259,8 +268,8 @@ Screens.select = {
           <span class="mc-key">${i + 1}</span>
           <div class="sprite">${slimeSVG(id, 0, {})}</div>
           <div class="cc-name">？？？</div>
-          <div class="badges"><span class="badge gacha">ガチャ限定</span><span class="badge">${d.role}</span></div>
-          <p class="cc-desc">ガチャで であえる ふしぎな スライム。こうかんじょで かけらと こうかんも できる。</p>
+          <div class="badges">${d.gacha ? '<span class="badge gacha">ガチャ限定</span>' : '<span class="badge door">🚪 とびら</span>'}<span class="badge">${d.role}</span></div>
+          <p class="cc-desc">${d.gacha ? 'ガチャで であえる ふしぎな スライム。こうかんじょで かけらと こうかんも できる。' : lockNote('ch_' + id)}</p>
         </button>`;
       }
       return `<button class="char-card ${Save.data.active === id ? 'current' : ''}" data-id="${id}" style="--cc:${d.colors.main};--cd:${d.colors.dark}">
@@ -303,12 +312,16 @@ Screens.home = {
     $('#go-practice').onclick = () => { SFX.select(); App.show('psetup'); };
     $('#go-battle').onclick = () => { SFX.select(); App.show('stages'); };
     $('#go-select').onclick = () => { SFX.select(); App.show('select'); };
-    $('#go-survival').onclick = () => { SFX.select(); App.show('survival'); };
+    // まだ ひらいていない モードは 条件を 知らせる
+    const gate = (door, go) => () => { if (doorOpen(door)) { SFX.select(); go(); } else { SFX.miss(); toast(lockNote(door), 2600); } };
+    $('#go-survival').onclick = gate('survival', () => App.show('survival'));
     $('#go-dex').onclick = () => { SFX.select(); App.show('dex'); };
     $('#go-ach').onclick = () => { SFX.select(); App.show('ach'); };
-    $('#go-gacha').onclick = () => { SFX.select(); App.show('gacha'); };
-    $('#go-wardrobe').onclick = () => { SFX.select(); App.show('wardrobe'); };
+    $('#go-gacha').onclick = gate('gacha', () => App.show('gacha'));
+    $('#go-wardrobe').onclick = gate('gacha', () => App.show('wardrobe'));
+    $('#go-doors').onclick = () => { SFX.select(); App.show('doors'); };
     // これまでの記録で とれる しょうごうが あれば 知らせる
+    announceDoors(checkDoors(), 300);
     checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 しょうごう「${a.name}」を 手に入れた！ (🪙+${ACH_COINS})`, 2600), 400 + i * 2800));
     document.querySelectorAll('#set-lang button').forEach(b => {
       b.onclick = () => { Save.data.settings.lang = b.dataset.v; Save.save(); SFX.select(); this.render(); };
@@ -379,6 +392,15 @@ Screens.home = {
     $('#dex-count').textContent = `${dexCount()}/${ENEMIES.length}`;
     $('#ach-count').textContent = `${achCount()}/${ACHIEVEMENTS.length}`;
     $('#home-coins').textContent = Save.data.coins || 0;
+    $('#doors-count').textContent = `${doorCount()}/${DOORS.length}`;
+    // ひらいていない モードの カード
+    for (const [el, door] of [['#go-survival', 'survival'], ['#go-gacha', 'gacha'], ['#go-wardrobe', 'gacha']]) {
+      const card = $(el), open = doorOpen(door);
+      card.classList.toggle('locked', !open);
+      let note = card.querySelector('.lock-note');
+      if (!open && !note) { note = document.createElement('span'); note.className = 'lock-note'; card.appendChild(note); }
+      if (note) note.textContent = open ? '' : lockNote(door);
+    }
     $('#home-shards').textContent = gachaData().shards;
     const cc = collectCount();
     $('#gacha-count').textContent = `${cc.have}/${cc.total}`;
@@ -405,6 +427,7 @@ Screens.home = {
     if (e.key === '6') $('#go-ach').click();
     if (e.key === '7') $('#go-gacha').click();
     if (e.key === '8') $('#go-wardrobe').click();
+    if (e.key === '9') $('#go-doors').click();
     if (e.key === 'Escape') App.show('title');
   },
 };

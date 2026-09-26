@@ -109,6 +109,9 @@ const SV_WEAPONS = {
 };
 const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill' };
 
+// その 難易度が ぼうけんのとびらで ひらいているか (かんたんは さいしょから)
+function svDiffOpen(k) { return k === 'easy' || doorOpen('sv_' + k); }
+
 function svWeaponStat(id, lv) {
   const i = lv - 1;
   switch (id) {
@@ -149,7 +152,7 @@ Screens.survival = {
     this.buildSprites();
     this.pattern = this.makeGround();
 
-    this.diffKey = SV_DIFFS[Save.data.settings.svDiff] ? Save.data.settings.svDiff : 'normal';
+    this.diffKey = SV_DIFFS[Save.data.settings.svDiff] && svDiffOpen(Save.data.settings.svDiff) ? Save.data.settings.svDiff : 'easy';
     this.reset();
     this.state = 'ready';
     this._drawnState = null;
@@ -256,13 +259,14 @@ Screens.survival = {
     };
     const cards = SV_DIFF_KEYS.map((k, i) => {
       const d = SV_DIFFS[k];
-      return `<button class="svd-card ${k === this.diffKey ? 'on' : ''}" data-k="${k}" style="--dc:${d.color}">
+      const open = svDiffOpen(k);
+      return `<button class="svd-card ${k === this.diffKey ? 'on' : ''} ${open ? '' : 'locked'}" data-k="${k}" style="--dc:${d.color}">
         <span class="mc-key">${i + 1}</span>
         <div class="svd-boss">${enemySVG(d.boss)}</div>
         <div class="svd-name">${d.name}</div>
         <div class="svd-rec">おすすめ ${d.rec}</div>
         <div class="svd-desc">${d.desc}</div>
-        <div class="svd-exp">EXP ×${d.exp}</div>
+        <div class="svd-exp">${open ? `EXP ×${d.exp}` : lockNote('sv_' + k)}</div>
         ${best(k)}
       </button>`;
     }).join('');
@@ -279,6 +283,7 @@ Screens.survival = {
   },
 
   pickDiff(k) {
+    if (!svDiffOpen(k)) { SFX.miss(); toast(lockNote('sv_' + k)); return; }
     this.diffKey = k;
     Save.data.settings.svDiff = k;
     Save.save();

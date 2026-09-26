@@ -111,6 +111,7 @@ const ACHIEVEMENTS = [
   // ずかん・そのほか
   { id: 'dex_half', name: 'ずかん はかせ見習い', desc: 'ずかんに 33 しゅるい とうろく', check: () => dexCount() >= 33 },
   { id: 'dex_full', name: 'ずかん はかせ', desc: 'ずかんを コンプリート', check: () => dexCount() >= ENEMIES.length },
+  { id: 'doors_all', name: 'とびらの かぎもち', desc: 'ぼうけんのとびらを ぜんぶ ひらく', check: () => doorCount() >= DOORS.length },
   { id: 'keys10k', name: 'タイピング だいすき', desc: '合計 1 万回 正しく打つ', check: () => Save.data.totals.keys >= 10000 },
   { id: 'keys100k', name: 'タイピングの たつじん', desc: '合計 10 万回 正しく打つ', check: () => Save.data.totals.keys >= 100000 },
   // ガチャ

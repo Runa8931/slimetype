@@ -42,12 +42,12 @@ Screens.psetup = {
     DIFFS.weak.ex = { ja: wk.keys.map(k => k.toUpperCase()).join(' '), en: wk.keys.map(k => k.toUpperCase()).join(' ') };
     DIFFS.weak.desc = wk.fromRecord ? 'きろくした にがてキーを たくさん使う' : 'きろくが少ないので まちがえやすいキーで';
     $('#diff-grid').innerHTML = Object.entries(DIFFS).map(([k, d], i) => `
-      <button class="diff-card ${s.diff === k ? 'on' : ''}" data-k="${k}">
+      <button class="diff-card ${s.diff === k ? 'on' : ''} ${k === 'weak' && !doorOpen('weak') ? 'locked' : ''}" data-k="${k}">
         <span class="mc-key">${i + 1}</span>
         <div class="dc-name">${d.name}</div>
         <div class="dc-desc">${d.desc}</div>
         <div class="dc-ex">${d.ex[s.lang]}</div>
-        <div class="dc-mult">EXP ×${d.mult.toFixed(1)}</div>
+        <div class="dc-mult">${k === 'weak' && !doorOpen('weak') ? lockNote('weak') : `EXP ×${d.mult.toFixed(1)}`}</div>
       </button>`).join('');
     $('#diff-grid').querySelectorAll('.diff-card').forEach(b => { b.onclick = () => this.setDiff(b.dataset.k); });
     document.querySelectorAll('#time-seg button').forEach(b => {
@@ -57,7 +57,10 @@ Screens.psetup = {
     $('#btn-psetup-back').onclick = () => App.show('home');
     $('#btn-psetup-start').onclick = () => App.show('practice');
   },
-  setDiff(k) { Save.data.settings.diff = k; Save.save(); SFX.select(); this.enter(); },
+  setDiff(k) {
+    if (k === 'weak' && !doorOpen('weak')) { SFX.miss(); toast(lockNote('weak')); return; }
+    Save.data.settings.diff = k; Save.save(); SFX.select(); this.enter();
+  },
   onKey(e) {
     const keys = Object.keys(DIFFS);
     const n = parseInt(e.key, 10);
