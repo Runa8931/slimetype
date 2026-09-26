@@ -48,8 +48,11 @@ const BATTLE_DIFF_KEYS = Object.keys(BATTLE_DIFFS);
 // レベル差による経験値の倍率 (ポケモン第 5 世代の式を もっと きびしくしたもの)
 //   ((2×敵Lv + 10) / (敵Lv + 自分Lv + 10)) ^ 6
 //   格下をたおすと 大きく へり、格上をたおすと ふえる (最大 1.5 倍)
+//   さらに 格下は 2 レベル差から へりはじめ、7 レベル差 以上で ほぼ 0 (2% 以下) に なる
 function levelGapMult(enemyLv, playerLv) {
-  const m = Math.pow((2 * enemyLv + 10) / (enemyLv + playerLv + 10), 6);
+  let m = Math.pow((2 * enemyLv + 10) / (enemyLv + playerLv + 10), 6);
+  const gap = playerLv - enemyLv;
+  if (gap > 1) m *= Math.max(0.02, 1 - (gap - 1) / 6);
   return Math.min(1.5, m);
 }
 
@@ -75,7 +78,7 @@ const CHARACTERS = {
       { main: '#1098ad', light: '#99e9f2', dark: '#0b5563', accent: '#ffffff' },
       { main: '#3b5bdb', light: '#e7f5ff', dark: '#1c2c80', accent: '#ffd43b' },
     ],
-    base: { hp: 75, atk: 80, def: 65, spd: 65 },
+    base: { hp: 72, atk: 77, def: 63, spd: 65 },
     desc: 'どこにでもいる、ぷるぷるのみずスライム。なんでもそつなくこなす。',
     // 進化段階ごとの とくせい・ひっさつ (数値はバトルで使う)
     forms: [
@@ -114,7 +117,7 @@ const CHARACTERS = {
       { main: '#9775fa', light: '#e5dbff', dark: '#5f3dc4', accent: '#fff27a' },
       { main: '#fcc419', light: '#ffffff', dark: '#e67700', accent: '#74c0fc' },
     ],
-    base: { hp: 70, atk: 85, def: 55, spd: 95 },
+    base: { hp: 72, atk: 88, def: 57, spd: 95 },
     desc: 'いつもビリビリしているかみなりスライム。打つのが速いほど強くなる。',
     forms: [
       {
@@ -152,7 +155,7 @@ const CHARACTERS = {
       { main: '#a5d8ff', light: '#ffffff', dark: '#4c6ef5', accent: '#e599f7' },
       { main: '#495057', light: '#adb5bd', dark: '#212529', accent: '#ffd43b' },
     ],
-    base: { hp: 90, atk: 60, def: 80, spd: 45 },
+    base: { hp: 89, atk: 59, def: 79, spd: 45 },
     desc: 'かたくて重たいいわスライム。のんびりやだけど、とにかくタフ。',
     forms: [
       {
@@ -228,7 +231,7 @@ const CHARACTERS = {
       { main: '#20c997', light: '#c3fae8', dark: '#087f5b', accent: '#fff3bf' },
       { main: '#94d82d', light: '#f4fce3', dark: '#2b8a3e', accent: '#ffd43b' },
     ],
-    base: { hp: 85, atk: 70, def: 72, spd: 60 },
+    base: { hp: 84, atk: 69, def: 71, spd: 60 },
     desc: 'もりに すむ くさスライム。ひなたぼっこで いつのまにか 元気になる。',
     forms: [
       {
@@ -306,7 +309,7 @@ const CHARACTERS = {
       { main: '#c92a2a', light: '#ffc9c9', dark: '#4d0a0a', accent: '#ffd43b' },
       { main: '#1c7ed6', light: '#d0ebff', dark: '#0b2c55', accent: '#ffd43b' },
     ],
-    base: { hp: 88, atk: 95, def: 70, spd: 60 },
+    base: { hp: 82, atk: 88, def: 65, spd: 60 },
     desc: 'りゅうの血を ひく スライム。ピンチになるほど ちからが わいてくる。',
     forms: [
       {
@@ -345,7 +348,7 @@ const CHARACTERS = {
       { main: '#66d9e8', light: '#ffffff', dark: '#0b7285', accent: '#fcc2d7' },
       { main: '#fff3bf', light: '#ffffff', dark: '#e67700', accent: '#f783ac' },
     ],
-    base: { hp: 72, atk: 88, def: 60, spd: 90 },
+    base: { hp: 82, atk: 101, def: 69, spd: 90 },
     desc: 'ほしから おちてきた ひかりのスライム。ノーミスが つづくほど かがやきを ます。',
     forms: [
       {
@@ -384,7 +387,7 @@ const CHARACTERS = {
       { main: '#4dabf7', light: '#ffffff', dark: '#0b3d6b', accent: '#99e9f2' },
       { main: '#e7f5ff', light: '#ffffff', dark: '#1971c2', accent: '#74c0fc' },
     ],
-    base: { hp: 80, atk: 82, def: 75, spd: 68 },
+    base: { hp: 87, atk: 89, def: 81, spd: 68 },
     desc: 'こおりの けっしょうから うまれた スライム。こうげきされると ひんやり やりかえす。',
     forms: [
       { trait: { name: 'ひんやりボディ', desc: '攻撃を うけると 25% で 敵の 攻撃ゲージを 35% もどす', counter: 0.25, pushback: 0.35, statusCut: 0 },
@@ -413,7 +416,7 @@ const CHARACTERS = {
       { main: '#38d9a9', light: '#ffffff', dark: '#054d3b', accent: '#fff3bf' },
       { main: '#c3fae8', light: '#ffffff', dark: '#0ca678', accent: '#ffd43b' },
     ],
-    base: { hp: 70, atk: 86, def: 58, spd: 98 },
+    base: { hp: 74, atk: 91, def: 62, spd: 98 },
     desc: 'かぜに のって ただよう スライム。すばやく 2 回 こうげきする ことが ある。',
     forms: [
       { trait: { name: 'おいかぜ', desc: 'お題を 打ち切ると 15% で もう 1 回 おいうち (50% の ダメージ)', double: 0.15, statusCut: 0 },
@@ -442,7 +445,7 @@ const CHARACTERS = {
       { main: '#5c7cfa', light: '#dbe4ff', dark: '#1c2c80', accent: '#ffd43b' },
       { main: '#e9ecef', light: '#ffffff', dark: '#5f3dc4', accent: '#ffd43b' },
     ],
-    base: { hp: 86, atk: 90, def: 85, spd: 45 },
+    base: { hp: 78, atk: 82, def: 77, spd: 45 },
     desc: 'てつで できた おもたい スライム。ながい お題を 打つほど パワーが たまる。',
     forms: [
       { trait: { name: 'ためうち', desc: '9 キー 以上の お題は 1 キー ふえるごとに +3% (最大 +30%)', longFrom: 8, longStep: 0.03, longMax: 0.3, pierce: false, statusCut: 0 },

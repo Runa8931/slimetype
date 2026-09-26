@@ -982,8 +982,22 @@ Screens.survival = {
         <div class="svc-icon">${w.icon}</div><div class="svc-name">${w.name}</div><div class="svc-tag">${tag}</div><div class="svc-desc">${w.desc}</div></button>`;
     }).join('');
     this.overlay(`<div class="ov-box chest"><div class="ov-title">🎁 たからばこ！</div><div class="ov-sub">ほしいものを えらぼう (武器 ${owned.length}/${SV_MAX_WEAPONS})</div>
-      <div class="sv-choices">${cards}</div></div>`);
-    document.querySelectorAll('.sv-choice').forEach(b => { b.onclick = () => this.choose(+b.dataset.i); });
+      <div class="sv-choices">${cards}</div>
+      <div class="ov-key"><kbd>A</kbd><kbd>D</kbd> で えらんで <kbd>Space</kbd> で けってい　(<kbd>1</kbd>〜<kbd>${this.choices.length}</kbd> でも えらべる)</div></div>`);
+    document.querySelectorAll('.sv-choice').forEach(b => {
+      b.onclick = () => this.choose(+b.dataset.i);
+      b.onmouseenter = () => this.moveSel(+b.dataset.i - this.sel);
+    });
+    this.sel = 0;
+    this.moveSel(0);
+  },
+
+  // たからばこの えらぶ カードを 左右に うごかす
+  moveSel(d) {
+    const n = this.choices.length;
+    this.sel = ((this.sel || 0) + d + n) % n;
+    document.querySelectorAll('.sv-choice').forEach(b => b.classList.toggle('sel', +b.dataset.i === this.sel));
+    if (d) SFX.tone(900, 0.04, { vol: 0.03 });
   },
 
   choose(i) {
@@ -1367,6 +1381,9 @@ Screens.survival = {
     if (this.state === 'choice') {
       const n = parseInt(e.key, 10);
       if (n >= 1 && n <= this.choices.length) this.choose(n - 1);
+      if (k === 'a' || k === 'arrowleft') this.moveSel(-1);
+      if (k === 'd' || k === 'arrowright') this.moveSel(1);
+      if (e.key === ' ' || e.key === 'Enter') this.choose(this.sel);
       return;
     }
     if (this.state === 'pause') {
