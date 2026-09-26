@@ -32,6 +32,8 @@ const Save = {
     try { d = JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { /* 読めなければ新規 */ }
     // ぼうけんのとびら より 前の セーブ: つかったことの ある ものは ひらいた ことに する
     this.needDoorMigrate = !!d && !d.doors;
+    // プレイ時間を 記録する 前の セーブ (打った キーの 数から 推定する)
+    this.needPtEstimate = !!d && !d.playtime;
     const f = this.fresh();
     this.data = d ? {
       ...f, ...d,
@@ -184,6 +186,7 @@ const App = {
   current: null,
 
   show(name, arg) {
+    PlayTime.flush(); // 画面を かえる 前に その モードの 時間を 足す
     const prev = Screens[this.current];
     if (prev && prev.leave) prev.leave();
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -196,6 +199,7 @@ const App = {
   boot() {
     Save.load();
     if (Save.needDoorMigrate) migrateDoors();
+    PlayTime.init(Save.needPtEstimate);
     SFX.enabled = Save.data.settings.sound;
     SFX.setVolume(Save.data.settings.volume);
     // 動作確認用: アドレスに ?mute=1 を付けたときは音を出さない (設定は保存しない)
@@ -414,6 +418,7 @@ Screens.home = {
         ${Object.keys(diffName).map(k => `<div><span>${diffName[k]}</span><b>${best[lang + '-' + k] ?? '—'}</b></div>`).join('')}
         <div><span>バトル突破</span><b>${Save.data.cleared}/${ENEMIES.length}</b></div>
         <div><span>サバイバル</span><b>${svRecord(best)}</b></div>
+        <div><span>プレイ時間</span><b>${(PlayTime.flush(), fmtHMS(PlayTime.total()))}</b></div>
       </div>
       <div class="weak"><span>苦手なキー</span>${wk.length ? wk.map(([k, n]) => `<kbd>${k === ';' ? ';' : k.toUpperCase()}</kbd><small>${n}</small>`).join('') : '<small>まだデータがありません</small>'}</div>`;
   },

@@ -111,6 +111,9 @@ const ACHIEVEMENTS = [
   // ずかん・そのほか
   { id: 'dex_half', name: 'ずかん はかせ見習い', desc: 'ずかんに 33 しゅるい とうろく', check: () => dexCount() >= 33 },
   { id: 'dex_full', name: 'ずかん はかせ', desc: 'ずかんを コンプリート', check: () => dexCount() >= ENEMIES.length },
+  { id: 'pt1h', name: 'スライムと なかよし', desc: 'プレイ時間 1 時間', check: () => PlayTime.total() >= 3600 },
+  { id: 'pt10h', name: 'スライムの しんゆう', desc: 'プレイ時間 10 時間', check: () => PlayTime.total() >= 36000 },
+  { id: 'pt30h', name: 'スライムの せかいの じゅうにん', desc: 'プレイ時間 30 時間', check: () => PlayTime.total() >= 108000 },
   { id: 'doors_all', name: 'とびらの かぎもち', desc: 'ぼうけんのとびらを ぜんぶ ひらく', check: () => doorCount() >= DOORS.length },
   { id: 'keys10k', name: 'タイピング だいすき', desc: '合計 1 万回 正しく打つ', check: () => Save.data.totals.keys >= 10000 },
   { id: 'keys100k', name: 'タイピングの たつじん', desc: '合計 10 万回 正しく打つ', check: () => Save.data.totals.keys >= 100000 },
@@ -156,7 +159,7 @@ Screens.ach = {
   },
   render() {
     const have = Save.data.ach || {};
-    $('#ach-desc').innerHTML = `あつめた しょうごう <b>${achCount()}</b> / ${ACHIEVEMENTS.length}　・　とった しょうごうを クリックすると ホームに かざれます`;
+    $('#ach-desc').innerHTML = `${playTimeHtml()}あつめた しょうごう <b>${achCount()}</b> / ${ACHIEVEMENTS.length}　・　とった しょうごうを クリックすると ホームに かざれます`;
     $('#ach-list').innerHTML = ACHIEVEMENTS.map(a => {
       const ok = !!have[a.id];
       const on = Save.data.title === a.id;
