@@ -5,9 +5,12 @@
 
 let _svgUid = 0;
 
-function slimeSVG(id, stage = 0) {
+// look: きせかえ ({ colors, rainbow, hat, stars })。わたさないときは そのキャラが 今 きているもの
+function slimeSVG(id, stage = 0, look) {
   const def = CHARACTERS[id];
-  const c = (def.stageColors && def.stageColors[stage]) || def.colors;
+  if (look === undefined) look = typeof slimeLook === 'function' && Save.data ? slimeLook(id) : {};
+  look = look || {};
+  const c = look.colors || (def.stageColors && def.stageColors[stage]) || def.colors;
   const u = 's' + (++_svgUid);
 
   // 体の形 (進化すると少し形も変わる)
@@ -36,6 +39,16 @@ function slimeSVG(id, stage = 0) {
       'M60,30 C88,30 104,56 106,80 C108,98 96,104 84,104 L36,104 C24,104 12,98 14,80 C16,56 32,30 60,30 Z',
       'M60,26 C90,26 108,54 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C12,54 30,26 60,26 Z',
       'M60,26 C90,26 108,54 110,80 C112,100 98,105 84,105 L36,105 C22,105 8,100 10,80 C12,54 30,26 60,26 Z',
+    ],
+    ryumaru: [
+      'M60,30 C86,30 102,52 106,76 C110,98 96,104 84,104 L36,104 C24,104 10,98 14,76 C18,52 34,30 60,30 Z',
+      'M60,28 C90,28 106,52 110,78 C114,100 98,105 84,105 L36,105 C22,105 6,100 10,78 C14,52 30,28 60,28 Z',
+      'M60,28 C90,28 106,52 110,78 C114,100 98,105 84,105 L36,105 C22,105 6,100 10,78 C14,52 30,28 60,28 Z',
+    ],
+    kirari: [
+      'M60,32 C90,32 106,56 106,80 C106,98 94,104 82,104 L38,104 C26,104 14,98 14,80 C14,56 30,32 60,32 Z',
+      'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
+      'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
     ],
     gotsun: [
       'M30,44 L50,32 L74,34 L94,48 L104,74 L100,100 L86,104 L34,104 L18,100 L16,72 Z',
@@ -88,6 +101,27 @@ function slimeSVG(id, stage = 0) {
     if (stage >= 1) front += `<g transform="translate(18,40) rotate(-20)"><path d="M0,-10 L3,-3 L10,0 L3,3 L0,10 L-3,3 L-10,0 L-3,-3 Z" fill="#dee2e6" stroke="#495057" stroke-width="1.5"/><circle r="2" fill="#495057"/></g>`;
   }
 
+  if (id === 'ryumaru') {
+    // つの・しっぽ・おなか・きば
+    const hornPath = stage >= 1 ? ['M42,36 C34,24 30,12 34,0 C40,14 48,24 52,32 Z', 'M78,36 C86,24 90,12 86,0 C80,14 72,24 68,32 Z']
+      : ['M44,36 L36,16 L52,31 Z', 'M76,36 L84,16 L68,31 Z'];
+    behind += hornPath.map(d => `<path d="${d}" fill="#fff3bf" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round"/>`).join('');
+    behind += `<path d="M98,92 C114,92 120,82 124,70 L130,78 L122,80 C118,94 108,102 96,100 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    front += `<ellipse cx="60" cy="99" rx="22" ry="5" fill="${c.light}" opacity=".7"/>
+      <path d="M55,88 L57,93 L59,88 Z" fill="#fff"/>
+      <circle cx="36" cy="82" r="5" fill="#ff8787" opacity=".55"/><circle cx="84" cy="82" r="5" fill="#ff8787" opacity=".55"/>`;
+    if (stage >= 1) behind += [[40, 36], [60, 30], [80, 36]].map(([x, y]) => `<path d="M${x - 6},${y + 4} L${x},${y - 10} L${x + 6},${y + 4} Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>`).join('');
+  }
+  if (id === 'kirari') {
+    // ほしの アンテナと きらきら
+    behind += `<path d="M60,34 C58,26 60,18 62,12" stroke="${c.dark}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g transform="translate(62,8)" class="spark-soft"><path d="M0,-11 L3.2,-3.4 L11,-3.4 L4.8,1.8 L7,10 L0,5.2 L-7,10 L-4.8,1.8 L-11,-3.4 L-3.2,-3.4 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2" stroke-linejoin="round"/></g>`;
+    front += `<circle cx="36" cy="84" r="5" fill="#ff8fab" opacity=".7"/><circle cx="84" cy="84" r="5" fill="#ff8fab" opacity=".7"/>
+      <path d="M20,50 L22,56 L28,58 L22,60 L20,66 L18,60 L12,58 L18,56 Z" fill="#fff" class="spark"/>`;
+    if (stage >= 1) front += `<g class="orbit">${[[8, 40, 5], [112, 46, 6], [104, 22, 4]].map(([x, y, r]) =>
+      `<path transform="translate(${x},${y}) scale(${r / 10})" d="M0,-11 L3.2,-3.4 L11,-3.4 L4.8,1.8 L7,10 L0,5.2 L-7,10 L-4.8,1.8 L-11,-3.4 L-3.2,-3.4 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2"/>`).join('')}</g>`;
+  }
+
   // ---- 1 段階目の進化: 見た目がはっきり変わる飾り ----
   if (stage >= 1) {
     if (id === 'purun') {
@@ -118,8 +152,9 @@ function slimeSVG(id, stage = 0) {
 
   // ---- 最終進化: 王冠 + オーラ ----
   if (stage >= 2) {
-    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4 }[id] ?? 6;
-    front += `<g transform="translate(60,${crownY})">
+    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8 }[id] ?? 6;
+    // ぼうしを かぶっているときは 王冠を はずす
+    if (!look.hat) front += `<g transform="translate(60,${crownY})">
       <path d="M-20,18 L-22,0 L-11,9 L0,-6 L11,9 L22,0 L20,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
       <circle cx="0" cy="10" r="3.8" fill="#ff4d6d"/><circle cx="-12" cy="12" r="2.6" fill="#4dd2ff"/><circle cx="12" cy="12" r="2.6" fill="#6dff8a"/>
     </g>`;
@@ -143,16 +178,41 @@ function slimeSVG(id, stage = 0) {
       <circle cx="16" cy="96" r="3" fill="#fff" class="spark"/><circle cx="106" cy="30" r="2.5" fill="#fff" class="spark"/>`;
   }
 
+  // ---- きせかえ: ぼうし ----
+  if (look.hat && HAT_SVG[look.hat]) {
+    const h = HAT_SVG[look.hat];
+    const top = (HEAD_TOP[id] || [30, 28])[Math.min(stage, 1)];
+    front += h.eyes ? `<g transform="translate(60,71)">${h.draw(c)}</g>` : `<g transform="translate(60,${top + 5})">${h.draw(c)}</g>`;
+  }
+
+  // ---- せんざいかくせい: ★ の数だけ 足もとが かがやく ----
+  let awaken = '';
+  const n = look.stars || 0;
+  if (n >= 1) {
+    awaken += `<ellipse cx="60" cy="109" rx="${44 + n * 5}" ry="${8 + n}" fill="none" stroke="#ffd43b" stroke-width="${1.5 + n * 0.7}" opacity=".75" class="spark-soft"/>`;
+    if (n >= 4) awaken = `<ellipse cx="60" cy="70" rx="64" ry="54" fill="url(#${u}-rb)" opacity=".45" class="spark-soft"/>` + awaken;
+  }
+  if (n >= 3) {
+    front += `<path d="M112,86 L114,92 L120,94 L114,96 L112,102 L110,96 L104,94 L110,92 Z" fill="#ffd43b" class="spark"/>
+      <path d="M6,40 L8,45 L13,47 L8,49 L6,54 L4,49 L-1,47 L4,45 Z" fill="#fff3bf" class="spark"/>`;
+  }
+
   const aura = stage >= 2
     ? `<ellipse class="aura" cx="60" cy="72" rx="58" ry="48" fill="url(#${u}-aura)"/>` : '';
+  // にじいろ: 体を なないろの グラデーションで ぬる
+  const bodyGrad = look.rainbow
+    ? `<linearGradient id="${u}-g" x1="0" y1="0" x2="1" y2="1">${RAINBOW.map((col, i) => `<stop offset="${i / (RAINBOW.length - 1) * 100}%" stop-color="${col}"/>`).join('')}</linearGradient>`
+    : `<radialGradient id="${u}-g" cx="40%" cy="35%" r="75%">
+        <stop offset="0%" stop-color="${c.light}"/><stop offset="55%" stop-color="${c.main}"/><stop offset="100%" stop-color="${c.dark}"/>
+      </radialGradient>`;
 
   return `<svg viewBox="${stage >= 3 ? '-30 -24 180 144' : '-6 -14 132 134'}" class="slime slime-${id} stage-${stage}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <radialGradient id="${u}-g" cx="40%" cy="35%" r="75%">
-        <stop offset="0%" stop-color="${c.light}"/><stop offset="55%" stop-color="${c.main}"/><stop offset="100%" stop-color="${c.dark}"/>
-      </radialGradient>
+      ${bodyGrad}
       <radialGradient id="${u}-aura"><stop offset="0%" stop-color="${c.accent}" stop-opacity=".6"/><stop offset="100%" stop-color="${c.accent}" stop-opacity="0"/></radialGradient>
+      ${n >= 4 ? `<radialGradient id="${u}-rb"><stop offset="0%" stop-color="#fff3bf" stop-opacity=".9"/><stop offset="60%" stop-color="#ffd43b" stop-opacity=".5"/><stop offset="100%" stop-color="#ff8fab" stop-opacity="0"/></radialGradient>` : ''}
     </defs>
+    ${awaken}
     ${aura}
     <ellipse cx="60" cy="109" rx="46" ry="7" fill="#000" opacity=".25"/>
     <g class="body">
@@ -170,6 +230,27 @@ function slimeSVG(id, stage = 0) {
     </g>
   </svg>`;
 }
+
+const RAINBOW = ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa', '#f783ac'];
+
+// 頭の てっぺんの 高さ [最初の すがた, 進化後]。ぼうしの 位置に つかう
+const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28] };
+
+// ぼうし・アクセサリーの絵 (下のはしが y=0。eyes は 目の 高さに つける)
+const HAT_SVG = {
+  ribbon: { draw: () => `<g transform="translate(18,6) rotate(15)"><path d="M0,0 L-15,-10 L-13,10 Z" fill="#ff6b9d" stroke="#c2255c" stroke-width="2" stroke-linejoin="round"/><path d="M0,0 L15,-10 L13,10 Z" fill="#ff6b9d" stroke="#c2255c" stroke-width="2" stroke-linejoin="round"/><circle r="4.5" fill="#ff8fab" stroke="#c2255c" stroke-width="2"/></g>` },
+  hachimaki: { draw: () => `<path d="M-27,10 Q0,2 27,10 L27,17 Q0,9 -27,17 Z" fill="#fff" stroke="#adb5bd" stroke-width="1.5"/><circle cx="0" cy="9" r="4" fill="#e03131"/><path d="M26,12 C34,10 40,16 44,12 M26,15 C34,18 38,24 44,22" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>` },
+  beret: { draw: () => `<ellipse cx="4" cy="-3" rx="25" ry="9" fill="#e03131" stroke="#862e2e" stroke-width="2"/><path d="M4,-12 L6,-18" stroke="#862e2e" stroke-width="3" stroke-linecap="round"/>` },
+  sprout: { draw: () => `<path d="M0,4 L0,-12" stroke="#2b8a3e" stroke-width="3" stroke-linecap="round"/><path d="M0,-11 C-4,-23 -18,-23 -20,-17 C-12,-11 -6,-9 0,-11 Z" fill="#69db7c" stroke="#2b8a3e" stroke-width="2"/><path d="M0,-12 C4,-24 18,-24 20,-18 C12,-12 6,-10 0,-12 Z" fill="#8ce99a" stroke="#2b8a3e" stroke-width="2"/>` },
+  witch: { draw: () => `<path d="M-18,-2 C-10,-20 -4,-40 8,-50 C6,-36 10,-18 18,-2 Z" fill="#6741d9" stroke="#2b1a4a" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="0" cy="0" rx="32" ry="6.5" fill="#5f3dc4" stroke="#2b1a4a" stroke-width="2.5"/><path d="M-16,-6 L16,-6 L17,-1 L-17,-1 Z" fill="#ffd43b"/><path d="M6,-26 L8,-21 L13,-21 L9,-18 L10,-13 L6,-16 L2,-13 L3,-18 L-1,-21 L4,-21 Z" fill="#ffe066"/>` },
+  straw: { draw: () => `<ellipse cx="0" cy="0" rx="34" ry="8" fill="#f5d17a" stroke="#b8860b" stroke-width="2"/><path d="M-16,-1 C-16,-20 16,-20 16,-1 Z" fill="#fce38a" stroke="#b8860b" stroke-width="2"/><path d="M-16,-5 L16,-5 L16,-1 L-16,-1 Z" fill="#e03131"/>` },
+  cat: { draw: c => `<path d="M-30,10 L-24,-16 L-8,2 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round"/><path d="M-25,4 L-22,-8 L-14,1 Z" fill="#ffa8c5"/><path d="M30,10 L24,-16 L8,2 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round"/><path d="M25,4 L22,-8 L14,1 Z" fill="#ffa8c5"/>` },
+  shades: { eyes: true, draw: () => `<path d="M-26,-8 L-4,-8 L-6,4 C-8,9 -22,9 -24,4 Z M26,-8 L4,-8 L6,4 C8,9 22,9 24,4 Z" fill="#111" stroke="#000" stroke-width="1.5"/><path d="M-4,-6 L4,-6" stroke="#000" stroke-width="3"/><path d="M-21,-5 L-15,-5" stroke="#fff" stroke-width="2" opacity=".7" stroke-linecap="round"/><path d="M9,-5 L15,-5" stroke="#fff" stroke-width="2" opacity=".7" stroke-linecap="round"/>` },
+  tiara: { draw: () => `<path d="M-22,2 L-17,-10 L-9,-3 L0,-18 L9,-3 L17,-10 L22,2 Z" fill="#e9ecef" stroke="#868e96" stroke-width="2" stroke-linejoin="round"/><circle cx="0" cy="-8" r="3.8" fill="#f783ac"/><circle cx="-13" cy="-3" r="2.4" fill="#74c0fc"/><circle cx="13" cy="-3" r="2.4" fill="#74c0fc"/><circle cx="0" cy="-18" r="2" fill="#fff" class="spark"/>` },
+  pirate: { draw: () => `<path d="M-34,2 C-24,-30 24,-30 34,2 C20,-4 -20,-4 -34,2 Z" fill="#212529" stroke="#000" stroke-width="2"/><path d="M-30,-2 C-18,-8 18,-8 30,-2" stroke="#ffd43b" stroke-width="2.5" fill="none"/><circle cx="0" cy="-16" r="5" fill="#fff"/><path d="M-7,-8 L7,-3 M7,-8 L-7,-3" stroke="#fff" stroke-width="2"/><circle cx="-2" cy="-17" r="1.3" fill="#000"/><circle cx="2" cy="-17" r="1.3" fill="#000"/>` },
+  starcrown: { draw: () => `<path d="M-24,2 L-26,-18 L-13,-8 L0,-26 L13,-8 L26,-18 L24,2 Z" fill="#ffd43b" stroke="#b8860b" stroke-width="2.5" stroke-linejoin="round"/>${[[-26, -18, 5], [0, -26, 7], [26, -18, 5]].map(([x, y, r]) => `<path transform="translate(${x},${y - r}) scale(${r / 10})" d="M0,-11 L3.2,-3.4 L11,-3.4 L4.8,1.8 L7,10 L0,5.2 L-7,10 L-4.8,1.8 L-11,-3.4 L-3.2,-3.4 Z" fill="#fff3bf" stroke="#e67700" stroke-width="2.5"/>`).join('')}<circle cx="0" cy="-6" r="4" fill="#4dabf7"/><circle cx="-14" cy="-3" r="2.6" fill="#ff6b6b"/><circle cx="14" cy="-3" r="2.6" fill="#69db7c"/><circle cx="-30" cy="-30" r="2.4" fill="#fff" class="spark"/><circle cx="30" cy="-34" r="2" fill="#fff" class="spark"/>` },
+  kabuto: { draw: () => `<path d="M-28,6 C-28,-24 28,-24 28,6 L22,6 C22,-14 -22,-14 -22,6 Z" fill="#343a40" stroke="#000" stroke-width="2"/><path d="M-28,2 L-36,10 L-24,8 Z M28,2 L36,10 L24,8 Z" fill="#495057" stroke="#000" stroke-width="1.5"/><path d="M-4,-14 C-12,-26 -22,-40 -20,-52 C-14,-40 -6,-30 2,-18 M4,-14 C12,-26 22,-40 20,-52 C14,-40 6,-30 -2,-18" fill="#ffd43b" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/><circle cx="0" cy="-15" r="6" fill="#ffd43b" stroke="#b8860b" stroke-width="2"/><circle cx="0" cy="-15" r="2.5" fill="#e03131"/>` },
+};
 
 // SVG 文字列をキャンバスで描ける画像に変換する
 function svgToImage(svg) {

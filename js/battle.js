@@ -5,6 +5,8 @@
 //  ・正しく打つと必殺技ゲージがたまり、満タンになると自動で発動
 // ============================================================
 
+const CHILL_MULT = 0.7; // こごえている あいだの 攻撃の 強さ
+
 const DIFF_POOLS = { easy: ['easy'], normal: ['easy', 'normal', 'normal'], hard: ['normal', 'hard', 'hard'] };
 
 Screens.battle = {
@@ -29,7 +31,7 @@ Screens.battle = {
     this.e = { hp: Math.round(es.hp * ENEMY_HP_SCALE), max: Math.round(es.hp * ENEMY_HP_SCALE), stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
-    this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0;
+    this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0;
     this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
     // 新しい敵の特殊能力で使う状態
     this.shellUntil = 0; this.nextShell = 4000; this.nextRegen = 8000;
@@ -138,10 +140,12 @@ Screens.battle = {
     }
     const status = [
       this.p.poisonUntil > this.elapsed ? `<i class="st poison">${this.ed.statusName || 'どく'}</i>` : '',
-      this.frozenUntil > this.elapsed ? '<i class="st frozen">こおり</i>' : '',
+      this.frozenUntil > this.elapsed ? '<i class="st frozen">こごえ</i>' : '',
       this.p.shield > 0 ? `<i class="st shield">シールド×${this.p.shield}</i>` : '',
       this.p.barrier > 0 ? `<i class="st barrier">バリア×${this.p.barrier}</i>` : '',
       this.p.boost > 1 ? '<i class="st boost">こうげきUP</i>' : '',
+      this.raging() ? '<i class="st rage">いかり</i>' : '',
+      this.streakBonus() > 0 ? `<i class="st boost">リズム+${Math.round(this.streakBonus() * 100)}%</i>` : '',
     ].join('');
     // 変わったときだけ書きかえる (毎フレーム書きかえると重い)
     if (status !== this._status) { this._status = status; $('#b-pstatus').innerHTML = status; }
@@ -311,6 +315,11 @@ Screens.battle = {
     renderTyping($('#b-tp'), this.word, this.target, { hideRoma: this.fogUntil > this.elapsed });
   },
 
+  // りゅうまる: HP が へると こうげきアップ
+  raging() { return this.ch.id === 'ryumaru' && this.p.hp / this.p.max < this.ch.trait.rageAt; },
+  // きらり: ノーミスが つづいた 回数の ボーナス
+  streakBonus() { return this.ch.id === 'kirari' ? Math.min(this.ch.trait.streakMax, this.streak * this.ch.trait.streakStep) : 0; },
+
   comboMult() { return 1 + Math.min(this.combo, this.ch.trait.comboMax || 100) / 200; },
 
   updateCombo() {
@@ -361,12 +370,6 @@ Screens.battle = {
       return;
     }
     if (e.key.length !== 1) return;
-    // こおっている間は入力できない
-    if (this.frozenUntil > this.elapsed) {
-      SFX.tone(2000, 0.04, { type: 'sine', vol: 0.03 });
-      replayAnim($('#b-tp'), 'miss-shake', 200);
-      return;
-    }
 
     const key = e.key.toLowerCase();
     if (!this.wordStart) this.wordStart = this.elapsed;
@@ -404,6 +407,7 @@ Screens.battle = {
       this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200) * this.ch.skill.charge);
       if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.useSkill(); }
       SFX.key();
+      keyFx($('#b-tp'), r === 'done');
       if (r === 'done') { this.wordDone(); }
     }
     this.updateCombo();
@@ -424,8 +428,16 @@ Screens.battle = {
     let dmg = calcDamage(this.ch.L, wordPower(keys), st.atk, this.e.stats.def);
     dmg *= this.comboMult();
     dmg *= this.p.boost;
+    // こごえ: 体が つめたくて 攻撃が 弱くなる (入力は できる)
+    const chilled = this.frozenUntil > this.elapsed;
+    if (chilled) dmg *= CHILL_MULT;
     const boosted = this.p.boost > 1;
     this.p.boost = 1;
+    if (this.raging()) dmg *= this.ch.trait.rageMult;
+    if (this.ch.id === 'kirari') {
+      this.streak = perfect ? this.streak + 1 : 0;
+      dmg *= 1 + this.streakBonus();
+    }
 
     // 会心: ぴりりは速く打つほど出やすい (進化すると上限と倍率が上がる)
     let critRate = 0.06, critMult = 1.5;
@@ -473,6 +485,8 @@ Screens.battle = {
       purun: { color: col.main, size: 11, arc: -70 },
       piriri: { color: '#fff27a', size: 9, arc: -20, frames: 12 },
       gotsun: { color: col.dark, size: 14, arc: -100, frames: 26 },
+      ryumaru: { color: '#ff922b', size: 13, arc: -40, frames: 18 },
+      kirari: { color: '#fff3bf', size: 9, arc: -90, frames: 16 },
     };
     this.proj({ x: from.x + 30, y: from.y }, to, {
       frames: 20, ...kinds[this.ch.id],
@@ -610,13 +624,18 @@ Screens.battle = {
       }, 700);
     }
 
-    // ほむら・もりりん・かげまる: 攻撃 + それぞれの効果
-    if (ch.id === 'homura' || ch.id === 'moririn' || ch.id === 'kagemaru') {
+    // ほむら・もりりん・かげまる・りゅうまる・きらり: 攻撃 + それぞれの効果
+    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari'].includes(ch.id)) {
       this.after(() => {
         if (this.state !== 'run') return;
         const ec = FX.center($('#b-esprite'));
-        const dmg = Math.round(calcDamage(ch.L, sk.power, ch.stats.atk, this.e.stats.def) * (0.92 + Math.random() * 0.08));
-        const fxCol = { homura: ['#ff6b35', '#ffe066', '#fff'], moririn: ['#51cf66', '#d3f9d8', '#fff'], kagemaru: ['#7048e8', '#1a1a2e', '#e5dbff'] }[ch.id];
+        let dmg = calcDamage(ch.L, sk.power, ch.stats.atk, this.e.stats.def) * (0.92 + Math.random() * 0.08);
+        // りゅうまる: HP が へっているほど 強い / きらり: リズムの ボーナスが のる
+        if (ch.id === 'ryumaru') dmg *= 1 + sk.lowBoost * (1 - clamp(this.p.hp / this.p.max, 0, 1));
+        if (ch.id === 'kirari') dmg *= 1 + this.streakBonus();
+        dmg = Math.round(dmg);
+        const fxCol = { homura: ['#ff6b35', '#ffe066', '#fff'], moririn: ['#51cf66', '#d3f9d8', '#fff'], kagemaru: ['#7048e8', '#1a1a2e', '#e5dbff'],
+          ryumaru: ['#ff922b', '#ffd43b', '#fff'], kirari: ['#f783ac', '#fff3bf', '#99e9f2'] }[ch.id];
         for (let i = 0; i < 16; i++) {
           this.after(() => this.proj({ x: pc.x + 20, y: pc.y + (Math.random() - 0.5) * 40 }, { x: ec.x + (Math.random() - 0.5) * 60, y: ec.y + (Math.random() - 0.5) * 60 },
             { color: fxCol[i % 3], size: 5 + Math.random() * 7, frames: 16, arc: (Math.random() - 0.5) * 100, trail: false }), i * 20);
@@ -632,6 +651,11 @@ Screens.battle = {
             SFX.heal();
             this.log(`${sk.name}！ ${dmg} ダメージ、HP が ${h} 回復した！`, 'good');
             this.updateBars();
+          }
+          if (ch.id === 'ryumaru') this.log(`${sk.name}！ ${dmg} のダメージ！`, 'good');
+          if (ch.id === 'kirari') {
+            if (sk.barrier) { this.p.barrier = Math.max(this.p.barrier, sk.barrier); $('#b-player').classList.add('bubbled'); }
+            this.log(`${sk.name}！ ${dmg} のダメージ！${sk.barrier ? ' ひかりのかべを はった！' : ''}`, 'good');
           }
           if (ch.id === 'kagemaru') { this.e.bindUntil = this.elapsed + sk.bind * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.bind} 秒 しばった！`, 'good'); }
         }, 420);
@@ -794,10 +818,10 @@ Screens.battle = {
       this.log('どろを かけられた！ ガイドが 見えにくい', 'enemy');
       this.updateBars();
     }
-    // こおりのいき / ふぶき: しばらく入力できない
+    // こおりのいき / ふぶき: しばらく こごえて 攻撃が 弱くなる
     if ((this.has('freeze') || this.has('blizzard')) && !this.ch.trait.freezeImmune && statusCut < 1) {
-      this.frozenUntil = this.elapsed + (this.has('freeze') ? 1000 : 700);
-      this.log('こおってしまった！ すこし まってね', 'enemy');
+      this.frozenUntil = this.elapsed + (this.has('freeze') ? 4000 : 3000);
+      this.log(`こごえてしまった！ ${this.has('freeze') ? 4 : 3} 秒間 攻撃が 弱くなる`, 'enemy');
       FX.burst(pc.x, pc.y, { colors: ['#d0ebff', '#fff', '#74c0fc'], count: 24, speed: 6, shape: 'star', size: 6 });
       SFX.tone(1800, 0.3, { type: 'sine', vol: 0.05, slide: 600 });
     }
@@ -863,6 +887,11 @@ Screens.battle = {
     if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); } // ずかん: たおした
     Save.data.totals.keys += this.correct;
     const expRes = grantExp(this.ch.id, typing + bonus);
+    // コイン: 勝つと もらえる (格下では へる)。はじめて たおすと ボーナス
+    const coinGap = Math.min(1.2, gap);
+    const winCoins = won ? Math.round((30 + this.idx * 2) * coinGap) : Math.round(this.correct / 15 * Math.min(1, gap));
+    const firstCoins = firstClear ? (this.ed.boss ? 200 : 50) : 0;
+    const coins = grantCoins(winCoins + firstCoins);
     const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
     App.show('result', {
       mode: 'battle', won, enemyIdx: this.idx, firstClear,
@@ -870,6 +899,7 @@ Screens.battle = {
       correct: this.correct, miss: this.miss, acc,
       kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs),
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
+      coins, coinNote: `${won ? `勝利 ${winCoins}` : `打鍵 ${winCoins}`}${firstCoins ? ` + はじめて たおした ${firstCoins}` : ''}${gap < 1 ? '・格下なので へった' : ''}`,
       expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (敵の基礎EXP ${this.ed.exp} × Lv.${this.ed.lv} ÷ 5)` : '勝利ボーナスなし',
         `レベル差の補正 ×${gap.toFixed(2)} (敵 Lv.${this.ed.lv} / 自分 Lv.${this.ch.L}${gap < 1 ? '・格下なので へった' : gap > 1 ? '・格上なので ふえた' : ''})`],
     });

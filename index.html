@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260925f">
+  <link rel="stylesheet" href="css/style.css?v=20260926j">
 </head>
 <body>
   <div class="sky"></div>
@@ -67,6 +67,18 @@
           <span class="mc-title">スライムをかえる</span>
           <span class="mc-desc">ほかのスライムも育ててみよう</span>
         </button>
+        <div class="menu-row">
+          <button class="menu-card gacha" id="go-gacha">
+            <span class="mc-key">7</span>
+            <span class="mc-title">🎰 ガチャ <small id="gacha-count"></small></span>
+            <span class="mc-desc">🪙 <b id="home-coins">0</b>　💎 <b id="home-shards">0</b></span>
+          </button>
+          <button class="menu-card wardrobe" id="go-wardrobe">
+            <span class="mc-key">8</span>
+            <span class="mc-title">👕 きせかえ</span>
+            <span class="mc-desc">いろ・ぼうし・エフェクト</span>
+          </button>
+        </div>
         <div class="sub-menu">
           <button class="sub-card" id="go-dex"><span class="mc-key">5</span>📖 モンスターずかん <small id="dex-count"></small></button>
           <button class="sub-card" id="go-ach"><span class="mc-key">6</span>🏅 しょうごう <small id="ach-count"></small></button>
@@ -215,25 +227,79 @@
     <div class="bottom-bar"><button class="btn ghost" id="btn-ach-back">もどる <kbd>Esc</kbd></button></div>
   </section>
 
+  <!-- ガチャ -->
+  <section class="screen" id="scr-gacha">
+    <h2 class="screen-title">ガチャ</h2>
+    <div class="gc-top">
+      <span>🪙 コイン <b id="gc-coins">0</b></span>
+      <span>💎 かけら <b id="gc-shards">0</b></span>
+      <span>📦 あつめた <b id="gc-collect">0</b></span>
+    </div>
+    <div class="gc-wrap">
+      <div class="gc-left panel">
+        <div class="gc-machine" id="gc-machine">
+          <svg viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg">
+            <rect x="30" y="112" width="100" height="70" rx="12" fill="#e03131" stroke="#7a1414" stroke-width="4"/>
+            <circle cx="80" cy="66" r="58" fill="rgba(255,255,255,.18)" stroke="#dee2e6" stroke-width="5"/>
+            <circle cx="56" cy="78" r="14" fill="#4dabf7"/><circle cx="92" cy="86" r="14" fill="#ffd43b"/><circle cx="72" cy="48" r="14" fill="#f783ac"/>
+            <circle cx="104" cy="54" r="13" fill="#69db7c"/><circle cx="60" cy="104" r="12" fill="#cc5de8"/><circle cx="100" cy="106" r="11" fill="#ff922b"/>
+            <path d="M44,40 C54,24 70,18 84,18" stroke="#fff" stroke-width="5" fill="none" opacity=".6" stroke-linecap="round"/>
+            <circle cx="80" cy="146" r="16" fill="#ffd43b" stroke="#7a1414" stroke-width="4"/><rect x="74" y="136" width="12" height="20" rx="3" fill="#7a1414"/>
+            <rect x="46" y="168" width="68" height="8" rx="4" fill="#7a1414"/>
+          </svg>
+        </div>
+        <button class="btn gc-btn" id="gc-one"><span class="mc-key">1</span>1 かい 引く<small>🪙 100</small></button>
+        <button class="btn big gc-btn" id="gc-ten"><span class="mc-key">2</span>10 かい 引く<small>🪙 1000・SR以上 1つ かくてい</small></button>
+      </div>
+      <div class="gc-right">
+        <div class="seg gc-tabs" id="gc-tabs">
+          <button data-v="result"><kbd>3</kbd> けっか</button><button data-v="shop"><kbd>4</kbd> こうかんじょ</button><button data-v="list"><kbd>5</kbd> ラインナップ</button>
+        </div>
+        <div class="gc-panel panel" id="gc-panel"></div>
+      </div>
+    </div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-gacha-back">もどる <kbd>Esc</kbd></button></div>
+    <div class="gc-stage" id="gc-stage"></div>
+  </section>
+
+  <!-- きせかえ -->
+  <section class="screen" id="scr-wardrobe">
+    <h2 class="screen-title">きせかえ</h2>
+    <div class="wd-chars" id="wd-chars"></div>
+    <div class="wd-wrap">
+      <div class="wd-preview panel" id="wd-preview"></div>
+      <div class="wd-side">
+        <div class="wd-head">
+          <div class="seg" id="wd-tabs"><button data-v="color"><kbd>1</kbd> いろ</button><button data-v="hat"><kbd>2</kbd> ぼうし</button><button data-v="fx"><kbd>3</kbd> エフェクト</button></div>
+          <small id="wd-count"></small>
+          <button class="icon-btn" id="wd-try">✨ ためす</button>
+        </div>
+        <div class="wd-items panel" id="wd-items"></div>
+      </div>
+    </div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-wd-back">もどる <kbd>Esc</kbd></button></div>
+  </section>
+
   <!-- 結果 -->
   <section class="screen" id="scr-result">
     <div class="result-wrap" id="result-wrap"></div>
   </section>
 
-  <script src="js/romaji.js?v=20260925f"></script>
-  <script src="js/data.js?v=20260925f"></script>
-  <script src="js/words.js?v=20260925f"></script>
-  <script src="js/sprites.js?v=20260925f"></script>
-  <script src="js/enemies2.js?v=20260925f"></script>
-  <script src="js/effects.js?v=20260925f"></script>
-  <script src="js/audio.js?v=20260925f"></script>
-  <script src="js/main.js?v=20260925f"></script>
-  <script src="js/practice.js?v=20260925f"></script>
-  <script src="js/map.js?v=20260925f"></script>
-  <script src="js/battle.js?v=20260925f"></script>
-  <script src="js/survival.js?v=20260925f"></script>
-  <script src="js/collection.js?v=20260925f"></script>
-  <script src="js/result.js?v=20260925f"></script>
+  <script src="js/romaji.js?v=20260926j"></script>
+  <script src="js/data.js?v=20260926j"></script>
+  <script src="js/words.js?v=20260926j"></script>
+  <script src="js/sprites.js?v=20260926j"></script>
+  <script src="js/enemies2.js?v=20260926j"></script>
+  <script src="js/effects.js?v=20260926j"></script>
+  <script src="js/audio.js?v=20260926j"></script>
+  <script src="js/main.js?v=20260926j"></script>
+  <script src="js/practice.js?v=20260926j"></script>
+  <script src="js/map.js?v=20260926j"></script>
+  <script src="js/battle.js?v=20260926j"></script>
+  <script src="js/survival.js?v=20260926j"></script>
+  <script src="js/collection.js?v=20260926j"></script>
+  <script src="js/gacha.js?v=20260926j"></script>
+  <script src="js/result.js?v=20260926j"></script>
   <script>App.boot();</script>
 </body>
 </html>

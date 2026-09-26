@@ -182,6 +182,7 @@ Screens.practice = {
       SFX.key();
       pressKey($('#p-kb'), key, false);
       if (this.combo > 0 && this.combo % 50 === 0) this.comboFx();
+      keyFx($('#p-tp'), r === 'done');
       if (r === 'done') { this.wordDone(); return; }
     }
     this.render();
@@ -236,12 +237,14 @@ Screens.practice = {
     Save.data.totals.plays++;
     if (this.diff === 'weak') Save.data.totals.weakPlays = (Save.data.totals.weakPlays || 0) + 1;
     const expRes = grantExp(this.char.id, exp);
+    const coins = grantCoins(correct / 8 * acc * acc * DIFFS[this.diff].mult);
 
     this.overlay('<div class="count go">FINISH!</div>');
     SFX.win();
     setTimeout(() => App.show('result', {
       mode: 'practice', diff: this.diff, correct, miss, acc, kpm, score, newBest,
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
+      coins, coinNote: '打鍵 ÷ 8 × 正確率² × 難易度',
       expBreakdown: [`打鍵 ${correct} × 正確率² × (1 + ${kpm}/300) × 難易度 ${DIFFS[this.diff].mult} × レベル補正 ${(1 + this.char.L / 15).toFixed(1)}`],
     }), 1100);
   },

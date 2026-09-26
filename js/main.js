@@ -20,6 +20,9 @@ const Save = {
       settings: { lang: 'ja', sound: true, volume: 0.8, diff: 'easy', time: 60, lite: false },
       missKeys: {},
       totals: { keys: 0, plays: 0, wins: 0 },
+      coins: START_COINS,
+      gacha: { items: {}, chars: {}, awaken: {}, shards: 0, pulls: 0, ssr: 0 },
+      wear: {},
     };
   },
 
@@ -32,6 +35,7 @@ const Save = {
       chars: { ...f.chars, ...(d.chars || {}) },
       settings: { ...f.settings, ...(d.settings || {}) },
       totals: { ...f.totals, ...(d.totals || {}) },
+      gacha: { ...f.gacha, ...(d.gacha || {}) },
     } : f;
   },
 
@@ -40,21 +44,31 @@ const Save = {
   },
 };
 
+// ガチャ限定キャラは ガチャで 出るまで つかえない
+function hasChar(id) { return !CHARACTERS[id].gacha || !!(Save.data.gacha && Save.data.gacha.chars[id]); }
+// せんざいかくせいの ★ の数 (0〜4)
+function awakenOf(id) { return Math.min(AWAKEN_MAX, (Save.data.gacha && Save.data.gacha.awaken[id]) || 0); }
+
 // キャラの現在の状態をまとめて返す
 function charInfo(id) {
   const def = CHARACTERS[id];
   const exp = Save.data.chars[id].exp;
-  const L = levelFromExp(exp);
+  const awaken = awakenOf(id);
+  const cap = MAX_LV + awaken; // ★ 1 つごとに レベルの上限 +1
+  const L = levelFromExp(exp, cap);
   const stage = evoStage(L);
+  const raw = calcStats(def.base, L);
+  const k = 1 + AWAKEN_STAT * awaken;
+  const trait = def.forms[stage].trait;
   return {
-    id, def, exp, L, stage,
+    id, def, exp, L, stage, awaken, cap,
     name: def.names[stage],
-    // 進化段階に合わせた とくせい・ひっさつ
-    trait: def.forms[stage].trait,
+    // 進化段階に合わせた とくせい・ひっさつ (かくせいで とくせいが 少し のびる)
+    trait: awaken && AWAKEN_BONUS[id] ? AWAKEN_BONUS[id].apply(trait, awaken) : trait,
     skill: def.forms[stage].skill,
-    stats: calcStats(def.base, L),
+    stats: Object.fromEntries(Object.entries(raw).map(([key, v]) => [key, Math.round(v * k)])),
     curLvExp: expForLevel(L),
-    nextLvExp: L >= MAX_LV ? null : expForLevel(L + 1),
+    nextLvExp: L >= cap ? null : expForLevel(L + 1),
   };
 }
 
@@ -204,7 +218,7 @@ const App = {
 // ---------------- タイトル ----------------
 Screens.title = {
   enter() {
-    $('#title-slimes').innerHTML = Object.keys(CHARACTERS)
+    $('#title-slimes').innerHTML = Object.keys(CHARACTERS).filter(hasChar)
       .map((id, i) => `<div class="sprite bounce d${i}">${slimeSVG(id, 0)}</div>`).join('');
     $('#btn-start').onclick = () => this.go();
   },
@@ -229,10 +243,20 @@ Screens.select = {
     $('#select-grid').innerHTML = ids.map((id, i) => {
       const c = charInfo(id);
       const d = c.def;
+      if (!hasChar(id)) {
+        return `<button class="char-card locked" data-id="${id}" disabled>
+          <span class="mc-key">${i + 1}</span>
+          <div class="sprite">${slimeSVG(id, 0, {})}</div>
+          <div class="cc-name">？？？</div>
+          <div class="badges"><span class="badge gacha">ガチャ限定</span><span class="badge">${d.role}</span></div>
+          <p class="cc-desc">ガチャで であえる ふしぎな スライム。こうかんじょで かけらと こうかんも できる。</p>
+        </button>`;
+      }
       return `<button class="char-card ${Save.data.active === id ? 'current' : ''}" data-id="${id}" style="--cc:${d.colors.main};--cd:${d.colors.dark}">
         <span class="mc-key">${i + 1}</span>
         <div class="sprite bounce d${i}">${slimeSVG(id, c.stage)}</div>
         <div class="cc-name">${c.name} <small>Lv.${c.L}</small></div>
+        ${c.awaken ? `<div class="cc-stars">${starText(c.awaken)}</div>` : ''}
         <div class="badges"><span class="badge type-${id}">${d.type}</span><span class="badge">${d.role}</span></div>
         <p class="cc-desc">${d.desc}</p>
         <div class="stats">${statBars(d.base, 100)}</div>
@@ -241,7 +265,7 @@ Screens.select = {
         <div class="evo-note">Lv.20・40・60・80 で進化すると とくせい・ひっさつも パワーアップ</div>
       </button>`;
     }).join('');
-    $('#select-grid').querySelectorAll('.char-card').forEach(b => { b.onclick = () => this.pick(b.dataset.id); });
+    $('#select-grid').querySelectorAll('.char-card:not(.locked)').forEach(b => { b.onclick = () => this.pick(b.dataset.id); });
     $('#btn-select-back').onclick = () => this.back();
   },
   pick(id) {
@@ -257,7 +281,7 @@ Screens.select = {
   onKey(e) {
     const ids = Object.keys(CHARACTERS);
     const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= ids.length) this.pick(ids[n - 1]);
+    if (n >= 1 && n <= ids.length && hasChar(ids[n - 1])) this.pick(ids[n - 1]);
     if (e.key === 'Escape') this.back();
   },
 };
@@ -272,8 +296,10 @@ Screens.home = {
     $('#go-survival').onclick = () => { SFX.select(); App.show('survival'); };
     $('#go-dex').onclick = () => { SFX.select(); App.show('dex'); };
     $('#go-ach').onclick = () => { SFX.select(); App.show('ach'); };
+    $('#go-gacha').onclick = () => { SFX.select(); App.show('gacha'); };
+    $('#go-wardrobe').onclick = () => { SFX.select(); App.show('wardrobe'); };
     // これまでの記録で とれる しょうごうが あれば 知らせる
-    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 しょうごう「${a.name}」を 手に入れた！`, 2600), 400 + i * 2800));
+    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 しょうごう「${a.name}」を 手に入れた！ (🪙+${ACH_COINS})`, 2600), 400 + i * 2800));
     document.querySelectorAll('#set-lang button').forEach(b => {
       b.onclick = () => { Save.data.settings.lang = b.dataset.v; Save.save(); SFX.select(); this.render(); };
     });
@@ -322,7 +348,7 @@ Screens.home = {
       <div class="hc-top">
         <div class="sprite big bounce">${slimeSVG(c.id, c.stage)}</div>
         <div class="hc-id">
-          <div class="hc-name">${c.name}</div>
+          <div class="hc-name">${c.name}${c.awaken ? ` <span class="hc-stars">${starText(c.awaken)}</span>` : ''}</div>
           ${currentTitle() ? `<div class="hc-title">🏅 ${currentTitle()}</div>` : ''}
           <div class="badges"><span class="badge type-${c.id}">${d.type}</span><span class="badge">${d.role}</span><span class="badge evo">${nextEvo}</span></div>
           <div class="hc-lv">Lv.<b>${c.L}</b></div>
@@ -339,6 +365,10 @@ Screens.home = {
 
     $('#dex-count').textContent = `${dexCount()}/${ENEMIES.length}`;
     $('#ach-count').textContent = `${achCount()}/${ACHIEVEMENTS.length}`;
+    $('#home-coins').textContent = Save.data.coins || 0;
+    $('#home-shards').textContent = gachaData().shards;
+    const cc = collectCount();
+    $('#gacha-count').textContent = `${cc.have}/${cc.total}`;
     const best = Save.data.best;
     const lang = s.lang;
     const diffName = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい' };
@@ -360,6 +390,8 @@ Screens.home = {
     if (e.key === '4') $('#go-select').click();
     if (e.key === '5') $('#go-dex').click();
     if (e.key === '6') $('#go-ach').click();
+    if (e.key === '7') $('#go-gacha').click();
+    if (e.key === '8') $('#go-wardrobe').click();
     if (e.key === 'Escape') App.show('title');
   },
 };

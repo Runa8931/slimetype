@@ -90,7 +90,7 @@ const SV_WEAPONS = {
   meteor: { name: 'メテオ', icon: '☄️', color: '#ff6a00', desc: '空から いんせきを落として 大ばくはつ' },
   tornado: { name: 'たつまき', icon: '🌪️', color: '#96f2d7', desc: '敵を まきこむ たつまきを 生みだす' },
 };
-const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star' };
+const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser' };
 
 function svWeaponStat(id, lv) {
   const i = lv - 1;
@@ -150,6 +150,8 @@ Screens.survival = {
     this.dmgMult = 1 + (st.atk - 5) / 60;
     // ほむら: 武器のダメージが上がる (進化で もっと上がる)
     if (this.ch.id === 'homura') this.dmgMult *= [1.1, 1.14, 1.18, 1.22, 1.26][this.ch.stage];
+    // きらり: 武器を うつ間かくが みじかい
+    this.cdMult = this.ch.id === 'kirari' ? [0.9, 0.88, 0.86, 0.84, 0.82][this.ch.stage] : 1;
     this.weapons = { [SV_START_WEAPON[this.ch.id]]: { lv: 1, t: 0.5 } };
 
     this.enemies = []; this.shots = []; this.eshots = []; this.pickups = [];
@@ -455,7 +457,7 @@ Screens.survival = {
       if (id === 'rock') { this.rockAngle += s.spin * dt; continue; }
       w.t -= dt;
       if (w.t > 0) continue;
-      w.t = s.cd;
+      w.t = s.cd * this.cdMult;
       const fired = this.fire(id, s, p);
       if (!fired) w.t = 0.2;
     }
@@ -609,7 +611,9 @@ Screens.survival = {
 
   hurt(e, base, kbx, kby, color = '#fff') {
     if (e.dead) return;
-    const dmg = Math.max(1, Math.round(base * this.dmgMult * (0.9 + Math.random() * 0.2)));
+    // りゅうまる: HP が へると こうげきアップ
+    const rage = this.ch.id === 'ryumaru' && this.p.hp / this.p.max < this.ch.trait.rageAt ? this.ch.trait.rageMult : 1;
+    const dmg = Math.max(1, Math.round(base * this.dmgMult * rage * (0.9 + Math.random() * 0.2)));
     e.hp -= dmg;
     e.flash = 0.1;
     if (!e.boss) { e.kbx += kbx; e.kby += kby; }
@@ -1237,9 +1241,11 @@ Screens.survival = {
     const better = !prev || (won && !prev.cleared) || (won === !!prev.cleared && (won ? this.time < prev.time : this.time > prev.time));
     if (better) Save.data.best[key] = { time: Math.floor(this.time), cleared: won };
     const expRes = grantExp(this.ch.id, exp);
+    const coins = grantCoins((this.kills / 4 + this.time / 2 + (won ? 150 : 0)) * d.exp);
     setTimeout(() => App.show('result', {
       mode: 'survival', won, time: this.time, kills: this.kills, gems: this.gems, diffName: d.name, diffColor: d.color, boss: d.boss,
       weapons: Object.entries(this.weapons).map(([id, w]) => ({ id, lv: w.lv })), expRes, newBest: better,
+      coins, coinNote: `(たおした数 ÷ 4 + 秒 ÷ 2${won ? ' + クリア 150' : ''}) × 難易度 ${d.exp}`,
       expBreakdown: [`(ジェム ${this.gems} + 時間 ${timeBonus}${won ? ` + ボス ${bonus}` : ''}) × 難易度 ${d.exp}`],
     }), 1800);
   },

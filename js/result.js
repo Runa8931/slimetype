@@ -67,15 +67,18 @@ Screens.result = {
       </div>
     </div>`;
 
-    $('#result-wrap').innerHTML = head + `<div class="res-cols"><div class="panel">${statsHtml}</div>${expHtml}</div>
+    const coinHtml = r.coins != null ? `<div class="res-coin">🪙 <b>+${r.coins}</b> コイン <small>${r.coinNote || ''}</small><span>もっている コイン <b class="res-coin-have">${Save.data.coins}</b></span></div>` : '';
+    $('#result-wrap').innerHTML = head + `<div class="res-cols"><div class="panel">${statsHtml}${coinHtml}</div>${expHtml}</div>
       <div class="bottom-bar">
         <button class="btn ghost" id="res-home">ホームへ <kbd>Esc</kbd></button>
         <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もういちど' : r.mode === 'survival' ? 'もういちど' : r.won ? 'マップへ' : 'リベンジ'} <kbd>Space</kbd></button>
       </div>`;
     // しょうごう: 新しく とれたものを 知らせる
     const got = checkAchievements(r);
+    const have = $('#result-wrap .res-coin-have');
+    if (have) have.textContent = Save.data.coins; // しょうごうの コインも ふくめる
     if (got.length) {
-      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="ach-get">${got.map(a => `<div>🏅 しょうごう「<b>${a.name}</b>」ゲット！<small>${a.desc}</small></div>`).join('')}</div>`);
+      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="ach-get">${got.map(a => `<div>🏅 しょうごう「<b>${a.name}</b>」ゲット！ 🪙+${ACH_COINS}<small>${a.desc}</small></div>`).join('')}</div>`);
       setTimeout(() => { SFX.levelup(); FX.confetti(); }, 600);
     }
     $('#res-home').onclick = () => this.home();
@@ -88,7 +91,7 @@ Screens.result = {
     const ex = this.r.expRes;
     const bar = $('#re-bar');
     const setBar = (L, exp) => {
-      const lo = expForLevel(L), hi = L >= MAX_LV ? lo + 1 : expForLevel(L + 1);
+      const lo = expForLevel(L), hi = L >= (ex.after.cap || MAX_LV) ? lo + 1 : expForLevel(L + 1);
       bar.style.width = clamp((exp - lo) / (hi - lo) * 100, 0, 100) + '%';
     };
     bar.style.transition = 'none';

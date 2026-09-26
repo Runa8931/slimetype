@@ -30,7 +30,7 @@ const FX = {
   },
 
   // 放射状に飛び散る粒
-  burst(x, y, { colors = ['#fff'], count: countIn = 20, speed = 5, size = 4, life = 40, gravity = 0.12, shape = 'circle' } = {}) {
+  burst(x, y, { colors = ['#fff'], count: countIn = 20, speed = 5, size = 4, life = 40, gravity = 0.12, shape = 'circle', text = '' } = {}) {
     const count = Save.data && Save.data.settings.lite ? Math.ceil(countIn / 2) : countIn;
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
@@ -38,7 +38,7 @@ const FX = {
       this.add({
         kind: 'dot', shape, x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - speed * 0.3,
         g: gravity, size: size * (0.6 + Math.random() * 0.8), life, max: life,
-        color: colors[i % colors.length], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
+        color: colors[i % colors.length], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4, text,
       });
     }
   },
@@ -100,7 +100,18 @@ const FX = {
       ctx.translate(p.x, p.y); ctx.rotate(p.rot);
       if (p.shape === 'rect') ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
       else if (p.shape === 'star') this.star(ctx, p.size);
-      else { ctx.beginPath(); ctx.arc(0, 0, p.size * (0.5 + k * 0.5), 0, Math.PI * 2); ctx.fill(); }
+      else if (p.shape === 'heart') this.heart(ctx, p.size);
+      else if (p.shape === 'petal') { ctx.beginPath(); ctx.ellipse(0, 0, p.size, p.size * 0.5, 0, 0, Math.PI * 2); ctx.fill(); }
+      else if (p.shape === 'snow') {
+        ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(1.5, p.size / 4); ctx.lineCap = 'round';
+        ctx.beginPath();
+        for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; ctx.moveTo(-Math.cos(a) * p.size, -Math.sin(a) * p.size); ctx.lineTo(Math.cos(a) * p.size, Math.sin(a) * p.size); }
+        ctx.stroke();
+      } else if (p.shape === 'text') {
+        ctx.rotate(-p.rot * 0.8);
+        ctx.font = `bold ${Math.round(p.size * 2.4)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(p.text, 0, 0);
+      } else { ctx.beginPath(); ctx.arc(0, 0, p.size * (0.5 + k * 0.5), 0, Math.PI * 2); ctx.fill(); }
     } else if (p.kind === 'ring') {
       p.life--;
       ctx.globalAlpha = k;
@@ -132,6 +143,14 @@ const FX = {
     }
     ctx.restore();
     return p.life > 0;
+  },
+
+  heart(ctx, r) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.9);
+    ctx.bezierCurveTo(-r * 1.4, -r * 0.1, -r * 0.7, -r * 1.2, 0, -r * 0.45);
+    ctx.bezierCurveTo(r * 0.7, -r * 1.2, r * 1.4, -r * 0.1, 0, r * 0.9);
+    ctx.fill();
   },
 
   star(ctx, r) {

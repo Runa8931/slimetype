@@ -11,9 +11,9 @@ const ENEMY_HP_SCALE = 3.6;      // 敵はさらに少し多め
 // 必要経験値: Lv^3 の 0.5 倍 (Lv20 = 4000, Lv50 = 62500, Lv99 = 約48万)
 function expForLevel(L) { return L <= 1 ? 0 : Math.floor(0.5 * L * L * L); }
 
-function levelFromExp(exp) {
+function levelFromExp(exp, cap = MAX_LV) {
   let L = 1;
-  while (L < MAX_LV && exp >= expForLevel(L + 1)) L++;
+  while (L < cap && exp >= expForLevel(L + 1)) L++;
   return L;
 }
 
@@ -274,6 +274,103 @@ const CHARACTERS = {
       },
     ],
   },
+  // ---- ここから ガチャ限定のキャラ (ガチャで出るまで つかえない) ----
+  ryumaru: {
+    id: 'ryumaru',
+    gacha: true,
+    names: ['りゅうまる', 'りゅうりゅん', 'ドラゴまる', 'ワイバーンまる', 'りゅうじんまる'],
+    type: 'ドラゴン',
+    role: 'ぎゃくてん型',
+    colors: { main: '#e8590c', light: '#ffd8a8', dark: '#7c2d12', accent: '#ffd43b' },
+    stageColors: [
+      { main: '#e8590c', light: '#ffd8a8', dark: '#7c2d12', accent: '#ffd43b' },
+      { main: '#d6336c', light: '#ffdeeb', dark: '#6b1030', accent: '#ffd43b' },
+      { main: '#ae3ec9', light: '#f3d9fa', dark: '#4a1260', accent: '#ffe066' },
+      { main: '#c92a2a', light: '#ffc9c9', dark: '#4d0a0a', accent: '#ffd43b' },
+      { main: '#1c7ed6', light: '#d0ebff', dark: '#0b2c55', accent: '#ffd43b' },
+    ],
+    base: { hp: 88, atk: 95, def: 70, spd: 60 },
+    desc: 'りゅうの血を ひく スライム。ピンチになるほど ちからが わいてくる。',
+    forms: [
+      {
+        trait: { name: 'りゅうのいかり', desc: 'HP が 半分を きると こうげき 1.2 倍', rageAt: 0.5, rageMult: 1.2, statusCut: 0 },
+        skill: { name: 'ドラゴンブレス', desc: '威力 230 のブレス。自分の HP が へっているほど 強い (最大 1.6 倍)', power: 230, lowBoost: 0.6, charge: 1 },
+      },
+      {
+        trait: { name: 'りゅうのいかり+', desc: 'HP が 半分を きると こうげき 1.25 倍。やけどの時間が半分', rageAt: 0.5, rageMult: 1.25, statusCut: 0.5 },
+        skill: { name: 'ドラゴンブレス+', desc: '威力 310。HP が へっているほど 強い (最大 1.7 倍)。ゲージ +5%', power: 310, lowBoost: 0.7, charge: 1.05 },
+      },
+      {
+        trait: { name: 'げきりん', desc: 'HP が 6 わりを きると こうげき 1.3 倍。どく・やけどの時間が半分', rageAt: 0.6, rageMult: 1.3, statusCut: 0.5 },
+        skill: { name: 'ドラゴンダイブ', desc: '威力 390。HP が へっているほど 強い (最大 1.8 倍)。ゲージ +10%', power: 390, lowBoost: 0.8, charge: 1.1 },
+      },
+      {
+        trait: { name: 'ひりゅう', desc: 'HP が 6 わりを きると こうげき 1.35 倍。どく・やけど・こおりが きかない', rageAt: 0.6, rageMult: 1.35, statusCut: 1 },
+        skill: { name: 'ワイバーンストーム', desc: '威力 470。HP が へっているほど 強い (最大 1.9 倍)。ゲージ +15%', power: 470, lowBoost: 0.9, charge: 1.15 },
+      },
+      {
+        trait: { name: 'りゅうじん', desc: 'HP が 7 わりを きると こうげき 1.4 倍。状態異常が きかない', rageAt: 0.7, rageMult: 1.4, statusCut: 1 },
+        skill: { name: 'りゅうじんのさばき', desc: '威力 550。HP が へっているほど 強い (最大 2 倍)。ゲージ +20%', power: 550, lowBoost: 1.0, charge: 1.2 },
+      },
+    ],
+  },
+  kirari: {
+    id: 'kirari',
+    gacha: true,
+    names: ['きらり', 'きららん', 'プリズムきらり', 'ステラきらり', 'ルミナスきらり'],
+    type: 'ひかり',
+    role: 'れんぞく型',
+    colors: { main: '#f783ac', light: '#fff0f6', dark: '#a61e4d', accent: '#fff3bf' },
+    stageColors: [
+      { main: '#f783ac', light: '#fff0f6', dark: '#a61e4d', accent: '#fff3bf' },
+      { main: '#faa2c1', light: '#ffffff', dark: '#c2255c', accent: '#99e9f2' },
+      { main: '#b197fc', light: '#f3f0ff', dark: '#5f3dc4', accent: '#ffec99' },
+      { main: '#66d9e8', light: '#ffffff', dark: '#0b7285', accent: '#fcc2d7' },
+      { main: '#fff3bf', light: '#ffffff', dark: '#e67700', accent: '#f783ac' },
+    ],
+    base: { hp: 72, atk: 88, def: 60, spd: 90 },
+    desc: 'ほしから おちてきた ひかりのスライム。ノーミスが つづくほど かがやきを ます。',
+    forms: [
+      {
+        trait: { name: 'きらきらリズム', desc: 'ノーミスで お題を打ち切るたび こうげき +5% (最大 +25%)。ミスで もとにもどる', streakStep: 0.05, streakMax: 0.25 },
+        skill: { name: 'スターシュート', desc: '威力 220 のほしを とばす。きらきらリズムの ボーナスも のる', power: 220, barrier: 0, charge: 1 },
+      },
+      {
+        trait: { name: 'きらきらリズム+', desc: 'ノーミスで 1 回ごとに +5% (最大 +30%)', streakStep: 0.05, streakMax: 0.3 },
+        skill: { name: 'スターシャワー', desc: '威力 300。リズムの ボーナスも のる。ゲージ +5%', power: 300, barrier: 0, charge: 1.05 },
+      },
+      {
+        trait: { name: 'プリズムリズム', desc: 'ノーミスで 1 回ごとに +6% (最大 +36%)', streakStep: 0.06, streakMax: 0.36 },
+        skill: { name: 'プリズムレイ', desc: '威力 370。リズムの ボーナスも のり、ひかりのかべで 1 回ふせぐ。ゲージ +10%', power: 370, barrier: 1, charge: 1.1 },
+      },
+      {
+        trait: { name: 'ほしのリズム', desc: 'ノーミスで 1 回ごとに +6% (最大 +42%)', streakStep: 0.06, streakMax: 0.42 },
+        skill: { name: 'ステラノヴァ', desc: '威力 440。リズムの ボーナスも のり、かべで 1 回ふせぐ。ゲージ +15%', power: 440, barrier: 1, charge: 1.15 },
+      },
+      {
+        trait: { name: 'ぎんがのリズム', desc: 'ノーミスで 1 回ごとに +7% (最大 +49%)', streakStep: 0.07, streakMax: 0.49 },
+        skill: { name: 'ルミナスギャラクシー', desc: '威力 510。リズムの ボーナスも のり、かべで 2 回ふせぐ。ゲージ +20%', power: 510, barrier: 2, charge: 1.2 },
+      },
+    ],
+  },
+};
+
+// さいしょから つかえるキャラ (ガチャ限定キャラを のぞく)
+const STARTERS = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].gacha);
+
+// ---------------- せんざいかくせい (ガチャで キャラが かぶると ★ が ふえる) ----------------
+// ★ 1 つごとに: 能力値 +2%、レベルの上限 +1、そのキャラの とくせいが 少し のびる
+const AWAKEN_MAX = 4;
+const AWAKEN_STAT = 0.02;
+const AWAKEN_BONUS = {
+  purun: { desc: 'ノーミス回復 +0.4%', apply: (t, n) => ({ ...t, heal: t.heal + 0.004 * n }) },
+  piriri: { desc: '会心率の上限 +2%', apply: (t, n) => ({ ...t, critMax: t.critMax + 0.02 * n }) },
+  gotsun: { desc: 'ダメージカット +1%', apply: (t, n) => ({ ...t, cut: t.cut + 0.01 * n }) },
+  homura: { desc: 'コンボ倍率の上限 +0.04', apply: (t, n) => ({ ...t, comboMax: t.comboMax + 8 * n }) },
+  moririn: { desc: '3 秒ごとの回復 +0.1%', apply: (t, n) => ({ ...t, regen: t.regen + 0.001 * n }) },
+  kagemaru: { desc: '敵の攻撃が さらに 1% おそく', apply: (t, n) => ({ ...t, slow: t.slow + 0.01 * n }) },
+  ryumaru: { desc: 'いかりの こうげき +0.03 倍', apply: (t, n) => ({ ...t, rageMult: t.rageMult + 0.03 * n }) },
+  kirari: { desc: 'リズムの上限 +3%', apply: (t, n) => ({ ...t, streakMax: t.streakMax + 0.03 * n }) },
 };
 
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく
@@ -371,10 +468,10 @@ const WORLD_DEFS = [
   { id: 'snow', name: 'ゆきやま', diff: 'hard', enemies: [
     E('penguin', 'ペンギナイト', 'normal', 4800, 'shell', 'こおりのたて: ときどき 3 秒間 うけるダメージが大きくへる', 'たてと やりを もったペンギンの きし。'),
     E('snowman', 'ユキダルマン', 'tank', 5000, 'regen', 'ゆきだまり: ときどき HP を回復する', 'うごく ゆきだるま。ゆきを あつめて 回復する。'),
-    E('yukionna', 'ユキオンナ', 'fast', 4400, 'freeze', 'つめたいいき: 攻撃をうけると 1 秒間 こおって入力できない', 'ゆきやまに あらわれる ゆうれい。'),
-    E('wolf', 'アイスウルフ', 'fast', 4200, 'freeze', 'こおりのいき: 攻撃をうけると 1 秒間 こおって入力できない', 'こおりの いきを はく オオカミ。'),
+    E('yukionna', 'ユキオンナ', 'fast', 4400, 'freeze', 'つめたいいき: 攻撃をうけると 4 秒間 こごえて 攻撃が 3 わり 弱くなる', 'ゆきやまに あらわれる ゆうれい。'),
+    E('wolf', 'アイスウルフ', 'fast', 4200, 'freeze', 'こおりのいき: 攻撃をうけると 4 秒間 こごえて 攻撃が 3 わり 弱くなる', 'こおりの いきを はく オオカミ。'),
     E('icegolem', 'アイスゴーレム', 'tank', 5600, 'armor', 'こおりのよろい: コンボ 30 未満だと ダメージ半減', 'こおりで できた きょじん。'),
-    E('yeti', 'イエティ', 'boss', 5400, 'blizzard', 'ふぶき: ときどき 漢字とかなが見えなくなる。攻撃で こおらせてくる', 'ゆきやまの ぬし。ふぶきを よびおこす。'),
+    E('yeti', 'イエティ', 'boss', 5400, 'blizzard', 'ふぶき: ときどき 漢字とかなが見えなくなる。攻撃で こごえさせて 攻撃を 弱くする', 'ゆきやまの ぬし。ふぶきを よびおこす。'),
   ] },
   { id: 'sky', name: 'てんくう', diff: 'hard', enemies: [
     E('skybird', 'ソラドリ', 'fast', 3800, 'wind', 'かぜおこし: ときどき 風で文字がゆれる', 'くもの上を とぶ 鳥。'),
@@ -462,5 +559,5 @@ function rankFor(score) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
+  module.exports = { STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
 }

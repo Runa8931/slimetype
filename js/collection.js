@@ -99,13 +99,27 @@ const ACHIEVEMENTS = [
   { id: 'lv20', name: 'しんかの はじまり', desc: 'だれかを Lv20 にする', check: () => maxCharLv() >= 20 },
   { id: 'lv60', name: 'つばさを えた もの', desc: 'だれかを Lv60 にする', check: () => maxCharLv() >= 60 },
   { id: 'lv99', name: 'レベルマスター', desc: 'だれかを Lv99 にする', check: () => maxCharLv() >= 99 },
-  { id: 'team20', name: 'なかま思い', desc: '6 たい 全員を Lv20 以上に する', check: () => Object.keys(CHARACTERS).every(id => charInfo(id).L >= 20) },
+  { id: 'team20', name: 'なかま思い', desc: 'さいしょの 6 たい 全員を Lv20 以上に する', check: () => STARTERS.every(id => charInfo(id).L >= 20) },
   // ずかん・そのほか
   { id: 'dex_half', name: 'ずかん はかせ見習い', desc: 'ずかんに 33 しゅるい とうろく', check: () => dexCount() >= 33 },
   { id: 'dex_full', name: 'ずかん はかせ', desc: 'ずかんを コンプリート', check: () => dexCount() >= ENEMIES.length },
   { id: 'keys10k', name: 'タイピング だいすき', desc: '合計 1 万回 正しく打つ', check: () => Save.data.totals.keys >= 10000 },
   { id: 'keys100k', name: 'タイピングの たつじん', desc: '合計 10 万回 正しく打つ', check: () => Save.data.totals.keys >= 100000 },
+  // ガチャ
+  { id: 'gacha1', name: 'はじめての ガチャ', desc: 'ガチャを 1 回 引く', check: () => gachaData().pulls >= 1 },
+  { id: 'gacha100', name: 'ガチャの たつじん', desc: 'ガチャを 合計 100 回 引く', check: () => gachaData().pulls >= 100 },
+  { id: 'gacha_ssr', name: 'ひきが つよい', desc: 'ガチャで SSR を 引く', check: () => gachaData().ssr >= 1 },
+  { id: 'gacha_friend', name: 'あたらしい なかま', desc: 'ガチャ限定の キャラを なかまにする', check: () => Object.keys(CHARACTERS).some(id => CHARACTERS[id].gacha && hasChar(id)) },
+  { id: 'gacha_half', name: 'おしゃれさん', desc: 'ガチャの なかみを 半分 あつめる', check: () => collectCount().have * 2 >= collectCount().total },
+  { id: 'gacha_all', name: 'コレクター', desc: 'ガチャの なかみを ぜんぶ あつめる', check: () => collectCount().have >= collectCount().total },
+  // せんざいかくせい ★4 (キャラごと)
+  ...Object.keys(CHARACTERS).map(id => ({
+    id: 'aw4_' + id, name: `${CHARACTERS[id].names[0]}の しんゆう`, desc: `${CHARACTERS[id].names[0]}を かくせい ★4 に する`, check: () => awakenOf(id) >= AWAKEN_MAX,
+  })),
 ];
+
+// しょうごうを 1 つ とるたびに もらえる コイン
+const ACH_COINS = 100;
 
 // まだ持っていない しょうごうを しらべて、新しく とれたものを返す
 function checkAchievements(r) {
@@ -117,7 +131,7 @@ function checkAchievements(r) {
     try { ok = a.check(r); } catch (e) { ok = false; }
     if (ok) { Save.data.ach[a.id] = Date.now(); got.push(a); }
   }
-  if (got.length) Save.save();
+  if (got.length) grantCoins(ACH_COINS * got.length);
   return got;
 }
 function achCount() { return Object.keys(Save.data.ach || {}).length; }
@@ -139,7 +153,7 @@ Screens.ach = {
       const on = Save.data.title === a.id;
       return `<button class="ach-card ${ok ? 'got' : 'locked'} ${on ? 'on' : ''}" data-id="${a.id}" ${ok ? '' : 'disabled'}>
         <div class="ach-icon">${ok ? '🏅' : '🔒'}</div>
-        <div class="ach-body"><div class="ach-name">${ok ? a.name : '？？？'}</div><div class="ach-desc">${a.desc}</div></div>
+        <div class="ach-body"><div class="ach-name">${ok ? a.name : '？？？'}</div><div class="ach-desc">${a.desc}${ok ? '' : ` <small class="ach-coin">🪙${ACH_COINS}</small>`}</div></div>
         ${on ? '<div class="ach-on">かざり中</div>' : ''}</button>`;
     }).join('');
     $('#ach-list').querySelectorAll('.ach-card.got').forEach(b => {
