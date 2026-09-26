@@ -1064,11 +1064,30 @@ body.lite .sky { display: none; }
 .menu-card.gacha .mc-desc b { color: var(--gold); font-family: var(--pixel); font-size: 15px; }
 .menu-row .menu-card:hover { transform: translateY(-4px); }
 
-/* ---- ガチャの 演出 (v4.1) ---- */
-.gc-stage { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(8,8,24,.82); overflow: hidden; }
+.menu-row .mc-title { white-space: nowrap; }
+
+/* ---- ガチャ画面: 機械を まんなかに 大きく (v4.2) ---- */
+.gc-tabs { margin-bottom: 10px; }
+.gc-tabs button { font-size: 15px; }
+.gc-main { width: 100%; max-width: 1000px; display: grid; justify-items: center; gap: 16px; }
+.gc-spot { position: relative; display: grid; place-items: center; width: min(44vh, 340px); aspect-ratio: 1; }
+.gc-spot::before { content: ''; position: absolute; inset: -12%; border-radius: 50%; background: radial-gradient(circle, rgba(255,212,59,.38), rgba(255,93,143,.16) 45%, transparent 70%); animation: gc-breathe 2.4s ease-in-out infinite; }
+.gc-spot::after { content: ''; position: absolute; inset: -18%; border-radius: 50%; background: repeating-conic-gradient(rgba(255,255,255,.07) 0 10deg, transparent 10deg 24deg); -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%); mask: radial-gradient(circle, #000 20%, transparent 68%); animation: gs-spin 18s linear infinite; }
+@keyframes gc-breathe { 50% { transform: scale(1.08); opacity: .75; } }
+.gc-main .gc-machine { width: 80%; position: relative; z-index: 1; }
+.gc-main .gc-machine.ready { animation: gc-float 2.4s ease-in-out infinite; }
+@keyframes gc-float { 50% { transform: translateY(-8px) rotate(1deg); } }
+.gc-btns { display: flex; gap: 16px; }
+.gc-btns .gc-btn { width: 290px; }
+.gc-last { width: 100%; }
+.gc-last .gc-empty { padding: 4px 20px 10px; }
+.gc-panel { width: 100%; max-width: 1100px; min-height: 420px; max-height: calc(100vh - 230px); }
+
+/* ---- ガチャの 演出 ---- */
+.gc-stage { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(8,8,24,.97); overflow: hidden; --spd: 1; --cy: 38%; }
 .gc-stage.show { display: block; animation: gs-fade .3s ease-out; }
 @keyframes gs-fade { from { opacity: 0; } }
-.gs-machine { position: absolute; left: 50%; top: 50%; width: min(46vh, 380px); transform: translate(-50%, -50%); animation: gs-zoom .55s cubic-bezier(.3,1.5,.5,1) both; transition: opacity .4s, transform .4s; }
+.gs-machine { position: absolute; left: 50%; top: 50%; width: min(46vh, 380px); transform: translate(-50%, -50%); animation: gs-zoom .55s cubic-bezier(.3,1.5,.5,1) both; transition: top .45s, width .45s, opacity .45s; }
 .gs-machine svg { width: 100%; display: block; overflow: visible; }
 @keyframes gs-zoom { from { transform: translate(-50%, -50%) scale(.25); opacity: 0; } }
 .gs-handle { transform-origin: 80px 146px; transform-box: view-box; }
@@ -1079,44 +1098,55 @@ body.lite .sky { display: none; }
 @keyframes gs-turn { to { transform: rotate(720deg); } }
 @keyframes gs-mix { 25% { transform: rotate(-14deg) translateY(-4px); } 75% { transform: rotate(14deg) translateY(3px); } }
 @keyframes gs-rattle { 25% { transform: translate(-51%, -50%) rotate(-1.5deg); } 75% { transform: translate(-49%, -50%) rotate(1.5deg); } }
+/* 回したあと: 機械は 上に 小さく */
+.gc-stage.out .gs-machine { top: 12%; width: 16vh; opacity: .55; animation: none; }
+.gc-stage.dark .gs-machine, .gc-stage.ssr .gs-machine { opacity: 0; }
 /* カプセル */
-.gs-cap { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; margin: -55px 0 0 -55px; opacity: 0; transform: translate(0, 22vh) scale(.35); }
-.gs-top, .gs-bottom { position: absolute; left: 0; width: 100%; height: 50%; border: 5px solid rgba(0,0,0,.35); transition: transform .45s cubic-bezier(.3,1.4,.5,1), opacity .45s; }
+.gs-cap { position: absolute; left: 50%; top: var(--cy); width: 110px; height: 110px; margin: -55px 0 0 -55px; z-index: 1; }
+.gs-top, .gs-bottom { position: absolute; left: 0; width: 100%; height: 50%; border: 5px solid rgba(0,0,0,.35); transition: transform .4s cubic-bezier(.3,1.4,.5,1), opacity .4s; }
 .gs-top { top: 0; border-radius: 55px 55px 0 0; border-bottom-width: 2px; background: radial-gradient(circle at 35% 30%, #fff 0 10%, var(--cap) 45%, color-mix(in srgb, var(--cap) 60%, #000)); }
 .gs-bottom { bottom: 0; border-radius: 0 0 55px 55px; border-top-width: 2px; background: linear-gradient(180deg, #f8f9fa, #ced4da); }
-.gs-shine { position: absolute; inset: -40%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--cap) 70%, transparent), transparent 65%); opacity: .6; z-index: -1; }
-.gc-stage.drop .gs-machine { opacity: .35; transform: translate(-50%, -50%) scale(.9); animation: none; }
-.gc-stage.drop .gs-cap { animation: gs-drop .65s cubic-bezier(.4,0,.6,1) forwards; }
-@keyframes gs-drop { 0% { opacity: 1; transform: translate(0, 12vh) scale(.3); } 55% { transform: translate(0, 28vh) scale(.45); } 75% { transform: translate(0, 24vh) scale(.45); } 100% { opacity: 1; transform: translate(0, 28vh) scale(.45); } }
-.gc-stage.drop.center .gs-cap { animation: gs-center .7s cubic-bezier(.3,1.4,.5,1) forwards; }
-@keyframes gs-center { from { opacity: 1; transform: translate(0, 28vh) scale(.45) rotate(0); } to { opacity: 1; transform: translate(0, 0) scale(1.9) rotate(360deg); } }
-.gc-stage.center .gs-cap { opacity: 1; transform: scale(1.9); }
-/* SR: ひかる */
-.gc-stage.center.sr .gs-cap { animation: gs-center .7s cubic-bezier(.3,1.4,.5,1) forwards, gs-glow .35s ease-in-out 3 alternate; }
+.gs-shine { position: absolute; inset: -40%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--cap) 70%, transparent), transparent 65%); opacity: .6; z-index: -1; transition: transform .4s, opacity .4s; }
+.gs-cap.drop { animation: gs-drop calc(.65s * var(--spd)) cubic-bezier(.4,0,.6,1) forwards; }
+@keyframes gs-drop { 0% { transform: translateY(-22vh) scale(.25); } 60% { transform: translateY(2vh) scale(.55); } 80% { transform: translateY(-1vh) scale(.55); } 100% { transform: translateY(0) scale(.55); } }
+.gs-cap.center { animation: gs-grow calc(.65s * var(--spd)) cubic-bezier(.3,1.4,.5,1) forwards; }
+@keyframes gs-grow { from { transform: scale(.55) rotate(0); } to { transform: scale(1.6) rotate(360deg); } }
+.gs-cap.center.glow { animation: gs-grow calc(.65s * var(--spd)) cubic-bezier(.3,1.4,.5,1) forwards, gs-glow .3s ease-in-out 3 alternate; }
 @keyframes gs-glow { to { filter: drop-shadow(0 0 30px var(--cap)) brightness(1.3); } }
-/* SSR: いちど とまって ぶるぶる → 暗く → 金色 */
-.gc-stage.center.hold .gs-cap { animation: gs-hold .12s linear infinite; opacity: 1; transform: scale(1.9); }
-@keyframes gs-hold { 25% { transform: scale(1.9) translate(-3px, 1px) rotate(-3deg); } 75% { transform: scale(1.9) translate(3px, -1px) rotate(3deg); } }
+/* SSR: とまって ぶるぶる → 暗く → 金色 (文字は 出さない) */
+.gs-cap.center.hold { animation: gs-hold .12s linear infinite; transform: scale(1.6); }
+.gs-cap.center.hold.hard { animation-duration: .06s; filter: brightness(.6); }
+@keyframes gs-hold { 0%,100% { transform: scale(1.6); } 25% { transform: scale(1.6) translate(-3px, 1px) rotate(-3deg); } 75% { transform: scale(1.6) translate(3px, -1px) rotate(3deg); } }
 .gc-stage.dark { background: rgba(0,0,0,.97); }
-.gc-stage.dark .gs-machine { opacity: 0; }
-.gc-stage.center.dark .gs-cap { animation: gs-hold .06s linear infinite; filter: brightness(.6); }
-.gs-rays { position: absolute; left: 50%; top: 50%; width: 180vmax; height: 180vmax; margin: -90vmax 0 0 -90vmax; opacity: 0; transition: opacity .4s;
+.gs-rays { position: absolute; left: 50%; top: var(--cy); width: 180vmax; height: 180vmax; margin: -90vmax 0 0 -90vmax; opacity: 0; transition: opacity .4s;
   background: repeating-conic-gradient(from 0deg, rgba(255,212,59,.35) 0 8deg, transparent 8deg 20deg); border-radius: 50%;
   -webkit-mask: radial-gradient(circle, #000 0 20%, transparent 60%); mask: radial-gradient(circle, #000 0 20%, transparent 60%); }
-.gc-stage.ssr { background: radial-gradient(circle, rgb(120,70,0), rgb(12,6,0)); }
-.gc-stage.ssr .gs-machine { opacity: 0; }
+.gc-stage.ssr { background: radial-gradient(circle at 50% 38%, rgb(120,70,0), rgb(12,6,0)); }
 .gc-stage.ssr .gs-rays { opacity: 1; animation: gs-spin 6s linear infinite; }
 @keyframes gs-spin { to { transform: rotate(360deg); } }
-.gc-stage.center.ssr .gs-cap { animation: gs-ssr .6s cubic-bezier(.3,1.6,.5,1) forwards; filter: drop-shadow(0 0 40px #ffd43b); }
-@keyframes gs-ssr { from { opacity: 1; transform: scale(1.5); } to { opacity: 1; transform: scale(2.2); } }
-.gc-stage.ssr .gs-top { background: linear-gradient(120deg, #ff6b6b, #ffd43b, #69db7c, #4dabf7, #cc5de8); }
-.gs-text { position: absolute; left: 0; right: 0; top: 14%; text-align: center; font-family: var(--pixel); pointer-events: none; }
-.gs-text b { display: block; font-size: 110px; line-height: 1; background: linear-gradient(180deg, #fff9db, #ffd43b 50%, #f08c00); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 6px 0 #7a4a00) drop-shadow(0 0 30px rgba(255,212,59,.8)); animation: gs-pop .6s cubic-bezier(.3,1.8,.5,1) both; }
-.gs-text span { display: block; font-size: 38px; color: #fff; text-shadow: 0 4px 0 #7a4a00; margin-top: 6px; animation: gs-pop .6s .2s cubic-bezier(.3,1.8,.5,1) both; }
-@keyframes gs-pop { from { transform: scale(3); opacity: 0; } }
+.gs-cap.center.ssr { animation: gs-ssr .6s cubic-bezier(.3,1.6,.5,1) forwards; filter: drop-shadow(0 0 40px #ffd43b); }
+@keyframes gs-ssr { from { transform: scale(1.4); } to { transform: scale(2); } }
+.gs-cap.ssr .gs-top { background: linear-gradient(120deg, #ff6b6b, #ffd43b, #69db7c, #4dabf7, #cc5de8); }
 /* ひらく */
-.gc-stage.open .gs-top { transform: translate(-30px, -120px) rotate(-35deg); opacity: 0; }
-.gc-stage.open .gs-bottom { transform: translate(20px, 90px) rotate(20deg); opacity: 0; }
-.gc-stage.open .gs-shine { opacity: 1; transform: scale(2.5); transition: transform .45s, opacity .45s; }
-.gs-skip { position: absolute; right: 24px; bottom: 20px; color: var(--sub); font-size: 13px; }
-.menu-row .mc-title { white-space: nowrap; }
+.gs-cap.open .gs-top { transform: translate(-30px, -120px) rotate(-35deg); opacity: 0; }
+.gs-cap.open .gs-bottom { transform: translate(20px, 90px) rotate(20deg); opacity: 0; }
+.gs-cap.open .gs-shine { opacity: 1; transform: scale(2.4); }
+/* 出てきた 中身 */
+.gs-item { position: absolute; left: 50%; top: var(--cy); transform: translate(-50%, -50%); z-index: 2; }
+.gs-item .gc-card { width: 200px; animation: gs-card .45s cubic-bezier(.3,1.6,.5,1) both; }
+.gs-item .gc-card .sprite, .gs-item .gc-card .fx-icon { width: 120px; height: 120px; font-size: 64px; }
+.gs-item .gc-name { font-size: 18px; }
+@keyframes gs-card { from { transform: scale(.2) rotate(-12deg); opacity: 0; } }
+/* 下に ならぶ トレイ */
+.gs-tray { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); display: grid; grid-template-columns: 110px; gap: 8px; justify-content: center; }
+.gs-tray.ten { grid-template-columns: repeat(5, 96px); }
+.gs-tray .gc-card { padding: 6px 4px; animation: gs-card .3s ease-out both; }
+.gs-tray .gc-card .sprite, .gs-tray .gc-card .fx-icon { width: 46px; height: 46px; font-size: 26px; }
+.gs-tray .gc-name { font-size: 11px; }
+.gs-tray .gc-kind { display: none; }
+.gs-tray .gc-rar { font-size: 11px; top: 3px; left: 5px; }
+.gs-tray .gc-new, .gs-tray .gc-aw, .gs-tray .gc-shard { font-size: 10px; }
+.gs-skip { position: absolute; right: 24px; bottom: 16px; color: var(--sub); font-size: 13px; }
+/* 機械の 後ろの 光が タブの クリックを じゃましないように */
+.gc-spot::before, .gc-spot::after { pointer-events: none; }
+.gc-tabs { position: relative; z-index: 2; }

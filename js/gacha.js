@@ -180,6 +180,20 @@ function pullGacha(times) {
   return res;
 }
 
+// 結果の カード 1 まい
+function resultCard(r, delay = 0) {
+  const it = r.it;
+  const tag = r.kind === 'new' ? '<span class="gc-new">NEW!</span>'
+    : r.kind === 'awaken' ? `<span class="gc-aw">かくせい ${starText(r.stars)}</span>`
+      : `<span class="gc-shard">💎 +${r.n}</span>`;
+  return `<div class="gc-card r-${it.rarity}" style="--rc:${RARITY[it.rarity].color};animation-delay:${delay}s">
+    <span class="gc-rar">${it.rarity}</span>
+    ${itemIcon(it)}
+    <div class="gc-name">${it.name}</div>
+    <div class="gc-kind">${KIND_NAME[it.kind]}</div>
+    ${tag}</div>`;
+}
+
 // いちばん レアなもの
 function bestRarity(res) {
   return ['SSR', 'SR', 'R', 'N'].find(k => res.some(r => r.it.rarity === k));
@@ -250,7 +264,11 @@ Screens.gacha = {
     $('#gc-ten').disabled = coins < GACHA_COST10;
     document.querySelectorAll('#gc-tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === this.tab));
     const box = $('#gc-panel');
-    if (this.tab === 'result') box.innerHTML = this.resultHtml();
+    // ガチャの タブでは 機械を まんなかに 大きく、ほかの タブでは 一覧を 出す
+    $('#gc-main').style.display = this.tab === 'result' ? '' : 'none';
+    box.style.display = this.tab === 'result' ? 'none' : '';
+    $('#gc-machine').classList.toggle('ready', coins >= GACHA_COST && !this.busy);
+    if (this.tab === 'result') $('#gc-last').innerHTML = this.resultHtml();
     if (this.tab === 'shop') box.innerHTML = this.shopHtml();
     if (this.tab === 'list') box.innerHTML = this.listHtml();
     box.querySelectorAll('[data-buy]').forEach(b => { b.onclick = () => this.buy(b.dataset.buy); });
@@ -259,23 +277,11 @@ Screens.gacha = {
   resultHtml() {
     if (!this.last) {
       return `<div class="gc-empty">
-        <p>コインで ガチャを 引こう！</p>
         <p class="gc-help">キャラが かぶると <b>せんざいかくせい</b> (★1〜★4) で 少し強くなる。<br>
         ★4 の あとや、ほかのものが かぶると <b>かけら 💎</b> に なる。<br>かけらは <b>こうかんじょ</b> で 好きなものと こうかんできる。</p>
         <p class="gc-help">コインは れんしゅう・バトル・サバイバル・しょうごう で もらえるよ</p></div>`;
     }
-    return `<div class="gc-results ${this.last.length > 1 ? 'ten' : 'one'}">${this.last.map((r, i) => {
-      const it = r.it;
-      const tag = r.kind === 'new' ? '<span class="gc-new">NEW!</span>'
-        : r.kind === 'awaken' ? `<span class="gc-aw">かくせい ${starText(r.stars)}</span>`
-          : `<span class="gc-shard">💎 +${r.n}</span>`;
-      return `<div class="gc-card r-${it.rarity}" style="--rc:${RARITY[it.rarity].color};animation-delay:${i * 0.12}s">
-        <span class="gc-rar">${it.rarity}</span>
-        ${itemIcon(it)}
-        <div class="gc-name">${it.name}</div>
-        <div class="gc-kind">${KIND_NAME[it.kind]}</div>
-        ${tag}</div>`;
-    }).join('')}</div>`;
+    return `<div class="gc-results ${this.last.length > 1 ? 'ten' : 'one'}">${this.last.map((r, i) => resultCard(r, i * 0.05)).join('')}</div>`;
   },
 
   // かけらの こうかんじょ
@@ -351,6 +357,7 @@ Screens.gacha = {
     await this.show(res);
     this.last = res;
     this.render();
+    $('#gc-last').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     const best = bestRarity(res);
     if (best === 'SSR') setTimeout(() => FX.confetti(), 200);
     else if (best === 'SR') SFX.levelup();
@@ -370,70 +377,94 @@ Screens.gacha = {
   },
 
   async show(res) {
-    const best = bestRarity(res);
     const stage = $('#gc-stage');
     this.skip = false;
-    // SSR のときは さいしょ ちがう色の カプセルで 出して、とちゅうで 金色に かわる
-    const fake = best === 'SSR' ? (Math.random() < 0.5 ? 'SR' : 'R') : best;
+    const ten = res.length > 1;
     stage.innerHTML = `
       <div class="gs-rays"></div>
       <div class="gs-machine">${GACHA_MACHINE_SVG}</div>
-      <div class="gs-cap" style="--cap:${RARITY[fake].color}"><div class="gs-top"></div><div class="gs-bottom"></div><div class="gs-shine"></div></div>
-      <div class="gs-text"></div>
+      <div class="gs-cap-slot"></div>
+      <div class="gs-item"></div>
+      <div class="gs-tray ${ten ? 'ten' : ''}"></div>
       <div class="gs-skip"><kbd>Space</kbd> で とばす</div>`;
+    stage.style.setProperty('--spd', ten ? 0.7 : 1);
     stage.className = 'gc-stage show';
-    const cls = c => { stage.className = 'gc-stage show ' + c; };
 
-    // 1. ガチャ機が 大きくなって 出てくる
+    // 1. ガチャ機が 大きくなって 出てきて、ハンドルを まわす (1 回だけ)
     SFX.tone(300, 0.3, { type: 'sine', vol: 0.05, slide: 700 });
     await this.wait(550);
-    // 2. ハンドルを ガチャガチャ まわす
-    cls('turning');
+    stage.className = 'gc-stage show turning';
     for (let i = 0; i < 6 && !this.skip; i++) {
       SFX.tone(700 + i * 40, 0.04, { vol: 0.04 }); SFX.noise(0.05, { vol: 0.05, filter: 2500, delay: 0.08 });
       await this.wait(200);
     }
-    // 3. カプセルが ころがり出て、まんなかで 大きくなる
-    cls('drop');
-    SFX.tone(500, 0.15, { type: 'triangle', vol: 0.05, slide: 200 });
-    await this.wait(650);
-    cls('drop center');
-    await this.wait(700);
+    stage.className = 'gc-stage show out';
 
-    if (best === 'SSR' && !this.skip) {
-      // 4. SSR: いちど とまって ぶるぶる → 暗くなって 金色に かわる
-      cls('drop center hold');
-      SFX.tone(120, 1.2, { type: 'sawtooth', vol: 0.04, slide: 400 });
-      await this.wait(1300);
-      cls('drop center hold dark');
-      await this.wait(500);
-      stage.querySelector('.gs-cap').style.setProperty('--cap', RARITY.SSR.color);
-      cls('drop center ssr');
-      replayAnim(document.body, 'flash-white', 400);
-      SFX.thunder();
-      setTimeout(() => SFX.win(), 250);
-      stage.querySelector('.gs-text').innerHTML = '<b>SSR</b><span>かくてい！</span>';
-      const c = FX.center(stage.querySelector('.gs-cap'));
-      FX.burst(c.x, c.y, { colors: [...RAINBOW, '#fff'], count: 90, shape: 'star', size: 8, speed: 11 });
-      FX.ring(c.x, c.y, '#ffd43b', 260, 40, 10);
-      await this.wait(1900);
-    } else if (best === 'SR' && !this.skip) {
-      cls('drop center sr');
-      SFX.charge();
-      await this.wait(700);
-    } else {
-      await this.wait(250);
-    }
+    // 2. カプセルを 1 こずつ 出す
+    for (let i = 0; i < res.length; i++) await this.capsule(stage, res[i], i, ten);
 
-    // 5. カプセルが ひらく
-    cls(`drop center open ${best === 'SSR' ? 'ssr' : ''}`);
-    SFX.tone(1320, 0.12, { vol: 0.05 }); SFX.tone(1760, 0.18, { vol: 0.05, delay: 0.08 });
-    const c = FX.center(stage.querySelector('.gs-cap'));
-    FX.burst(c.x, c.y, { colors: [RARITY[best].color, '#fff'], count: best === 'SSR' ? 60 : 30, shape: 'star', size: 7, speed: 8 });
-    await this.wait(450);
+    await this.wait(ten ? 1100 : 500);
     stage.className = 'gc-stage';
     stage.innerHTML = '';
     this._skipNow = null;
+  },
+
+  // カプセル 1 こぶん: ころがり出る → (SSR だけ 当たりの 演出) → ひらく → 下に ならぶ
+  async capsule(stage, r, i, ten) {
+    const rar = r.it.rarity;
+    const ssr = rar === 'SSR' && !this.skip;
+    // SSR は さいしょ ちがう色で 出てきて、とちゅうで 金色に かわる
+    const first = rar === 'SSR' ? (Math.random() < 0.5 ? 'SR' : 'R') : rar;
+    const slot = stage.querySelector('.gs-cap-slot');
+    slot.innerHTML = `<div class="gs-cap" style="--cap:${RARITY[first].color}"><div class="gs-top"></div><div class="gs-bottom"></div><div class="gs-shine"></div></div>`;
+    const cap = slot.firstChild;
+    const set = c => { cap.className = 'gs-cap ' + c; };
+    const base = stage.className.replace(/ (dark|ssr)/g, '');
+
+    if (!this.skip) SFX.tone(500, 0.12, { type: 'triangle', vol: 0.05, slide: 200 });
+    set('drop');
+    await this.wait(ten ? 420 : 650);
+    set('center');
+    await this.wait(ten ? 420 : 650);
+
+    if (ssr) {
+      set('center hold');
+      SFX.tone(120, 1.2, { type: 'sawtooth', vol: 0.04, slide: 400 });
+      await this.wait(1300);
+      stage.className = base + ' dark';
+      set('center hold hard');
+      await this.wait(600);
+      cap.style.setProperty('--cap', RARITY.SSR.color);
+      stage.className = base + ' ssr';
+      set('center ssr');
+      replayAnim(document.body, 'flash-white', 400);
+      SFX.thunder();
+      setTimeout(() => SFX.win(), 250);
+      const c = FX.center(cap);
+      FX.burst(c.x, c.y, { colors: [...RAINBOW, '#fff'], count: 90, shape: 'star', size: 8, speed: 11 });
+      FX.ring(c.x, c.y, '#ffd43b', 260, 40, 10);
+      await this.wait(1500);
+    } else if (rar === 'SR' && !this.skip) {
+      set('center glow');
+      SFX.charge();
+      await this.wait(ten ? 350 : 600);
+    }
+
+    // ひらいて 中身を 見せる
+    set(`center open ${ssr ? 'ssr' : ''}`);
+    if (!this.skip) {
+      SFX.tone(1320, 0.1, { vol: 0.05 }); SFX.tone(1760, 0.14, { vol: 0.05, delay: 0.06 });
+      const c = FX.center(cap);
+      FX.burst(c.x, c.y, { colors: [RARITY[rar].color, '#fff'], count: ssr ? 50 : 16, shape: 'star', size: 6, speed: 6 });
+    }
+    const item = stage.querySelector('.gs-item');
+    item.innerHTML = resultCard(r, 0);
+    await this.wait(ssr ? 1600 : ten ? 650 : 900);
+    // 下の トレイに 小さく ならべる
+    item.innerHTML = '';
+    slot.innerHTML = '';
+    stage.querySelector('.gs-tray').insertAdjacentHTML('beforeend', resultCard(r, 0));
+    if (ssr) stage.className = base;
   },
 
   // 新しい なかま・★4・しょうごうを 知らせる
