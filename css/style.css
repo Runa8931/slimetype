@@ -1169,3 +1169,17 @@ body.lite .sky { display: none; }
 .gc-pct { font-family: var(--pixel); font-size: 12px; color: var(--gold); }
 .gc-rates-btn { margin-top: -4px; }
 .ability li.aw-note { color: var(--gold); font-size: 11.5px; }
+
+/* ---- うらの せかい (v4.4) ---- */
+.map-outer.theme-shade { box-shadow: 0 0 0 8px #5f3dc4, 0 0 0 12px #140b24, 0 0 40px rgba(218,119,242,.45); }
+.map-outer.theme-void { box-shadow: 0 0 0 8px #0b7285, 0 0 0 12px #02030f, 0 0 40px rgba(102,217,232,.45); }
+.theme-shade .road .road-edge { stroke: #9d4edd; } .theme-shade .road .road-fill { stroke: #5a3d85; } .theme-shade .road .road-dots { stroke: #da77f2; }
+.theme-void .road .road-edge { stroke: #3bc9db; } .theme-void .road .road-fill { stroke: #1c2541; } .theme-void .road .road-dots { stroke: #99e9f2; }
+.theme-shade .road.locked .road-edge, .theme-void .road.locked .road-edge { stroke: rgba(0,0,0,.3); }
+.map-fade.theme-shade { background: radial-gradient(circle, #5f3dc4, #0a0514); }
+.map-fade.theme-void { background: radial-gradient(circle, #0b7285, #010208); }
+.bg-shade .arena-bg { background: radial-gradient(ellipse at 50% 110%, #7b2cbf, transparent 60%), linear-gradient(180deg, #0d0618, #2b1a4a); } .bg-shade { --ground: #1f1233; }
+.bg-void .arena-bg { background: radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent), radial-gradient(1.5px 1.5px at 70% 20%, #99e9f2, transparent), radial-gradient(2px 2px at 85% 60%, #fff, transparent), radial-gradient(ellipse at 50% 120%, #0b7285, transparent 60%), linear-gradient(180deg, #01020a, #0c1633); } .bg-void { --ground: #111a33; }
+/* へんい種: あしもとに あやしい 光 */
+.fighter.enemy.variant .sprite::before { content: ''; position: absolute; left: 10%; right: 10%; bottom: -4%; height: 22%; border-radius: 50%; background: radial-gradient(ellipse, var(--vc, #da77f2), transparent 70%); opacity: .7; animation: gc-breathe 1.8s ease-in-out infinite; }
+.fighter.enemy.v-void { --vc: #66d9e8; }

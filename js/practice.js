@@ -182,7 +182,7 @@ Screens.practice = {
       SFX.key();
       pressKey($('#p-kb'), key, false);
       if (this.combo > 0 && this.combo % 50 === 0) this.comboFx();
-      keyFx($('#p-tp'), r === 'done');
+      if (r === 'done') wordFx($('#p-tp'));
       if (r === 'done') { this.wordDone(); return; }
     }
     this.render();

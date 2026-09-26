@@ -61,8 +61,8 @@ const FX = {
   },
 
   // 飛んでいく弾 (到着したら onHit を呼ぶ)
-  projectile(from, to, { color = '#fff', size = 10, frames = 22, arc = -60, trail = true, onHit } = {}) {
-    this.add({ kind: 'proj', from, to, color, size, t: 0, frames, arc, trail, onHit, life: 1, max: 1 });
+  projectile(from, to, { color = '#fff', size = 10, frames = 22, arc = -60, trail = true, onHit, trailShape = 'circle', trailColors = null, trailText = '' } = {}) {
+    this.add({ kind: 'proj', from, to, color, size, t: 0, frames, arc, trail, onHit, trailShape, trailColors, trailText, life: 1, max: 1 });
   },
 
   // 画面いっぱいに降る紙吹雪
@@ -135,7 +135,8 @@ const FX = {
       ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(x, y, p.size, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x - p.size * 0.3, y - p.size * 0.3, p.size * 0.35, 0, Math.PI * 2); ctx.fill();
       if (p.trail && p.t % 2 === 0) {
-        this.parts.push({ kind: 'dot', shape: 'circle', x, y, vx: (Math.random() - .5), vy: (Math.random() - .5), g: 0, size: p.size * 0.6, life: 14, max: 14, color: p.color, rot: 0, vr: 0 });
+        const tc = p.trailColors ? p.trailColors[p.t % p.trailColors.length] : p.color;
+        this.parts.push({ kind: 'dot', shape: p.trailShape || 'circle', text: p.trailText, x, y, vx: (Math.random() - .5), vy: (Math.random() - .5), g: 0, size: p.trailShape && p.trailShape !== 'circle' ? p.size * 0.8 : p.size * 0.6, life: 16, max: 16, color: tc, rot: Math.random() * 6, vr: 0.1 });
       }
       if (p.t >= p.frames) { ctx.restore(); if (p.onHit) p.onHit(); return false; }
       ctx.restore();

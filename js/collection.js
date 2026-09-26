@@ -86,7 +86,9 @@ const ACHIEVEMENTS = [
   { id: 'world3', name: 'たびびと', desc: 'ワールド 3 の ボスをたおす', check: () => Save.data.cleared > worldStages(2).slice(-1)[0] },
   { id: 'world6', name: 'ぼうけんか', desc: 'ワールド 6 の ボスをたおす', check: () => Save.data.cleared > worldStages(5).slice(-1)[0] },
   { id: 'world9', name: 'えいゆう', desc: 'ワールド 9 の ボスをたおす', check: () => Save.data.cleared > worldStages(8).slice(-1)[0] },
-  { id: 'all_clear', name: 'でんせつの ゆうしゃ', desc: 'まおうを たおす', check: () => Save.data.cleared >= ENEMIES.length },
+  { id: 'all_clear', name: 'でんせつの ゆうしゃ', desc: 'まおうを たおす', check: () => Save.data.cleared > ENEMIES.findIndex(e => e.final) },
+  { id: 'world12', name: 'かげを こえし もの', desc: 'ワールド 12「かげのもり」の ボスを たおす', check: () => Save.data.cleared > worldStages(11).slice(-1)[0] },
+  { id: 'world13', name: 'ほしのはての ゆうしゃ', desc: 'しんまおうを たおして ぜんぶ クリア', check: () => Save.data.cleared >= ENEMIES.length },
   { id: 'wins50', name: 'ベテラン', desc: 'バトルに 合計 50 回 勝つ', check: () => Save.data.totals.wins >= 50 },
   { id: 'wins200', name: 'バトルマスター', desc: 'バトルに 合計 200 回 勝つ', check: () => Save.data.totals.wins >= 200 },
   // サバイバル

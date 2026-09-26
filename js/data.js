@@ -414,6 +414,9 @@ const ENEMY_POWER = {
   skybird: 102, cloud: 109, wbat: 95, skygolem: 123, wyvern: 126, skydragon: 89,
   alien: 126, ufo: 96, meteor: 160, star: 96, galaxyrobo: 146, alienking: 81,
   imp: 102, hellhound: 104, mgolem: 156, darkknight: 144, salamander: 130, demon: 105,
+  // うらの せかい (自分 Lv99・220 打鍵で ふつう 7〜8 わり、ボス 4.5〜6 わり)
+  v_bat: 81, v_mush: 106, v_goblin: 89, v_jelly: 89, v_golem: 94, v_dragon: 45,
+  v_penguin: 108, v_yukionna: 91, v_raijin: 73, v_wyvern: 79, v_galaxyrobo: 86, v_demon: 21,
 };
 
 // E(id, 名前, 体つき, 攻撃間隔ms, 特殊能力, 能力の説明, 敵の説明, その他)
@@ -506,9 +509,32 @@ const WORLD_DEFS = [
     E('mgolem', 'マグマゴーレム', 'tank', 5600, 'armor', 'マグマのよろい: コンボ 30 未満だと ダメージ半減', 'ようがんで できた きょじん。とても かたい。'),
     E('darkknight', 'ダークナイト', 'normal', 4800, 'shell', 'やみのたて: ときどき 3 秒間 うけるダメージが大きくへる', 'まおうに つかえる やみの きし。'),
     E('salamander', 'サラマンダー', 'normal', 4600, 'fade', 'かげろう: ときどき ローマ字ガイドが ゆらめいて見えなくなる', 'ほのおを まとう トカゲ。'),
-    E('demon', 'まおう', 'boss', 5600, 'demon', 'まおうのちから: HP 2/3 で やみ (ガイドが消える)、1/3 で 攻撃が速くなり ひっさつゲージをうばう', 'マグマのしろの あるじ。さいごの てき。', { final: true }),
+    E('demon', 'まおう', 'boss', 5600, 'demon', 'まおうのちから: HP 2/3 で やみ (ガイドが消える)、1/3 で 攻撃が速くなり ひっさつゲージをうばう', 'マグマのしろの あるじ。', { final: true }),
+  ] },
+  // ---- ここから うらの せかい (Lv100 より 上)。敵の 絵は 今ある 敵を つかい回して 色を かえた「へんい種」 ----
+  { id: 'shade', name: 'かげのもり', diff: 'hard', enemies: [
+    E('v_bat', 'かげコウモリン', 'fast', 3800, ['poison', 'fade'], 'かげのキバ: どくに して、ときどき ローマ字ガイドを かくす', 'かげに そまった コウモリン。すばやい。', { sprite: 'bat', lv: 101 }),
+    E('v_mush', 'かげドクキノコ', 'normal', 4600, ['poison', 'regen'], 'かげのほうし: どくに して、ときどき HP を 回復する', 'かげの もりで ふえつづける キノコ。', { sprite: 'mush', lv: 103 }),
+    E('v_goblin', 'かげゴブリン', 'normal', 4400, ['rage', 'charge'], 'かげのこんぼう: 3 回に 1 回 ためこうげき。HP 半分で 速くなる', 'かげの ちからで 強くなった ゴブリン。', { sprite: 'goblin', lv: 104 }),
+    E('v_jelly', 'かげクラゲール', 'normal', 4800, ['shock', 'sweet'], 'かげのしょくしゅ: ミスすると 自分が ダメージを うけ、敵が 回復する', 'やみの 水に ただよう クラゲ。まちがえると こわい。', { sprite: 'jelly', lv: 106 }),
+    E('v_golem', 'かげゴーレム', 'tank', 5400, ['armor', 'regen'], 'かげのよろい: コンボ 30 未満だと ダメージ半減。ときどき 回復する', 'かげの いしで できた きょじん。', { sprite: 'golem', lv: 107 }),
+    E('v_dragon', 'かげドラゴン', 'boss', 5200, ['dragon', 'fade', 'poison'], 'やみのりゅう: HP 半分で 速くなり ブレス。ガイドを かくし、どくも ある', 'かげの もりの ぬし。まおうより 強い という うわさ。', { sprite: 'dragon', lv: 110 }),
+  ] },
+  { id: 'void', name: 'ほしのはて', diff: 'hard', enemies: [
+    E('v_penguin', 'ほしのペンギナイト', 'normal', 4600, ['shell', 'freeze'], 'ほしのたて: ときどき 3 秒間 ダメージ大はばダウン。攻撃で こごえさせる', 'ほしの はてを まもる きし。', { sprite: 'penguin', lv: 110 }),
+    E('v_yukionna', 'うつろなユキオンナ', 'fast', 4200, ['freeze', 'fade'], 'うつろないき: 攻撃で こごえさせ、ときどき ガイドを かくす', 'ほしの かぜに のって あらわれる ゆうれい。', { sprite: 'yukionna', lv: 112 }),
+    E('v_raijin', 'ほしのライジン', 'normal', 4800, ['thunder', 'shock'], 'ほしのいかずち: 落雷の予告。ミスすると 自分が ダメージを うける', 'ほしの ちからを えた かみなりさま。', { sprite: 'raijin', lv: 113 }),
+    E('v_wyvern', 'こくうのワイバーン', 'fast', 4200, ['wind', 'rage'], 'こくうのつばさ: 風で 文字を ゆらす。HP 半分で 速くなる', 'なにもない そらを とぶ りゅう。', { sprite: 'wyvern', lv: 115 }),
+    E('v_galaxyrobo', 'ほしのきょじんロボ', 'tank', 5400, ['armor', 'shell'], 'ほしのそうこう: コンボ 30 未満だと ダメージ半減。ときどき ガードも かたくなる', 'ほしを まもる さいごの ロボット。', { sprite: 'galaxyrobo', lv: 117 }),
+    E('v_demon', 'しんまおう', 'boss', 5400, ['demon', 'thunder'], 'しんまおうのちから: まおうの ちからに くわえて、落雷の予告も してくる', 'ほしの はてで めざめた ほんとうの まおう。さいごの てき。', { sprite: 'demon', lv: 120, last: true }),
   ] },
 ];
+
+// へんい種の 見た目 (もとの 絵に 色の フィルターを かけるだけなので 軽い)
+const VARIANT_FILTER = {
+  shade: 'hue-rotate(250deg) saturate(1.5) brightness(.8) contrast(1.15)',
+  void: 'hue-rotate(150deg) saturate(1.7) brightness(1.05)',
+};
 
 // ワールドの一覧
 const WORLDS = WORLD_DEFS.map(w => ({ id: w.id, name: w.name }));
@@ -519,7 +545,7 @@ WORLD_DEFS.forEach((w, wi) => {
   w.enemies.forEach((e, i) => {
     const g = ENEMIES.length;
     const boss = i === w.enemies.length - 1;
-    const lv = e.final ? 99 : Math.round(2 + g * 1.46) + (boss ? 2 : 0);
+    const lv = e.lv || (e.final ? 99 : Math.round(2 + g * 1.46) + (boss ? 2 : 0));
     ENEMIES.push({
       ...e,
       world: wi,
@@ -534,6 +560,10 @@ WORLD_DEFS.forEach((w, wi) => {
     });
   });
 });
+// へんい種: id → { もとの 敵, フィルター }
+const ENEMY_VARIANT = {};
+for (const e of ENEMIES) if (e.sprite) ENEMY_VARIANT[e.id] = { base: e.sprite, filter: VARIANT_FILTER[WORLD_DEFS[e.world].id] };
+
 // 決めてある威力を反映
 function applyEnemyPower() { for (const e of ENEMIES) if (ENEMY_POWER[e.id]) e.power = ENEMY_POWER[e.id]; }
 applyEnemyPower();

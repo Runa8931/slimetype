@@ -238,16 +238,31 @@ function itemIcon(it, charId = Save.data.active) {
   return `<div class="fx-icon" style="--fc:${it.colors[0]}">${it.icon}</div>`;
 }
 
-// 打つときのエフェクト (れんしゅう・バトル共通)。big = お題を 打ち切ったとき
-function keyFx(root, big = false) {
-  const w = wearOf(Save.data.active);
-  if (!w.fx || !hasItem(w.fx)) return;
-  const f = ITEM_BY_ID[w.fx];
-  const el = root.querySelector('.tp-roma .next') || root.querySelector('.tp-roma');
-  if (!el) return;
-  const p = FX.center(el);
-  FX.burst(p.x, p.y, { colors: f.colors, shape: f.shape, text: f.text, count: big ? 18 : 4, speed: big ? 6 : 3, size: f.size, gravity: f.gravity ?? 0.12, life: big ? 44 : 30 });
-  if (f.bolt && big) FX.bolt(p.x + 30, p.y - 120, p.x, p.y, '#fff27a', 10);
+// いま つけている エフェクト (なければ null)
+function fxStyle(charId = Save.data.active) {
+  const w = wearOf(charId);
+  return w.fx && hasItem(w.fx) ? ITEM_BY_ID[w.fx] : null;
+}
+
+// お題を 打ち切ったとき、タイピングの 枠の まわりから 外に 飛び出す (文字の 上には 出さない)
+function wordFx(root) {
+  const f = fxStyle();
+  if (!f) return;
+  const r = root.getBoundingClientRect();
+  const lite = Save.data.settings.lite;
+  const n = lite ? 10 : 20;
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < n; i++) {
+    // 枠の ふちの 上の 点を えらんで、外向きに とばす
+    const side = i % 4, k = Math.random();
+    const x = side === 0 || side === 2 ? r.left + k * r.width : side === 1 ? r.right : r.left;
+    const y = side === 1 || side === 3 ? r.top + k * r.height : side === 0 ? r.top : r.bottom;
+    const len = Math.hypot(x - cx, y - cy) || 1;
+    const sp = 3 + Math.random() * 3;
+    FX.add({ kind: 'dot', shape: f.shape, text: f.text, x, y, vx: (x - cx) / len * sp, vy: (y - cy) / len * sp * 1.4, g: (f.gravity ?? 0.12) * 0.5,
+      size: f.size * (0.8 + Math.random() * 0.6), life: 40, max: 40, color: f.colors[i % f.colors.length], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3 });
+  }
+  if (f.bolt && !lite) FX.bolt(r.right + 20, r.top - 80, r.right - 30, r.top, '#fff27a', 10);
 }
 
 // ---------------- ガチャの 画面 ----------------
@@ -565,7 +580,7 @@ Screens.wardrobe = {
     }).join('');
     $('#wd-items').querySelectorAll('.wd-item:not(.locked)').forEach(b => { b.onclick = () => this.wear(b.dataset.id || null); });
     const owned = list.filter(it => hasItem(it.id)).length;
-    $('#wd-count').textContent = `${KIND_NAME[this.tab]} ${owned}/${list.length}`;
+    $('#wd-count').textContent = `${KIND_NAME[this.tab]} ${owned}/${list.length}${this.tab === 'fx' ? '　・　バトルの 攻撃の 弾と、お題を 打ちおわったときに 枠から 出る' : ''}`;
   },
 
   wear(itemId) {

@@ -25,7 +25,7 @@ const MAP_LAYOUTS = {
   D: { start: P(90, 340), nodes: [P(260, 340), P(260, 140), P(560, 140), P(560, 460), P(860, 460), P(860, 200)],
     via: [[], [], [], [], [], []], gate: P(1100, 200) },
 };
-const WORLD_LAYOUT = { grass: 'A', poison: 'C', desert: 'B', sea: 'D', candy: 'A', rain: 'C', factory: 'B', snow: 'B', sky: 'A', space: 'C', magma: 'D' };
+const WORLD_LAYOUT = { grass: 'A', poison: 'C', desert: 'B', sea: 'D', candy: 'A', rain: 'C', factory: 'B', snow: 'B', sky: 'A', space: 'C', magma: 'D', shade: 'C', void: 'A' };
 const WORLD_MAPS = WORLDS.map((w, i) => {
   const L = MAP_LAYOUTS[WORLD_LAYOUT[w.id]];
   // さいごのワールドには ゲートがない
@@ -202,6 +202,25 @@ const NEW_WORLD_BG = {
       <circle cx="140" cy="600" r="40" fill="#4dabf7"/><path d="M110,590 C130,580 150,600 170,592" stroke="#69db7c" stroke-width="10" fill="none"/>
       ${land('#495057', 130, 'opacity=".9"')}${land('#adb5bd', 100)}${craters}`;
   },
+};
+
+// うらの せかい (かず少ない 図形だけで 軽く 描く)
+NEW_WORLD_BG.shade = (m, land) => {
+  const trees = scatter(m, 18, 80, 211).map(p => `<g transform="translate(${p.x},${p.y}) scale(${0.8 + p.r * 0.5})"><rect x="-5" y="4" width="10" height="26" fill="#1a0f2e"/>
+    <path d="M0,-40 L24,8 L-24,8 Z" fill="#2b1a4a"/><circle cx="${p.r > 0.5 ? -6 : 6}" cy="-6" r="2.2" fill="#e599f7"/></g>`).join('');
+  const wisps = scatter(m, 14, 60, 223).map(p => `<circle cx="${p.x}" cy="${p.y}" r="${3 + p.r * 4}" fill="#da77f2" opacity="${0.3 + p.r * 0.4}" class="spark-soft"/>`).join('');
+  return `<rect width="${MAP_W}" height="${MAP_H}" fill="#140b24"/>
+    <ellipse cx="600" cy="360" rx="560" ry="220" fill="#3b1f6b" opacity=".45"/>
+    <circle cx="1060" cy="100" r="46" fill="#e5dbff" opacity=".85"/><circle cx="1076" cy="90" r="40" fill="#140b24"/>
+    ${land('#2b1a4a', 130)}${land('#4a2d73', 96)}${trees}${wisps}`;
+};
+NEW_WORLD_BG.void = (m, land) => {
+  const stars = scatter(m, 80, 16, 311).map(p => `<circle cx="${p.x}" cy="${p.y}" r="${0.7 + p.r * 1.8}" fill="${p.r > 0.8 ? '#66d9e8' : '#fff'}" opacity="${0.4 + p.r * 0.6}"/>`).join('');
+  const shards = scatter(m, 10, 110, 331).map(p => `<path transform="translate(${p.x},${p.y}) rotate(${p.r * 60})" d="M0,-18 L10,0 L0,18 L-10,0 Z" fill="#3bc9db" opacity=".55"/>`).join('');
+  return `<rect width="${MAP_W}" height="${MAP_H}" fill="#02030f"/>
+    <ellipse cx="620" cy="320" rx="520" ry="200" fill="#0b7285" opacity=".25"/>
+    <ellipse cx="300" cy="520" rx="260" ry="90" fill="#5f3dc4" opacity=".2"/>
+    ${stars}${shards}${land('#1c2541', 130, 'opacity=".95"')}${land('#3a506b', 96)}`;
 };
 
 // ---------------- ワールドごとの背景 ----------------

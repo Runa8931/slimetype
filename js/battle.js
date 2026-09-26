@@ -49,7 +49,7 @@ Screens.battle = {
     const arena = $('#arena');
     arena.className = 'arena bg-' + this.ed.bg;
     $('#b-player').className = 'fighter player';
-    $('#b-enemy').className = 'fighter enemy' + (this.ed.boss ? ' boss' : '');
+    $('#b-enemy').className = 'fighter enemy' + (this.ed.boss ? ' boss' : '') + (this.ed.sprite ? ' variant v-' + this.ed.bg : '');
     $('#b-psprite').innerHTML = slimeSVG(ch.id, ch.stage);
     $('#b-esprite').innerHTML = enemySVG(this.ed.id);
     $('#b-pname').textContent = ch.name;
@@ -296,7 +296,7 @@ Screens.battle = {
       const x = 8 + Math.random() * 84, y = 35 + Math.random() * 55, r = 80 + Math.random() * 70;
       return `<i style="left:${x}%;top:${y}%;width:${r}px;height:${r * (0.7 + Math.random() * 0.4)}px"></i>`;
     }).join('');
-    this.log('クラーケンが すみを はいた！', 'enemy');
+    this.log(`${this.ed.name}が すみを はいた！`, 'enemy');
     SFX.noise(0.3, { vol: 0.12, filter: 600 });
     const c = FX.center($('#b-tp'));
     FX.burst(c.x, c.y, { colors: ['#10002b', '#3c096c'], count: 30, speed: 8, size: 7 });
@@ -407,7 +407,7 @@ Screens.battle = {
       this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200) * this.ch.skill.charge);
       if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.useSkill(); }
       SFX.key();
-      keyFx($('#b-tp'), r === 'done');
+      if (r === 'done') wordFx($('#b-tp'));
       if (r === 'done') { this.wordDone(); }
     }
     this.updateCombo();
@@ -488,13 +488,17 @@ Screens.battle = {
       ryumaru: { color: '#ff922b', size: 13, arc: -40, frames: 18 },
       kirari: { color: '#fff3bf', size: 9, arc: -90, frames: 16 },
     };
+    // きせかえの エフェクト: 攻撃の 弾が その形の 尾を ひいて 飛び、当たると はじける
+    const f = fxStyle(this.ch.id);
+    const look = f ? { color: f.colors[0], trailShape: f.shape, trailColors: f.colors, trailText: f.text } : {};
     this.proj({ x: from.x + 30, y: from.y }, to, {
-      frames: 20, ...kinds[this.ch.id],
+      frames: 20, ...kinds[this.ch.id], ...look,
       onHit: () => {
         this.pending--;
         if (this.state !== 'run' && this.state !== 'pause') return;
-        if (this.ch.id === 'piriri') FX.bolt(to.x - 60, to.y - 40, to.x, to.y, '#fff27a', 10);
-        this.hitEnemy(dmg, { crit, colors: [col.main, col.light, '#fff'] });
+        if (this.ch.id === 'piriri' || (f && f.bolt)) FX.bolt(to.x - 60, to.y - 40, to.x, to.y, '#fff27a', 10);
+        if (f) FX.burst(to.x, to.y, { colors: f.colors, shape: f.shape, text: f.text, count: 14, speed: 6, size: f.size, gravity: f.gravity ?? 0.12 });
+        this.hitEnemy(dmg, { crit, colors: f ? f.colors : [col.main, col.light, '#fff'] });
         if (boosted) this.log('アクアパワーで こうげきが 1.5ばい！', 'good');
         if (armorMsg === 'block') this.log('いしのよろいで ダメージがへった… (コンボ30で貫通)', 'enemy');
         if (armorMsg === 'break' && Math.random() < 0.4) this.log('コンボの力で よろいを つらぬいた！', 'good');
@@ -553,7 +557,7 @@ Screens.battle = {
     if (this.has('ink') && !this.e2.double && this.e.hp <= this.e.max / 2) {
       this.e2.double = true;
       $('#b-enemy').classList.add('angry');
-      this.log('クラーケンが あばれだした！ 2 れんぞくで 攻撃してくる！', 'enemy');
+      this.log(`${this.ed.name}が あばれだした！ 2 れんぞくで 攻撃してくる！`, 'enemy');
       cutin('あばれる', this.ed.name, '#c9184a', enemySVG(this.ed.id));
     }
     if (this.e.angry || this.e.hp > this.e.max / 2) return;
@@ -715,8 +719,8 @@ Screens.battle = {
     };
     // 攻撃の弾の見た目 (決めていない敵は ワールドの色)
     const worldColor = { poison: '#b197fc', desert: '#e2b766', sea: '#4dabf7', candy: '#ff8fab', rain: '#74c0fc',
-      factory: '#ff922b', snow: '#d0ebff', sky: '#ffffff', space: '#9775fa', magma: '#ff7a1a' }[ed.bg] || '#ff6b6b';
-    const s = styles[ed.id] || { color: worldColor, size: ed.boss ? 15 : 12, arc: -40, frames: 20 };
+      factory: '#ff922b', snow: '#d0ebff', sky: '#ffffff', space: '#9775fa', magma: '#ff7a1a', shade: '#9d4edd', void: '#66d9e8' }[ed.bg] || '#ff6b6b';
+    const s = styles[ed.sprite || ed.id] || { color: worldColor, size: ed.boss ? 15 : 12, arc: -40, frames: 20 };
 
     // ボスは たくさんの弾を いっせいに とばす (はで)
     if (ed.boss && ed.id !== 'dragon') {

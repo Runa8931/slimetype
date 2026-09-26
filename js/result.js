@@ -36,7 +36,7 @@ Screens.result = {
         ${r.firstClear && r.enemyIdx + 1 < ENEMIES.length ? (ENEMIES[r.enemyIdx + 1].world !== e.world
           ? `<div class="unlock">ワールド ${e.world + 2}「${WORLDS[e.world + 1].name}」への ゲートが ひらいた！</div>`
           : `<div class="unlock">あたらしいあいて「${ENEMIES[r.enemyIdx + 1].name}」があらわれた！</div>`) : ''}
-        ${r.firstClear && r.enemyIdx + 1 >= ENEMIES.length ? '<div class="unlock">まおうを たおした！ ぜんぶのワールドを クリア！ おめでとう！</div>' : ''}
+        ${r.firstClear && r.enemyIdx + 1 >= ENEMIES.length ? `<div class="unlock">${e.name}を たおした！ ぜんぶの ワールドを クリア！ おめでとう！</div>` : ''}
         ${!r.won ? '<div class="tip">ヒント: れんしゅうでレベルを上げたり、コンボを切らさないように打つと有利だよ</div>' : ''}
       </div>`;
     }

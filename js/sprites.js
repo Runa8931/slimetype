@@ -554,4 +554,9 @@ const ENEMY_SVG = {
     </g></svg>`,
 };
 
-function enemySVG(id) { return ENEMY_SVG[id](); }
+// へんい種は もとの 敵の 絵に 色の フィルターを かけて つかい回す (新しい 絵を 作らないので 軽い)
+function enemySVG(id) {
+  const v = typeof ENEMY_VARIANT !== 'undefined' && ENEMY_VARIANT[id];
+  if (!v) return ENEMY_SVG[id]();
+  return ENEMY_SVG[v.base]().replace('<svg ', `<svg style="filter:${v.filter}" `);
+}
