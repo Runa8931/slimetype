@@ -24,8 +24,8 @@ Screens.battle = {
     this.idx = idx;
     this.dk = battleDiffKey();
     this.bd = BATTLE_DIFFS[this.dk];
-    // 上級者は 敵の レベルが 上がる
-    this.ed = this.bd.lv ? { ...ENEMIES[idx], lv: Math.max(ENEMIES[idx].lv, this.bd.lv) } : ENEMIES[idx];
+    // 難易度で 敵の レベルが かわる
+    this.ed = { ...ENEMIES[idx], lv: diffEnemyLv(ENEMIES[idx], this.bd) };
     const ch = charInfo(Save.data.active);
     this.ch = ch;
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
@@ -86,7 +86,7 @@ Screens.battle = {
     const box = $('#b-diff');
     if (!box) return;
     box.innerHTML = `<span>難易度</span>${BATTLE_DIFF_KEYS.map((k, i) => `<button class="${k === this.dk ? 'on' : ''}" data-k="${k}" style="--dc:${BATTLE_DIFFS[k].color}"><kbd>${i + 1}</kbd> ${BATTLE_DIFFS[k].name}</button>`).join('')}
-      <small>${this.bd.k > 1 ? `敵の 攻撃 ×${this.bd.k}・HP ×${Math.pow(this.bd.k, 0.7).toFixed(2)}・経験値と コイン ×${this.bd.reward}` : 'ふつうの 強さ'} (${this.bd.note})</small>`;
+      <small>推奨 Lv.${this.ed.lv}・敵の 攻撃 ×${this.bd.k}・HP ×${Math.pow(this.bd.k, 0.7).toFixed(2)}${this.bd.reward > 1 ? `・経験値と コイン ×${this.bd.reward}` : ''} (${this.bd.note})</small>`;
     box.querySelectorAll('button').forEach(b => { b.onclick = () => this.pickDiff(b.dataset.k); });
   },
   pickDiff(k) {

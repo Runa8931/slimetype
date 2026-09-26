@@ -595,15 +595,15 @@ Screens.stages = {
     const cleared = g < this.cleared;
     $('#map-world').innerHTML = `${head} - <b>${this.pos + 1}</b>`;
     const bd = BATTLE_DIFFS[battleDiffKey()];
-    const elv = bd.lv ? Math.max(e.lv, bd.lv) : e.lv; // 上級者は 敵の レベルが 上がる
+    const elv = diffEnemyLv(e, bd); // 難易度で 敵の レベルが かわる (= 推奨レベル)
     const gap = levelGapMult(elv, this.ch.L);
-    const warn = bd.lv ? `<div class="mi-warn">上級者: 敵は Lv${elv}。Lv最大・かくせい★4 むけ</div>` : this.ch.L < e.lv - 2 ? `<div class="mi-warn">レベルが たりないかも (おすすめ Lv.${Math.min(e.lv, MAX_LV)})</div>`
+    const warn = this.ch.L < elv ? `<div class="mi-warn">レベルが たりないかも (推奨 Lv.${elv}・${bd.note})</div>`
       : gap < 0.8 ? `<div class="mi-low">格下の あいて: もらえる経験値 ×${gap.toFixed(2)}</div>` : '';
     info.innerHTML = `<div class="mi-sprite">${enemySVG(e.id)}</div>
       <div class="mi-body">
-        <div class="mi-name">${e.name} <small>Lv.${e.lv}</small> ${e.boss ? '<span class="badge boss">BOSS</span>' : ''} ${cleared ? '<span class="mi-clear">CLEAR</span>' : ''} <span class="dmarks">${diffBadges(g)}</span></div>
+        <div class="mi-name">${e.name} <small>Lv.${elv}</small> ${e.boss ? '<span class="badge boss">BOSS</span>' : ''} ${cleared ? '<span class="mi-clear">CLEAR</span>' : ''} <span class="dmarks">${diffBadges(g)}</span></div>
         <div class="mi-desc">${e.abilityDesc}</div>${warn}
-        <div class="mi-go"><kbd>Space</kbd> で たたかう　難易度 <b style="color:${BATTLE_DIFFS[battleDiffKey()].color}">${BATTLE_DIFFS[battleDiffKey()].name}</b> <small>(<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> で かえる)</small></div>
+        <div class="mi-go"><kbd>Space</kbd> で たたかう　難易度 <b style="color:${BATTLE_DIFFS[battleDiffKey()].color}">${BATTLE_DIFFS[battleDiffKey()].name}</b>・推奨 Lv.${elv} <small>(<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> で かえる)</small></div>
       </div>`;
     replayAnim(info, 'pop-in', 300);
   },

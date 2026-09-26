@@ -28,15 +28,18 @@ function calcDamage(L, power, atk, def) {
   return ((2 * L / 5 + 2) * power * atk / def) / 50 + 2;
 }
 
-// バトルの 難易度。k: 敵の 攻撃力 ×k、HP ×k^0.7、攻撃の 間かく ÷k^0.25 / lv: 敵の レベルを ここまで 上げる
-// 初心者・中級者: 向いている 打鍵数なら 敵と 同じ レベルで ふつうの 敵に 約 8 わり (のこり HP 約 35%)、ボスに 約 55%
-// 上級者: 敵は ぜんぶ Lv125。1 分 300 打鍵で Lv124・かくせい★4 なら ふつう 約 5 わり・ボス 約 3 わり。
-//         Lv120・かくせい なしだと 約 2.5 わり (Lv最大・完凸 むけの やりこみ)
+// バトルの 難易度
+//   lvAdd: 敵の レベルを 足す (上限 Lv124 = 最大Lv + かくせい★4)。マップの「推奨レベル」は この 敵の レベル
+//   k: 敵の 攻撃力 ×k、HP ×k^0.7、攻撃の 間かく ÷k^0.25
+//   推奨レベルで むいている 打鍵数 (100 / 200 / 300) なら、ふつうの 敵に 約 8 わり (のこり HP 約 3 わり)、ボスに 約 5〜6 わり 勝てるよう 計算で きめた
+const BATTLE_LV_CAP = 124;
 const BATTLE_DIFFS = {
-  beg: { name: '初心者', k: 1, reward: 1, kpm: 220, color: '#69db7c', note: '1 分 220 打鍵くらい 向け' },
-  mid: { name: '中級者', k: 1.25, reward: 1.3, kpm: 300, color: '#ffd43b', note: '1 分 300 打鍵くらい 向け' },
-  adv: { name: '上級者', k: 1.8, reward: 2, kpm: 300, lv: 125, color: '#ff6b6b', note: '敵は ぜんぶ Lv125。Lv最大・かくせい★4 むけ' },
+  beg: { name: '初心者', k: 0.56, lvAdd: 0, reward: 1, kpm: 100, color: '#69db7c', note: '1 分 100 打鍵くらい 向け' },
+  mid: { name: '中級者', k: 0.94, lvAdd: 3, reward: 1.3, kpm: 200, color: '#ffd43b', note: '1 分 200 打鍵くらい 向け。敵の レベル +3' },
+  adv: { name: '上級者', k: 1.29, lvAdd: 6, reward: 1.7, kpm: 300, color: '#ff6b6b', note: '1 分 300 打鍵くらい 向け。敵の レベル +6 (さいごは Lv124)' },
 };
+// その 難易度での 敵の レベル (= 推奨レベル)
+function diffEnemyLv(e, bd) { return Math.min(BATTLE_LV_CAP, e.lv + bd.lvAdd); }
 const BATTLE_DIFF_KEYS = Object.keys(BATTLE_DIFFS);
 
 // レベル差による経験値の倍率 (ポケモン第 5 世代の式を もっと きびしくしたもの)
