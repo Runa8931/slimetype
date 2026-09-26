@@ -100,6 +100,7 @@ const ACHIEVEMENTS = [
   { id: 'sv_normal', name: 'つわもの', desc: 'サバイバル ふつう を クリア', check: () => !!(Save.data.best['sv-normal'] || {}).cleared },
   { id: 'sv_hard', name: 'いくさの ゆうしゃ', desc: 'サバイバル むずかしい を クリア', check: () => !!(Save.data.best['sv-hard'] || {}).cleared },
   { id: 'sv_oni', name: 'おにごろし', desc: 'サバイバル おに を クリア', check: () => !!(Save.data.best['sv-oni'] || {}).cleared },
+  { id: 'sv_hell', name: 'じごくの はてから かえった もの', desc: 'サバイバル じごく を クリア', check: () => !!(Save.data.best['sv-hell'] || {}).cleared },
   { id: 'sv_300', name: 'むそう', desc: 'サバイバル 1 回で 300 体 たおす', check: r => r && r.mode === 'survival' && r.kills >= 300 },
   // せいちょう
   { id: 'lv20', name: 'しんかの はじまり', desc: 'だれかを Lv20 にする', check: () => maxCharLv() >= 20 },

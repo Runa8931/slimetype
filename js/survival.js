@@ -43,6 +43,13 @@ const SV_DIFFS = {
     desc: 'マグマのしろの 敵が だいしゅうごう。ボスは まおう',
     tiers: [['crab', 'jelly', 'penguin'], ['penguin', 'wolf', 'snowman'], ['wolf', 'imp', 'salamander'], ['imp', 'salamander', 'mgolem']],
   },
+  // いちばん 上: 「おに」を Lv70 で あそぶ 手ごたえを、Lv124・かくせい★4 で さらに 1.4 倍 きびしく したもの
+  // (Lv が 上がると 自分の 攻撃力の 伸びが 敵より 大きいので、HP ×1.15・攻撃 ×2.26 で そろえてから ×1.4)
+  hell: {
+    name: 'じごく', color: '#c77dff', rec: 'Lv.110〜', hp: 5.3, dmg: 6.3, spawn: 1.6, bossHp: 5.8, exp: 3.5, boss: 'v_demon',
+    desc: 'うらの せかいの へんい種が おしよせる。ボスは しんまおう',
+    tiers: [['v_jelly', 'v_penguin', 'wolf'], ['v_penguin', 'v_goblin', 'imp'], ['v_goblin', 'salamander', 'v_golem'], ['v_golem', 'mgolem', 'salamander', 'v_goblin']],
+  },
 };
 const SV_DIFF_KEYS = Object.keys(SV_DIFFS);
 
@@ -62,11 +69,17 @@ const SV_ENEMIES = {
   imp: { hp: 45, spd: 95, dmg: 11, r: 24, gem: 5, w: 64, color: '#ff7a1a' },
   mgolem: { hp: 180, spd: 42, dmg: 16, r: 38, gem: 12, w: 104, chest: 0.3, color: '#ff5400' },
   salamander: { hp: 80, spd: 82, dmg: 13, r: 30, gem: 7, w: 100, chest: 0.1, color: '#ffba08' },
+  // へんい種 (もとの 絵に 色の フィルターを かけて つかい回す)
+  v_jelly: { hp: 32, spd: 80, dmg: 9, r: 22, gem: 3, w: 58, alpha: 0.85, color: '#da77f2' },
+  v_penguin: { hp: 60, spd: 82, dmg: 11, r: 24, gem: 5, w: 64, color: '#66d9e8' },
+  v_goblin: { hp: 75, spd: 76, dmg: 13, r: 28, gem: 6, w: 76, chest: 0.12, color: '#b197fc' },
+  v_golem: { hp: 210, spd: 48, dmg: 18, r: 38, gem: 14, w: 104, chest: 0.3, color: '#9775fa' },
   // ボス
   dragon: { hp: 2000, spd: 58, dmg: 22, r: 70, gem: 0, w: 230, color: '#ff7a1a' },
   kraken: { hp: 2100, spd: 50, dmg: 22, r: 74, gem: 0, w: 230, color: '#c9184a' },
   yeti: { hp: 2300, spd: 62, dmg: 24, r: 74, gem: 0, w: 220, color: '#d0ebff' },
   demon: { hp: 2500, spd: 60, dmg: 26, r: 78, gem: 0, w: 240, color: '#9d4edd' },
+  v_demon: { hp: 2800, spd: 66, dmg: 28, r: 78, gem: 0, w: 240, color: '#66d9e8' },
 };
 
 // ボスの攻撃のくせ
@@ -75,6 +88,7 @@ const SV_BOSS = {
   kraken: { name: 'クラーケン', color: '#7b2cbf', core: '#10002b', ring: 14, aim: 0, spd: 150, dash: false, summon: 'jelly' },
   yeti: { name: 'イエティ', color: '#a5d8ff', core: '#ffffff', ring: 8, aim: 5, spd: 240, dash: true, slow: true },
   demon: { name: 'まおう', color: '#9d4edd', core: '#ff006e', ring: 16, aim: 3, spd: 200, dash: true, summon: 'imp', homing: true },
+  v_demon: { name: 'しんまおう', color: '#3bc9db', core: '#ffffff', ring: 20, aim: 4, spd: 230, dash: true, summon: 'v_goblin', homing: true },
 };
 
 // 武器
@@ -183,19 +197,22 @@ Screens.survival = {
   async buildSprites() {
     const q = this.dpr;
     const jobs = Object.keys(SV_ENEMIES).map(id => {
-      const svg = enemySVG(id);
+      const v = ENEMY_VARIANT[id];
+      const svg = v ? ENEMY_SVG[v.base]() : enemySVG(id);
       const w = SV_ENEMIES[id].w;
-      return [id, svg, w, w * svgAspect(svg)];
+      return [id, svg, w, w * svgAspect(svg), v ? v.filter : null];
     });
     const psvg = slimeSVG(this.ch.id, this.ch.stage);
     const pw = this.ch.stage >= 3 ? 104 : 76; // つばさのある姿は 横に広い
     jobs.push(['player', psvg, pw, pw * svgAspect(psvg)]);
-    await Promise.all(jobs.map(async ([id, svg, w, h]) => {
+    await Promise.all(jobs.map(async ([id, svg, w, h, filter]) => {
       const img = svgToImage(svg);
       try { await img.decode(); } catch (e) { return; }
       const c = document.createElement('canvas');
       c.width = Math.ceil(w * q); c.height = Math.ceil(h * q);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const g = c.getContext('2d');
+      if (filter) g.filter = filter; // へんい種の 色
+      g.drawImage(img, 0, 0, c.width, c.height);
       this.sprites[id] = { c, flash: this.tint(c, 'rgba(255,255,255,.8)'), slow: this.tint(c, 'rgba(70,150,255,.5)'), w, h };
     }));
   },
@@ -257,7 +274,7 @@ Screens.survival = {
         <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> いどう (攻撃は自動)　🎁 宝箱で 武器を入手・強化 (最大 ${SV_MAX_WEAPONS} こ)</div>
         <div>💎 ジェム = 経験値　❤️ = 回復　さいしょの武器: ${w.icon} ${w.name}</div>
       </div>
-      <div class="ov-key"><kbd>1</kbd>〜<kbd>4</kbd> で難易度　<kbd>Space</kbd> でスタート</div></div>`);
+      <div class="ov-key"><kbd>1</kbd>〜<kbd>${SV_DIFF_KEYS.length}</kbd> で難易度　<kbd>Space</kbd> でスタート</div></div>`);
     document.querySelectorAll('.svd-card').forEach(b => { b.onclick = () => this.pickDiff(b.dataset.k); });
   },
 
@@ -1224,20 +1241,30 @@ Screens.survival = {
       ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-6, -7); ctx.lineTo(-13, 0); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.restore();
     } else if (s.kind === 'wind') {
+      // 風の 刃: 緑の 光 + こい ふち で 草原でも 見やすく
       ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang);
       ctx.globalAlpha = Math.min(1, s.life / 0.25);
-      ctx.strokeStyle = '#c3fae8'; ctx.lineWidth = 5; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.arc(-6, 0, 16, -1.1, 1.1); ctx.stroke();
+      this.drawGlow(ctx, 'rgba(32,201,151,.45)', 0, 0, 26);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#087f5b'; ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.arc(-8, 0, 20, -1.15, 1.15); ctx.stroke();
+      ctx.strokeStyle = '#63e6be'; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(-8, 0, 20, -1.1, 1.1); ctx.stroke();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(-2, 0, 13, -0.9, 0.9); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-6, 0, 18, -0.8, 0.8); ctx.stroke();
       ctx.restore();
     } else if (s.kind === 'drill') {
-      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang);
-      ctx.fillStyle = '#ced4da'; ctx.strokeStyle = '#495057'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-10, -13); ctx.lineTo(-10, 13); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.strokeStyle = '#868e96';
-      for (let i = 0; i < 3; i++) { const x = -4 + i * 8 - (s.spin % 8); ctx.beginPath(); ctx.moveTo(x, -10 + i * 3); ctx.lineTo(x + 6, 10 - i * 3); ctx.stroke(); }
-      ctx.fillStyle = '#ffd43b'; ctx.fillRect(-16, -8, 6, 16);
+      // ドリル: こい ふちの 金属 + 回る みぞ
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang); ctx.scale(1.5, 1.5);
+      this.drawGlow(ctx, 'rgba(255,212,59,.35)', 0, 0, 22);
+      const g = ctx.createLinearGradient(0, -13, 0, 13);
+      g.addColorStop(0, '#f1f3f5'); g.addColorStop(0.5, '#868e96'); g.addColorStop(1, '#343a40');
+      ctx.fillStyle = g; ctx.strokeStyle = '#212529'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(-10, -13); ctx.lineTo(-10, 13); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#212529'; ctx.lineWidth = 1.8;
+      for (let i = 0; i < 4; i++) { const x = -8 + i * 8 + (s.spin * 2 % 8); const hh = 12 * (1 - (x + 10) / 36); ctx.beginPath(); ctx.moveTo(x - 3, -hh); ctx.lineTo(x + 3, hh); ctx.stroke(); }
+      ctx.fillStyle = '#fab005'; ctx.strokeStyle = '#212529'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.rect(-18, -9, 8, 18); ctx.fill(); ctx.stroke();
       ctx.restore();
     } else if (s.kind === 'tornado') {
       const k = Math.min(1, s.life / 0.4, (s.max - s.life) / 0.2 + 0.2);

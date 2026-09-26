@@ -129,8 +129,8 @@ function renderTyping(root, word, target, { hideRoma = false } = {}) {
 
 // サバイバルの記録: クリアした一番むずかしい難易度 (なければ 一番長く生きのこった時間)
 function svRecord(best) {
-  const keys = ['oni', 'hard', 'normal', 'easy'];
-  const names = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい', oni: 'おに' };
+  const keys = ['hell', 'oni', 'hard', 'normal', 'easy'];
+  const names = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい', oni: 'おに', hell: 'じごく' };
   const c = keys.find(k => best['sv-' + k] && best['sv-' + k].cleared);
   if (c) return `<small>${names[c]}</small>クリア`;
   const t = keys.map(k => best['sv-' + k]).filter(Boolean).sort((a, b) => b.time - a.time)[0];

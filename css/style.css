@@ -1197,3 +1197,7 @@ body.lite .sky { display: none; }
 .mi-go small kbd { font-size: .75em; }
 .badge.type-koorin { background: #1971c2; } .badge.type-fuwari { background: #0ca678; } .badge.type-metarun { background: #495057; }
 .st.evade { background: #0ca678; } .st.break { background: #e67700; }
+.svd-grid { grid-template-columns: repeat(5, 1fr); } .ov-box.sv-ready { max-width: 1120px; }
+/* キャラが ふえても タイトルで はみださない */
+.title-slimes { flex-wrap: wrap; max-width: min(96vw, 900px); gap: 6px 10px; margin-left: auto; margin-right: auto; }
+.title-slimes .sprite { width: clamp(64px, 8vw, 100px); height: clamp(64px, 8vw, 100px); }
