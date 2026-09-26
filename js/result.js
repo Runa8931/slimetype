@@ -71,8 +71,8 @@ Screens.result = {
     const coinHtml = r.coins != null ? `<div class="res-coin">🪙 <b>+${r.coins}</b> コイン <small>${r.coinNote || ''}</small><span>もっている コイン <b class="res-coin-have">${Save.data.coins}</b></span></div>` : '';
     $('#result-wrap').innerHTML = head + `<div class="res-cols"><div class="panel">${statsHtml}${coinHtml}</div>${expHtml}</div>
       <div class="bottom-bar">
-        <button class="btn ghost" id="res-home">ホームへ <kbd>Esc</kbd></button>
-        <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もういちど' : r.mode === 'survival' ? 'もういちど' : r.won ? 'マップへ' : 'リベンジ'} <kbd>Space</kbd></button>
+        ${r.mode === 'battle' && r.won ? '' : `<button class="btn ghost" id="res-home">${r.mode === 'battle' ? 'マップへ' : 'ホームへ'} <kbd>Esc</kbd></button>`}
+        <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もういちど <kbd>Space</kbd>' : r.mode === 'survival' ? 'もういちど <kbd>Space</kbd>' : r.won ? 'マップへ <kbd>Space</kbd> <kbd>Esc</kbd>' : 'リベンジ <kbd>Space</kbd>'}</button>
       </div>`;
     // しょうごう: 新しく とれたものを 知らせる
     const got = checkAchievements(r);
@@ -82,7 +82,7 @@ Screens.result = {
       $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="ach-get">${got.map(a => `<div>🏅 しょうごう「<b>${a.name}</b>」ゲット！ 🪙+${ACH_COINS}<small>${a.desc}</small></div>`).join('')}</div>`);
       setTimeout(() => { SFX.levelup(); FX.confetti(); }, 600);
     }
-    $('#res-home').onclick = () => this.home();
+    if ($('#res-home')) $('#res-home').onclick = () => this.home();
     $('#res-again').onclick = () => this.again();
     this.animateExp();
   },
@@ -178,7 +178,12 @@ Screens.result = {
     else App.show('battle', r.enemyIdx);
   },
 
-  home() { App.show('home'); },
+  // バトルの あとは マップへ もどる (はじめて たおしたときは 道が ひらく 演出も)
+  home() {
+    const r = this.r;
+    if (r.mode === 'battle') App.show('stages', { justCleared: r.firstClear ? r.enemyIdx : null });
+    else App.show('home');
+  },
 
   onKey(e) {
     // 打ち終わった直後の押しまちがいで先に進まないよう、少し待つ

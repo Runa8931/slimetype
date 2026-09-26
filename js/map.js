@@ -595,7 +595,7 @@ Screens.stages = {
     const cleared = g < this.cleared;
     $('#map-world').innerHTML = `${head} - <b>${this.pos + 1}</b>`;
     const bd = BATTLE_DIFFS[battleDiffKey()];
-    const elv = diffEnemyLv(e, bd); // 難易度で 敵の レベルが かわる (= 推奨レベル)
+    const elv = diffEnemyLv(e); // 推奨レベル (難易度では かわらない)
     const gap = levelGapMult(elv, this.ch.L);
     const warn = this.ch.L < elv ? `<div class="mi-warn">レベルが たりないかも (推奨 Lv.${elv}・${bd.note})</div>`
       : gap < 0.8 ? `<div class="mi-low">格下の あいて: もらえる経験値 ×${gap.toFixed(2)}</div>` : '';

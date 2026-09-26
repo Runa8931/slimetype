@@ -28,18 +28,21 @@ function calcDamage(L, power, atk, def) {
   return ((2 * L / 5 + 2) * power * atk / def) / 50 + 2;
 }
 
-// バトルの 難易度
-//   lvAdd: 敵の レベルを 足す (上限 Lv124 = 最大Lv + かくせい★4)。マップの「推奨レベル」は この 敵の レベル
+// バトルの 難易度: どの 難易度でも 推奨レベル (= 敵の レベル) は おなじ。かわるのは 必要な タイピングの 速さだけ
 //   k: 敵の 攻撃力 ×k、HP ×k^0.7、攻撃の 間かく ÷k^0.25
-//   推奨レベルで むいている 打鍵数 (100 / 200 / 300) なら、ふつうの 敵に 約 8 わり (のこり HP 約 3 わり)、ボスに 約 5〜6 わり 勝てるよう 計算で きめた
+//   ramp: 上級者は さいしょ k×ramp から はじまり、ステージが すすむほど k まで 上がる (序盤は かてる・終盤は ぎりぎり)
+//   推奨レベルで むいている 打鍵数なら: 1-1 は Lv1 でも かてる / 序盤 ふつうの 敵に 約 9 わり /
+//   終盤 初心者・中級者は 約 8 わり、上級者は 約 5 わり (ぎりぎり)。計算で きめた
 const BATTLE_LV_CAP = 124;
 const BATTLE_DIFFS = {
-  beg: { name: '初心者', k: 0.56, lvAdd: 0, reward: 1, kpm: 100, color: '#69db7c', note: '1 分 100 打鍵くらい 向け' },
-  mid: { name: '中級者', k: 0.94, lvAdd: 3, reward: 1.3, kpm: 200, color: '#ffd43b', note: '1 分 200 打鍵くらい 向け。敵の レベル +3' },
-  adv: { name: '上級者', k: 1.29, lvAdd: 6, reward: 1.7, kpm: 300, color: '#ff6b6b', note: '1 分 300 打鍵くらい 向け。敵の レベル +6 (さいごは Lv124)' },
+  beg: { name: '初心者', k: 0.5, reward: 1, kpm: 100, color: '#69db7c', note: '1 分 100 打鍵くらい 向け' },
+  mid: { name: '中級者', k: 0.9, reward: 1.3, kpm: 200, color: '#ffd43b', note: '1 分 200 打鍵くらい 向け' },
+  adv: { name: '上級者', k: 1.65, ramp: 0.8, reward: 2, kpm: 350, color: '#ff6b6b', note: '1 分 350 打鍵くらい 向け。すすむほど きびしく、さいごは ぎりぎり' },
 };
-// その 難易度での 敵の レベル (= 推奨レベル)
-function diffEnemyLv(e, bd) { return Math.min(BATTLE_LV_CAP, e.lv + bd.lvAdd); }
+// その ステージ・難易度での 敵の 強さの 倍率
+function diffK(bd, idx) { return bd.k * (bd.ramp ? bd.ramp + (1 - bd.ramp) * idx / (ENEMIES.length - 1) : 1); }
+// 敵の レベル (= 推奨レベル)。難易度では かわらない
+function diffEnemyLv(e) { return e.lv; }
 const BATTLE_DIFF_KEYS = Object.keys(BATTLE_DIFFS);
 
 // レベル差による経験値の倍率 (ポケモン第 5 世代の式を もっと きびしくしたもの)
@@ -531,7 +534,7 @@ const E = (id, name, type, interval, ability, abilityDesc, desc, extra = {}) => 
 
 const WORLD_DEFS = [
   { id: 'grass', name: 'そうげん', diff: 'normal', enemies: [
-    E('bat', 'コウモリン', 'fast', 4200, null, 'とくになし', 'どうくつにすむ小さなコウモリ。最初の相手にぴったり。', { diff: 'easy', bg: 'cave' }),
+    E('bat', 'コウモリン', 'fast', 4200, null, 'とくになし', 'どうくつにすむ小さなコウモリ。最初の相手にぴったり。', { diff: 'easy', bg: 'cave', lv: 1 }),
     E('mush', 'ドクキノコ', 'normal', 4800, 'poison', 'どく: 攻撃をうけると 5 秒間 HP がへりつづける', 'もりのどくキノコ。攻撃をうけると、どくになってしまう。', { diff: 'easy', bg: 'forest' }),
     E('ghost', 'ユウレイン', 'fast', 4200, 'fade', 'ゆうれいのきり: ときどきローマ字ガイドが見えなくなる', 'ぼちをさまようおばけ。ローマ字のガイドをかくしてくる。', { bg: 'grave' }),
     E('goblin', 'ゴブリン', 'normal', 4600, 'rage', 'げきど: HP が半分をきると攻撃が速くなる', 'こんぼうをふりまわす らんぼうもの。追いつめるとおこりだす。', { bg: 'plain' }),
@@ -633,7 +636,7 @@ const WORLD_DEFS = [
     E('v_raijin', 'ほしのライジン', 'normal', 4800, ['thunder', 'shock'], 'ほしのいかずち: 落雷の予告。ミスすると 自分が ダメージを うける', 'ほしの ちからを えた かみなりさま。', { sprite: 'raijin', lv: 113 }),
     E('v_wyvern', 'こくうのワイバーン', 'fast', 4200, ['wind', 'rage'], 'こくうのつばさ: 風で 文字を ゆらす。HP 半分で 速くなる', 'なにもない そらを とぶ りゅう。', { sprite: 'wyvern', lv: 115 }),
     E('v_galaxyrobo', 'ほしのきょじんロボ', 'tank', 5400, ['armor', 'shell'], 'ほしのそうこう: コンボ 30 未満だと ダメージ半減。ときどき ガードも かたくなる', 'ほしを まもる さいごの ロボット。', { sprite: 'galaxyrobo', lv: 117 }),
-    E('v_demon', 'しんまおう', 'boss', 5400, ['demon', 'thunder'], 'しんまおうのちから: まおうの ちからに くわえて、落雷の予告も してくる', 'ほしの はてで めざめた ほんとうの まおう。さいごの てき。', { sprite: 'demon', lv: 120, last: true }),
+    E('v_demon', 'しんまおう', 'boss', 5400, ['demon', 'thunder'], 'しんまおうのちから: まおうの ちからに くわえて、落雷の予告も してくる', 'ほしの はてで めざめた ほんとうの まおう。さいごの てき。', { sprite: 'demon', lv: 124, last: true }),
   ] },
 ];
 

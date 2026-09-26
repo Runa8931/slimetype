@@ -25,13 +25,14 @@ Screens.battle = {
     this.dk = battleDiffKey();
     this.bd = BATTLE_DIFFS[this.dk];
     // 難易度で 敵の レベルが かわる
-    this.ed = { ...ENEMIES[idx], lv: diffEnemyLv(ENEMIES[idx], this.bd) };
+    this.ed = ENEMIES[idx];
+    this.k = diffK(this.bd, idx); // 難易度と ステージで きまる 敵の 強さ
     const ch = charInfo(Save.data.active);
     this.ch = ch;
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
     this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, evade: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
-    const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.bd.k, 0.7)); // 難易度で HP が ふえる
+    const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.k, 0.7)); // 難易度で HP が かわる
     this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
@@ -86,7 +87,7 @@ Screens.battle = {
     const box = $('#b-diff');
     if (!box) return;
     box.innerHTML = `<span>難易度</span>${BATTLE_DIFF_KEYS.map((k, i) => `<button class="${k === this.dk ? 'on' : ''}" data-k="${k}" style="--dc:${BATTLE_DIFFS[k].color}"><kbd>${i + 1}</kbd> ${BATTLE_DIFFS[k].name}</button>`).join('')}
-      <small>推奨 Lv.${this.ed.lv}・敵の 攻撃 ×${this.bd.k}・HP ×${Math.pow(this.bd.k, 0.7).toFixed(2)}${this.bd.reward > 1 ? `・経験値と コイン ×${this.bd.reward}` : ''} (${this.bd.note})</small>`;
+      <small>推奨 Lv.${this.ed.lv}・敵の 攻撃 ×${this.k.toFixed(2)}・HP ×${Math.pow(this.k, 0.7).toFixed(2)}${this.bd.reward > 1 ? `・経験値と コイン ×${this.bd.reward}` : ''} (${this.bd.note})</small>`;
     box.querySelectorAll('button').forEach(b => { b.onclick = () => this.pickDiff(b.dataset.k); });
   },
   pickDiff(k) {
@@ -132,7 +133,7 @@ Screens.battle = {
   },
 
   interval() {
-    let iv = this.ed.interval / Math.pow(this.bd.k, 0.25); // 難易度で 攻撃が 速くなる
+    let iv = this.ed.interval / Math.pow(this.k, 0.25); // 難易度で 攻撃の 速さが かわる
     if (this.e.angry) iv *= this.has('dragon') ? 0.72 : 0.7;
     return iv;
   },
@@ -726,7 +727,7 @@ Screens.battle = {
     const breath = this.has('dragon') && this.e.angry && this.e.attacks % 3 === 0;
     const charged = this.has('charge') && this.e.attacks % 3 === 0;
     this.chargeWarned = false;
-    let dmg = calcDamage(ed.lv, ed.power, this.e.stats.atk, this.ch.stats.def) * this.bd.k * (0.85 + Math.random() * 0.15);
+    let dmg = calcDamage(ed.lv, ed.power, this.e.stats.atk, this.ch.stats.def) * this.k * (0.85 + Math.random() * 0.15);
     if (breath) dmg *= 1.5;
     if (charged) dmg *= 1.8;
     if (this.ch.id === 'gotsun') dmg *= 1 - this.ch.trait.cut;
