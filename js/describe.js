@@ -81,6 +81,25 @@ function traitLines(id, t) {
       L.push(statusLine(t.statusCut));
       break;
     }
+    case 'dororin':
+      L.push(`お題を 打ち切るたび 敵に どくが 1 つ かさなる (最大 ${t.poisonMax})。1 つ につき 毎秒 敵の 最大HPの ${pct(t.poisonPct)} (最大で 毎秒 ${pct(t.poisonPct * t.poisonMax)})`);
+      L.push(statusLine(t.statusCut));
+      break;
+    case 'gorurin':
+      L.push(`あたえた ダメージの ${pct(t.drain)} ぶん HP 回復`);
+      L.push(`バトルの コイン +${pct(t.coinBonus)}`);
+      L.push(statusLine(t.statusCut));
+      break;
+    case 'yukidarun':
+      L.push(`お題を 打ち切るたび ゆきだま +1 (最大 ${t.snowMax})。1 こ につき うける ダメージ -${pct(t.snowCut)} (最大 -${pct(t.snowCut * t.snowMax)})`);
+      L.push('攻撃を うけると ゆきだまが 1 こ へる');
+      L.push(statusLine(t.statusCut));
+      break;
+    case 'yuusharin':
+      L.push(`会心率 ${pct(t.crit)} (ふつうは 6%)・うける ダメージ -${pct(t.cut)}`);
+      L.push(`コンボ倍率の 上限 ${times(1 + t.comboMax / 200)} (${t.comboMax} コンボ)。ふつうは 1.5 倍`);
+      L.push(statusLine(t.statusCut));
+      break;
     case 'pitarin':
       L.push(`ノーミスで 打ち切った お題は かならず 会心 (ダメージ ${times(t.perfectCrit)})。ミスした お題は ふつうと 同じ 6%・1.5 倍`);
       L.push(statusLine(t.statusCut));
@@ -148,6 +167,22 @@ function skillLines(id, s, def) {
       L.push(`おとの 波で ${pw}`);
       L.push(`つぎの ${s.tempo} お題の 攻撃が ${times(s.tempoMult)} (テンポアップ)`);
       break;
+    case 'dororin':
+      L.push(`どくの しずくで ${pw}`);
+      L.push(`敵の どく +${s.addPoison} (最大より おおく なれる)、${s.weaken} 秒 敵の 攻撃を 20% よわく する`);
+      break;
+    case 'gorurin':
+      L.push(`きんの あらしで ${pw}`);
+      L.push(`あたえた ダメージの ${pct(s.skillDrain)} ぶん HP 回復`);
+      break;
+    case 'yukidarun':
+      L.push(`ゆきだまで ${pw}`);
+      L.push(`ゆきだま 1 こ につき 威力 +${pct(s.snowBoost)} (ゆきだまは へらない)`);
+      break;
+    case 'yuusharin':
+      L.push(`つるぎで ${pw}`);
+      L.push(`HP を 最大HPの ${pct(s.heal)} 回復し、敵の 攻撃ゲージを 0 に もどす`);
+      break;
     case 'pitarin':
       L.push(`つきの 光で ${pw}`);
       L.push(`つぎの 敵の 攻撃を ${s.reflect} 回 はね返す (うける はずの ダメージを 敵に 返す)`);
@@ -179,6 +214,10 @@ function survivalLine(id, stage, t) {
   if (id === 'fuwari') x = `ジェムを すいよせる 範囲 ${times(sv.magnet[stage])}`;
   if (id === 'metarun') x = `最大HP ${times(sv.hp[stage])}`;
   if (id === 'onpuru') x = `足の 速さ ${times(sv.speed[stage])}`;
+  if (id === 'dororin') x = `ちかくの 敵に 0.5 秒ごと ${sv.aura[stage]} の どくダメージ`;
+  if (id === 'gorurin') x = `コイン ${times(sv.coin[stage])}`;
+  if (id === 'yukidarun') x = `ふれた 敵が ${sv.chill[stage]} 秒 おそくなる`;
+  if (id === 'yuusharin') x = `武器の ダメージ ${times(sv.dmg[stage])}・うける ダメージ ${pct(1 - sv.hurt[stage])} カット`;
   if (id === 'pitarin') x = `武器が ${pct(sv.crit[stage])} の 確率で 会心 (ダメージ 2 倍)`;
   return `${x}${w ? `。さいしょの 武器「${w.name}」` : ''}`;
 }

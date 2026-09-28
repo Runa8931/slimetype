@@ -43,7 +43,11 @@ const BATTLE_DIFFS = {
   adv: { name: '上級者', k: 1.65, ramp: 0.8, reward: 2, kpm: 350, color: '#ff6b6b', note: '1 分 350 打鍵くらい 向け。すすむほど きびしく、さいごは ぎりぎり' },
 };
 // その ステージ・難易度での 敵の 強さの 倍率
-function diffK(bd, idx) { return bd.k * (bd.ramp ? bd.ramp + (1 - bd.ramp) * idx / (ENEMIES.length - 1) : 1); }
+function diffK(bd, idx) {
+  // かくしステージは その ワールドの ボスと おなじ すすみぐあい として あつかう
+  const g = ENEMIES[idx] && ENEMIES[idx].hidden ? worldStages(ENEMIES[idx].host).slice(-1)[0] : idx;
+  return bd.k * (bd.ramp ? bd.ramp + (1 - bd.ramp) * g / (MAIN_STAGES - 1) : 1);
+}
 // 敵の レベル (= 推奨レベル)。難易度では かわらない
 function diffEnemyLv(e) { return e.lv; }
 const BATTLE_DIFF_KEYS = Object.keys(BATTLE_DIFFS);
@@ -522,10 +526,123 @@ const CHARACTERS = {
         skill: { name: 'フルムーンミラー', desc: '威力 470。3 回 はね返す。ゲージ +20%', power: 470, reflect: 3, charge: 1.2 } },
     ],
   },
+  // ---- v5.3: ガチャ限定 1 たい・かくしステージ 2 たい・とびらの ミッション 1 たい ----
+  dororin: {
+    id: 'dororin',
+    gacha: true,
+    names: ['どろりん', 'どろどろりん', 'ポイズンどろりん', 'ベノムどろりん', 'カオスどろりん'],
+    type: 'どく', role: 'じわじわ型',
+    colors: { main: '#9775fa', light: '#e5dbff', dark: '#3b1c8c', accent: '#8ce99a' },
+    stageColors: [
+      { main: '#9775fa', light: '#e5dbff', dark: '#3b1c8c', accent: '#8ce99a' },
+      { main: '#845ef7', light: '#d0bfff', dark: '#2b1a4a', accent: '#a9e34b' },
+      { main: '#5f3dc4', light: '#b197fc', dark: '#1a0f3a', accent: '#94d82d' },
+      { main: '#37b24d', light: '#b2f2bb', dark: '#0b3d16', accent: '#e599f7' },
+      { main: '#212529', light: '#9775fa', dark: '#000000', accent: '#a9e34b' },
+    ],
+    base: { hp: 68, atk: 68, def: 60, spd: 75 },
+    desc: 'ぬまの そこから うまれた どくの スライム。じわじわと 敵を よわらせる。',
+    forms: [
+      { trait: { name: 'どくのしずく', desc: 'お題を 打ち切るたび 敵に どくが 1 つ 重なる (最大 5)。1 つごとに 毎秒 敵の 最大HPの 0.35%', poisonPct: 0.0035, poisonMax: 5, statusCut: 0.5 },
+        skill: { name: 'もうどく', desc: '威力 180。どく +3。敵の 攻撃を 5 秒 20% よわく', power: 180, addPoison: 3, weaken: 5, charge: 1 } },
+      { trait: { name: 'どくのしずく+', desc: 'どく 最大 6。1 つ 毎秒 0.35%', poisonPct: 0.0035, poisonMax: 6, statusCut: 0.5 },
+        skill: { name: 'もうどく+', desc: '威力 250。どく +3。5.5 秒 よわく。ゲージ +5%', power: 250, addPoison: 3, weaken: 5.5, charge: 1.05 } },
+      { trait: { name: 'ポイズンボディ', desc: 'どく 最大 7。1 つ 毎秒 0.4%。どく・やけど・こごえが きかない', poisonPct: 0.004, poisonMax: 7, statusCut: 1 },
+        skill: { name: 'ベノムショット', desc: '威力 320。どく +4。6 秒 よわく。ゲージ +10%', power: 320, addPoison: 4, weaken: 6, charge: 1.1 } },
+      { trait: { name: 'ベノムボディ', desc: 'どく 最大 8。1 つ 毎秒 0.4%。状態異常が きかない', poisonPct: 0.004, poisonMax: 8, statusCut: 1 },
+        skill: { name: 'ベノムレイン', desc: '威力 390。どく +4。6.5 秒 よわく。ゲージ +15%', power: 390, addPoison: 4, weaken: 6.5, charge: 1.15 } },
+      { trait: { name: 'カオスボディ', desc: 'どく 最大 9。1 つ 毎秒 0.45%。状態異常が きかない', poisonPct: 0.0045, poisonMax: 9, statusCut: 1 },
+        skill: { name: 'カオスミアズマ', desc: '威力 460。どく +5。7 秒 よわく。ゲージ +20%', power: 460, addPoison: 5, weaken: 7, charge: 1.2 } },
+    ],
+  },
+  gorurin: {
+    id: 'gorurin',
+    special: true,
+    names: ['ゴルりん', 'ゴルゴルりん', 'ゴールドりん', 'プラチナりん', 'エンペラーゴルりん'],
+    type: 'きん', role: 'きゅうしゅう型',
+    colors: { main: '#fcc419', light: '#fff9db', dark: '#8a5a00', accent: '#ffffff' },
+    stageColors: [
+      { main: '#fcc419', light: '#fff9db', dark: '#8a5a00', accent: '#ffffff' },
+      { main: '#fab005', light: '#fff3bf', dark: '#7a4a00', accent: '#ff6b6b' },
+      { main: '#f59f00', light: '#ffec99', dark: '#5c3c00', accent: '#4dabf7' },
+      { main: '#dee2e6', light: '#ffffff', dark: '#495057', accent: '#fcc419' },
+      { main: '#ffd43b', light: '#ffffff', dark: '#5c3c00', accent: '#e64980' },
+    ],
+    base: { hp: 84, atk: 86, def: 74, spd: 64 },
+    desc: 'おうごんゴーレムが まもっていた きんいろの スライム。こうげきで 元気を すいとる。',
+    forms: [
+      { trait: { name: 'ゴールドドレイン', desc: 'あたえた ダメージの 6% 回復。バトルの コイン +20%', drain: 0.06, coinBonus: 0.2, statusCut: 0 },
+        skill: { name: 'ゴールドラッシュ', desc: '威力 200。あたえた ダメージの 40% 回復', power: 200, skillDrain: 0.4, charge: 1 } },
+      { trait: { name: 'ゴールドドレイン+', desc: '7% 回復。コイン +25%', drain: 0.07, coinBonus: 0.25, statusCut: 0 },
+        skill: { name: 'ゴールドラッシュ+', desc: '威力 270。45% 回復。ゲージ +5%', power: 270, skillDrain: 0.45, charge: 1.05 } },
+      { trait: { name: 'おうごんの からだ', desc: '8% 回復。コイン +30%。どく・やけどの時間が半分', drain: 0.08, coinBonus: 0.3, statusCut: 0.5 },
+        skill: { name: 'ゴールドストーム', desc: '威力 340。50% 回復。ゲージ +10%', power: 340, skillDrain: 0.5, charge: 1.1 } },
+      { trait: { name: 'プラチナの からだ', desc: '9% 回復。コイン +35%。どく・やけどの時間が半分', drain: 0.09, coinBonus: 0.35, statusCut: 0.5 },
+        skill: { name: 'プラチナストーム', desc: '威力 410。55% 回復。ゲージ +15%', power: 410, skillDrain: 0.55, charge: 1.15 } },
+      { trait: { name: 'おうごんの ていおう', desc: '10% 回復。コイン +40%。状態異常が きかない', drain: 0.1, coinBonus: 0.4, statusCut: 1 },
+        skill: { name: 'エンペラーラッシュ', desc: '威力 480。60% 回復。ゲージ +20%', power: 480, skillDrain: 0.6, charge: 1.2 } },
+    ],
+  },
+  yukidarun: {
+    id: 'yukidarun',
+    special: true,
+    names: ['ゆきだるん', 'ゆきだるるん', 'スノーだるん', 'ブリザードだるん', 'ダイヤモンドだるん'],
+    type: 'ゆき', role: 'ためこみ型',
+    colors: { main: '#f8f9fa', light: '#ffffff', dark: '#74c0fc', accent: '#ff922b' },
+    stageColors: [
+      { main: '#f8f9fa', light: '#ffffff', dark: '#74c0fc', accent: '#ff922b' },
+      { main: '#e7f5ff', light: '#ffffff', dark: '#4dabf7', accent: '#e03131' },
+      { main: '#d0ebff', light: '#ffffff', dark: '#1c7ed6', accent: '#ff922b' },
+      { main: '#a5d8ff', light: '#ffffff', dark: '#1864ab', accent: '#ffd43b' },
+      { main: '#ffffff', light: '#ffffff', dark: '#3bc9db', accent: '#f783ac' },
+    ],
+    base: { hp: 94, atk: 78, def: 82, spd: 52 },
+    desc: 'こおりの じょおうが のこした ゆきの スライム。ゆきだまを ためて みを まもる。',
+    forms: [
+      { trait: { name: 'ゆきだまアーマー', desc: 'お題を 打ち切るたび ゆきだま +1 (最大 3)。1 こ につき うける ダメージ -6%。攻撃を うけると 1 こ へる', snowMax: 3, snowCut: 0.06, statusCut: 0 },
+        skill: { name: 'ゆきだまラッシュ', desc: '威力 170。ゆきだま 1 こ につき 威力 +25%', power: 170, snowBoost: 0.25, charge: 1 } },
+      { trait: { name: 'ゆきだまアーマー+', desc: 'ゆきだま 最大 4', snowMax: 4, snowCut: 0.06, statusCut: 0.5 },
+        skill: { name: 'ゆきだまラッシュ+', desc: '威力 240。1 こ につき +25%。ゲージ +5%', power: 240, snowBoost: 0.25, charge: 1.05 } },
+      { trait: { name: 'スノーアーマー', desc: 'ゆきだま 最大 4。1 こ -7%。こごえが きかない', snowMax: 4, snowCut: 0.07, statusCut: 1 },
+        skill: { name: 'スノーボム', desc: '威力 300。1 こ につき +30%。ゲージ +10%', power: 300, snowBoost: 0.3, charge: 1.1 } },
+      { trait: { name: 'ブリザードアーマー', desc: 'ゆきだま 最大 5。1 こ -7%。状態異常が きかない', snowMax: 5, snowCut: 0.07, statusCut: 1 },
+        skill: { name: 'ブリザードボム', desc: '威力 360。1 こ につき +30%。ゲージ +15%', power: 360, snowBoost: 0.3, charge: 1.15 } },
+      { trait: { name: 'ダイヤモンドアーマー', desc: 'ゆきだま 最大 5。1 こ -8%。状態異常が きかない', snowMax: 5, snowCut: 0.08, statusCut: 1 },
+        skill: { name: 'ダイヤモンドボム', desc: '威力 420。1 こ につき +35%。ゲージ +20%', power: 420, snowBoost: 0.35, charge: 1.2 } },
+    ],
+  },
+  yuusharin: {
+    id: 'yuusharin',
+    special: true,
+    names: ['ゆうしゃりん', 'ゆうしゃりんりん', 'せいけんゆうしゃりん', 'えいゆうりん', 'でんせつのゆうしゃりん'],
+    type: 'でんせつ', role: 'オールラウンド型',
+    colors: { main: '#4dabf7', light: '#e7f5ff', dark: '#1864ab', accent: '#ffd43b' },
+    stageColors: [
+      { main: '#4dabf7', light: '#e7f5ff', dark: '#1864ab', accent: '#ffd43b' },
+      { main: '#339af0', light: '#d0ebff', dark: '#0b3d6b', accent: '#ff6b6b' },
+      { main: '#228be6', light: '#a5d8ff', dark: '#082d52', accent: '#ffd43b' },
+      { main: '#e03131', light: '#ffc9c9', dark: '#5c0f0f', accent: '#ffd43b' },
+      { main: '#fff3bf', light: '#ffffff', dark: '#b8860b', accent: '#4dabf7' },
+    ],
+    base: { hp: 78, atk: 82, def: 69, spd: 72 },
+    desc: 'むずかしい しょうごうを あつめた ものの まえに あらわれる ゆうしゃの スライム。なんでも できる。',
+    forms: [
+      { trait: { name: 'ゆうしゃの こころえ', desc: '会心率 12%・ダメージ 6% カット・コンボ倍率の 上限 1.55 倍', crit: 0.12, cut: 0.06, comboMax: 110, statusCut: 0 },
+        skill: { name: 'ゆうしゃの いちげき', desc: '威力 200。HP 12% 回復。敵の 攻撃ゲージを 0 に', power: 200, heal: 0.12, charge: 1 } },
+      { trait: { name: 'ゆうしゃの こころえ+', desc: '会心率 14%・カット 7%・上限 1.6 倍', crit: 0.14, cut: 0.07, comboMax: 120, statusCut: 0.5 },
+        skill: { name: 'ゆうしゃの いちげき+', desc: '威力 260。HP 13% 回復。ゲージを 0 に。ゲージ +5%', power: 260, heal: 0.13, charge: 1.05 } },
+      { trait: { name: 'せいけんの ちかい', desc: '会心率 16%・カット 8%・上限 1.65 倍。どく・やけどの時間が半分', crit: 0.16, cut: 0.08, comboMax: 130, statusCut: 0.5 },
+        skill: { name: 'せいけんぎり', desc: '威力 320。HP 14% 回復。ゲージを 0 に。ゲージ +10%', power: 320, heal: 0.14, charge: 1.1 } },
+      { trait: { name: 'えいゆうの ちかい', desc: '会心率 18%・カット 9%・上限 1.7 倍。状態異常が きかない', crit: 0.18, cut: 0.09, comboMax: 140, statusCut: 1 },
+        skill: { name: 'えいゆうの つるぎ', desc: '威力 380。HP 15% 回復。ゲージを 0 に。ゲージ +15%', power: 380, heal: 0.15, charge: 1.15 } },
+      { trait: { name: 'でんせつの ちかい', desc: '会心率 20%・カット 10%・上限 1.75 倍。状態異常が きかない', crit: 0.2, cut: 0.1, comboMax: 150, statusCut: 1 },
+        skill: { name: 'でんせつの つるぎ', desc: '威力 440。HP 16% 回復。ゲージを 0 に。ゲージ +20%', power: 440, heal: 0.16, charge: 1.2 } },
+    ],
+  },
 };
 
-// さいしょから つかえるキャラ (ガチャ限定・しょうごうで ひらく キャラを のぞく)
-const STARTERS = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].gacha && !CHARACTERS[id].title);
+// さいしょから つかえるキャラ (ガチャ限定・しょうごうや とびらで ひらく キャラを のぞく)
+const STARTERS = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].gacha && !CHARACTERS[id].title && !CHARACTERS[id].special);
 
 // ---------------- せんざいかくせい (ガチャで キャラが かぶると ★ が ふえる) ----------------
 // ★ 1 つごとに: 能力値 +2%、レベルの上限 +1、そのキャラの とくせいが 少し のびる
@@ -545,6 +662,10 @@ const AWAKEN_BONUS = {
   metarun: { desc: 'ためうちの 上限 +3%', apply: (t, n) => ({ ...t, longMax: t.longMax + 0.03 * n }) },
   onpuru: { desc: 'テンポの 上限 +3%', apply: (t, n) => ({ ...t, speedMax: t.speedMax + 0.03 * n }) },
   pitarin: { desc: 'ノーミス会心 +0.03 倍', apply: (t, n) => ({ ...t, perfectCrit: t.perfectCrit + 0.03 * n }) },
+  dororin: { desc: 'どくの 最大 +1', apply: (t, n) => ({ ...t, poisonMax: t.poisonMax + n }) },
+  gorurin: { desc: 'ダメージ回復 +1%', apply: (t, n) => ({ ...t, drain: t.drain + 0.01 * n }) },
+  yukidarun: { desc: 'ゆきだま 1 こ の カット +1%', apply: (t, n) => ({ ...t, snowCut: t.snowCut + 0.01 * n }) },
+  yuusharin: { desc: '会心率 +1%', apply: (t, n) => ({ ...t, crit: t.crit + 0.01 * n }) },
 };
 
 // サバイバルでの とくせい (進化の 段階ごと)。説明文も ここから 作る
@@ -561,6 +682,10 @@ const SV_CHAR = {
   metarun: { hp: [1.15, 1.2, 1.25, 1.3, 1.35] },     // 最大HP
   onpuru: { speed: [1.1, 1.12, 1.14, 1.16, 1.18] },  // 足の速さ
   pitarin: { crit: [0.15, 0.18, 0.21, 0.24, 0.27] }, // 武器が 会心 (ダメージ 2 倍) に なる 確率
+  dororin: { aura: [4, 5, 6, 7, 8] },                // ちかくの 敵に 0.5 秒ごと どくの ダメージ
+  gorurin: { coin: [1.2, 1.25, 1.3, 1.35, 1.4] },    // サバイバルの コイン
+  yukidarun: { chill: [0.8, 0.9, 1.0, 1.1, 1.2] },   // ふれた 敵が おそくなる 秒数
+  yuusharin: { dmg: [1.06, 1.08, 1.1, 1.12, 1.14], hurt: [0.94, 0.92, 0.9, 0.88, 0.86] }, // 武器の ダメージ / うける ダメージ
 };
 
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく
@@ -739,15 +864,41 @@ WORLD_DEFS.forEach((w, wi) => {
     });
   });
 });
-// へんい種: id → { もとの 敵, フィルター }
+// メインの ステージの 数 (かくしステージを のぞく)
+const MAIN_STAGES = ENEMIES.length;
+
+// ---------------- かくしステージ ----------------
+// メインの ステージで 何かを たっせいすると、マップの host ワールドの from ばんめの マスから 道が ひらく
+// たおすと ぼうけんのとびらで キャラが ひらく。ENEMIES の さいごに 足すが、ワールドの ステージ一覧には 入れない
+const nomissCount = w => worldStages(w).filter(g => (Save.data.nomiss || {})[g]).length;
+const HIDDEN_DEFS = [
+  { host: 1, from: 5, e: E('h_goldgolem', 'おうごんゴーレム', 'tank', 5000, ['armor', 'regen'], 'おうごんの よろい: コンボ 30 未満だと ダメージ半減。ときどき 回復する',
+      'どくぬまの おくに かくれていた きんいろの きょじん。', { sprite: 'golem', filter: 'sepia(1) saturate(5) hue-rotate(-12deg) brightness(1.15)', lv: 24, bg: 'ruins' }),
+    reveal: { text: 'どくぬまの ステージを 3 つ ノーミスで クリアする', check: () => nomissCount(1) >= 3, progress: () => `${nomissCount(1)}/3` } },
+  { host: 7, from: 5, e: E('h_icequeen', 'こおりの じょおう', 'boss', 4800, ['blizzard', 'freeze', 'charge'], 'えいきゅうとうど: ふぶきで 漢字と かなを かくし、こごえさせ、ためこうげきも してくる',
+      'ゆきやまの いただきで ねむっていた こおりの じょおう。', { sprite: 'yukionna', filter: 'hue-rotate(185deg) saturate(2.2) brightness(1.25)', lv: 82, bg: 'snow' }),
+    reveal: { text: 'ゆきやまの ボス イエティを 上級者で たおす', check: () => stageBest(worldStages(7).slice(-1)[0]) >= 3, progress: () => 'まだ' } },
+];
+for (const h of HIDDEN_DEFS) {
+  const e = h.e;
+  h.idx = ENEMIES.length;
+  ENEMIES.push({ ...e, hidden: true, host: h.host, world: -1, boss: e.type === 'boss', lv: e.lv, base: { ...ENEMY_TYPES[e.type] }, power: 40,
+    exp: 0, diff: 'hard', bg: e.bg, abilities: [].concat(e.ability || []) });
+}
+// かくしステージの 道が ひらいているか / たおしたか
+function hiddenOpen(h) { try { return !!(Save.data.hiddenOpen || {})[h.e.id] || h.reveal.check(); } catch (err) { return false; } }
+function hiddenCleared(h) { return !!(Save.data.hiddenClear || {})[h.e.id]; }
+const hiddenOf = idx => HIDDEN_DEFS.find(h => h.idx === idx);
+
+// へんい種・かくしステージ: id → { もとの 敵, フィルター }
 const ENEMY_VARIANT = {};
-for (const e of ENEMIES) if (e.sprite) ENEMY_VARIANT[e.id] = { base: e.sprite, filter: VARIANT_FILTER[WORLD_DEFS[e.world].id] };
+for (const e of ENEMIES) if (e.sprite) ENEMY_VARIANT[e.id] = { base: e.sprite, filter: e.filter || VARIANT_FILTER[WORLD_DEFS[e.world].id] };
 
 // バトルに 勝ったときの 経験値: このステージの レベルから つぎの ステージの レベルまでの 6 わり
 // (推奨レベルで 勝ちすすむと つぎの 推奨レベルの すこし 手前に なる。れんしゅうで おいつく)
 function stageExp(i) {
   const lv = ENEMIES[i].lv;
-  const next = i + 1 < ENEMIES.length ? Math.max(ENEMIES[i + 1].lv, lv + 1) : lv + 2;
+  const next = i + 1 < MAIN_STAGES ? Math.max(ENEMIES[i + 1].lv, lv + 1) : lv + 2;
   return (expForLevel(next) - expForLevel(lv)) * 0.6;
 }
 
@@ -765,6 +916,7 @@ function worldStages(w) {
 // 「1-3」のようなステージ番号
 function stageLabel(i) {
   const e = ENEMIES[i];
+  if (e.hidden) return `${e.host + 1}-かくし`;
   return `${e.world + 1}-${worldStages(e.world).indexOf(i) + 1}`;
 }
 
@@ -787,5 +939,5 @@ function rankFor(score) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { levelNeed, stageExp, STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
+  module.exports = { MAIN_STAGES, HIDDEN_DEFS, levelNeed, stageExp, STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
 }

@@ -24,6 +24,19 @@ const DOORS = [
       get text() { const a = ach(); return `しょうごう「${a.name}」を とる (${a.desc})`; },
       check: () => !!(Save.data.ach || {})[CHARACTERS[id].title], progress: () => 'まだ' };
   }),
+  // かくしステージを たおすと ひらく キャラ
+  ...[['gorurin', 'h_goldgolem'], ['yukidarun', 'h_icequeen']].map(([id, hid]) => {
+    const h = HIDDEN_DEFS.find(x => x.e.id === hid);
+    return { id: 'ch_' + id, kind: 'char', char: id, hidden: hid, name: CHARACTERS[id].names[0], what: `${CHARACTERS[id].type}の ${CHARACTERS[id].role} スライム`,
+      text: `かくしステージ「${h.e.name}」を たおす (道の ひらきかた: ${h.reveal.text})`, check: () => hiddenCleared(h),
+      progress: () => { if (hiddenOpen(h)) return '道は ひらいている'; const p = h.reveal.progress(); return `道は まだ${p !== 'まだ' ? ` … ${p}` : ''}`; } };
+  }),
+  // むずかしい しょうごうの ミッション
+  { id: 'ch_yuusharin', kind: 'char', char: 'yuusharin', name: 'ゆうしゃりん', what: 'でんせつの オールラウンド型 スライム',
+    text: '★ むずかしい しょうごうを 3 こ とる', check: () => hardAchCount() >= 3, progress: () => `${hardAchCount()}/3 こ` },
+  { id: 'pet_phoenix', kind: 'item', give: 'p_phoenix', icon: '🔥', name: 'おとも「ふしちょう」', what: 'ここでしか 手に入らない おとも',
+    text: 'しょうごうを 40 こ とる (★ むずかしい もの 5 こ いじょう ふくむ)', check: () => achCount() >= 40 && hardAchCount() >= 5,
+    progress: () => `${achCount()}/40 こ・★ ${hardAchCount()}/5 こ` },
   { id: 'weak', kind: 'mode', icon: '🎯', name: 'にがてキー特訓', what: 'にがてな キーを たくさん つかう れんしゅう',
     text: 'れんしゅうを 3 回 さいごまで やる', check: () => Save.data.totals.plays >= 3, progress: () => `${Math.min(3, Save.data.totals.plays)}/3 回` },
   ...[['normal', 'easy'], ['hard', 'normal'], ['oni', 'hard'], ['hell', 'oni']].map(([k, prev]) => ({
@@ -44,7 +57,7 @@ function checkDoors() {
     if (doorOpen(d.id)) continue;
     let ok = false;
     try { ok = d.check(); } catch (e) { ok = false; }
-    if (ok) { Save.data.doors[d.id] = Date.now(); got.push(d); }
+    if (ok) { Save.data.doors[d.id] = Date.now(); got.push(d); if (d.give) gachaData().items[d.give] = Date.now(); }
   }
   if (got.length) Save.save();
   return got;
@@ -67,7 +80,7 @@ function migrateDoors() {
 
 // 画面で つかう: ひらいていない ときの ひとこと
 function lockNote(id) { const d = doorOf(id); return d ? `🔒 ${d.text}と ひらく` : ''; }
-function doorIcon(d) { return d.kind === 'char' ? `<div class="sprite">${slimeSVG(d.char, 0, {})}</div>` : `<div class="door-emoji">${d.icon}</div>`; }
+function doorIcon(d) { if (d.give) return `<div class="sprite pet-icon">${itemIcon(ITEM_BY_ID[d.give])}</div>`; return d.kind === 'char' ? `<div class="sprite">${slimeSVG(d.char, 0, {})}</div>` : `<div class="door-emoji">${d.icon}</div>`; }
 
 // 新しく ひらいた とびらを 知らせる (トースト)
 function announceDoors(list, delay = 400) {

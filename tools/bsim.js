@@ -18,7 +18,7 @@ function sim(cid, L, e, kpm, acc) {
   const en = { hp: Math.round(es.hp * D.ENEMY_HP_SCALE), g: 0, atk: 0, angry: false, dbl: false, phase: 0, heads: 1 }; en.max = en.hp;
   let t = 0, combo = 0, keys = wordKeys(e.diff), typed = 0, wstart = 0, wmiss = false, chill = 0, shell = 0, nextShell = 4, nextRegen = 8;
   let hidden = 0, nextHide = 6, wind = 0, nextWind = 5, words = 0, thunderAt = 0, thunderW = 0, nextThunder = 5;
-  let burnUntil = 0, bindUntil = 0, nextRegenP = 3, eChill = 0, breakUntil = 0, streak = 0, tempo = 0, tempoMult = 1;
+  let burnUntil = 0, bindUntil = 0, nextRegenP = 3, eChill = 0, breakUntil = 0, streak = 0, tempo = 0, tempoMult = 1, ePoison = 0, weak = 0, snow = 0;
   const dt = 0.02, kps = kpm / 60; let keyT = 0;
   const statusCut = cid === 'gotsun' ? (tr.freezeImmune ? 1 : 0.4) : (tr.statusCut || 0);
   const skDmg = (mult = 1) => D.calcDamage(L, sk.power, st.atk, es.def) * 0.96 * mult * (breakUntil > t ? 1.3 : 1);
@@ -34,6 +34,7 @@ function sim(cid, L, e, kpm, acc) {
     if (tr.regen && t >= nextRegenP) { nextRegenP += 3; p.hp = Math.min(p.max, p.hp + p.max * tr.regen); }
     const sec = Math.floor(t - dt) !== Math.floor(t);
     if (burnUntil > t && sec) en.hp -= Math.max(1, Math.round(en.max * 0.03));
+    if (ePoison > 0 && sec) en.hp -= Math.max(1, Math.round(en.max * tr.poisonPct * ePoison));
     if (p.poison > t && sec) p.hp -= Math.max(1, Math.round(p.max * 0.025));
     let iv = e.interval / 1000; if (en.angry) iv *= has('dragon') ? 0.72 : 0.7;
     if (bindUntil <= t) en.g += dt / iv * (1 - (tr.slow || 0)) * (eChill > t ? 0.5 : 1);
@@ -42,7 +43,9 @@ function sim(cid, L, e, kpm, acc) {
       const breath = has('dragon') && en.angry && en.atk % 3 === 0, charged = has('charge') && en.atk % 3 === 0;
       let dmg = D.calcDamage(e.lv, e.power, es.atk, st.def) * (0.85 + Math.random() * 0.15);
       if (breath) dmg *= 1.5; if (charged) dmg *= 1.8;
-      if (cid === 'gotsun') dmg *= 1 - tr.cut;
+      if (cid === 'gotsun' || cid === 'yuusharin') dmg *= 1 - tr.cut;
+      if (cid === 'yukidarun') dmg *= 1 - tr.snowCut * snow;
+      if (weak > t) dmg *= 0.8;
       const hits = [Math.max(1, Math.round(dmg))]; if (en.dbl) hits.push(Math.round(dmg * 0.6)); for (let h = 1; h < en.heads; h++) hits.push(Math.round(dmg * 0.5));
       for (const h of hits) {
         if (p.barrier > 0) { p.barrier--; continue; }
@@ -51,6 +54,7 @@ function sim(cid, L, e, kpm, acc) {
         if (cid === 'piriri' && Math.random() < tr.dodge) continue;
         if (p.shield > 0) { p.shield--; en.hp -= h + D.calcDamage(L, sk.power, st.atk, es.def); if (sk.heal) p.hp = Math.min(p.max, p.hp + p.max * sk.heal); continue; }
         p.hp -= h;
+        if (cid === 'yukidarun' && snow > 0) snow--;
         if (cid === 'koorin' && Math.random() < tr.counter) en.g = Math.max(0, en.g - tr.pushback);
         if (has('poison') && statusCut < 1 && !(tr.burnImmune && e.statusName === 'やけど')) p.poison = t + 5 * (1 - statusCut);
         if ((has('freeze') || has('blizzard')) && statusCut < 1 && !tr.freezeImmune) chill = t + (has('freeze') ? 4 : 3);
@@ -87,6 +91,10 @@ function sim(cid, L, e, kpm, acc) {
         if (cid === 'metarun') { en.hp -= skDmg(); breakUntil = t + sk.brk; }
         if (cid === 'onpuru') { en.hp -= skDmg(); tempo = sk.tempo; tempoMult = sk.tempoMult; }
         if (cid === 'pitarin') { en.hp -= skDmg(); p.reflect = sk.reflect; }
+        if (cid === 'dororin') { en.hp -= skDmg(); ePoison = Math.min(tr.poisonMax + sk.addPoison, ePoison + sk.addPoison); weak = t + sk.weaken; }
+        if (cid === 'gorurin') { const d = skDmg(); en.hp -= d; p.hp = Math.min(p.max, p.hp + d * sk.skillDrain); }
+        if (cid === 'yukidarun') en.hp -= skDmg(1 + sk.snowBoost * snow);
+        if (cid === 'yuusharin') { en.hp -= skDmg(); p.hp = Math.min(p.max, p.hp + p.max * sk.heal); en.g = 0; }
       }
       if (typed >= keys) {
         const secs = Math.max(0.2, t - wstart), kpsw = keys / secs;
@@ -97,7 +105,9 @@ function sim(cid, L, e, kpm, acc) {
         if (cid === 'onpuru' && kpsw > tr.speedFrom) dmg *= 1 + Math.min(tr.speedMax, (kpsw - tr.speedFrom) * tr.speedStep);
         if (tempo > 0) { dmg *= tempoMult; tempo--; }
         if (cid === 'metarun' && keys > tr.longFrom) dmg *= 1 + Math.min(tr.longMax, (keys - tr.longFrom) * tr.longStep);
-        let cr = 0.06, cm = 1.5;
+        if (cid === 'dororin') ePoison = Math.min(tr.poisonMax, ePoison + 1);
+        if (cid === 'yukidarun') snow = Math.min(tr.snowMax, snow + 1);
+        let cr = tr.crit || 0.06, cm = 1.5;
         if (cid === 'piriri') { cr = 0.1 + Math.min(tr.critMax - 0.1, Math.max(0, (kpsw - 2) * 0.2)); cm = tr.critMult; }
         if (cid === 'pitarin' && !wmiss) { cr = 1; cm = tr.perfectCrit; }
         if (Math.random() < cr) dmg *= cm;
@@ -106,6 +116,7 @@ function sim(cid, L, e, kpm, acc) {
         if (breakUntil > t) dmg *= 1.3;
         if (cid === 'fuwari' && Math.random() < tr.double) dmg *= 1.5;
         en.hp -= dmg * 0.95;
+        if (cid === 'gorurin') p.hp = Math.min(p.max, p.hp + dmg * 0.95 * tr.drain);
         if (cid === 'purun' && !wmiss) p.hp = Math.min(p.max, p.hp + p.max * tr.heal);
         typed = 0; wmiss = false; words++; keys = wordKeys(e.diff);
       }
@@ -128,7 +139,7 @@ function rate(cid, L, e, kpm, acc, n = 200) {
 // 難易度を かけた 敵 (battle.js の diffK と おなじ)
 const HP0 = D.ENEMY_HP_SCALE;
 function diffEnemy(e0, g, bd) {
-  const k = bd.k * (bd.ramp ? bd.ramp + (1 - bd.ramp) * g / (D.ENEMIES.length - 1) : 1);
+  const k = bd.k * (bd.ramp ? bd.ramp + (1 - bd.ramp) * g / (D.MAIN_STAGES - 1) : 1);
   D.ENEMY_HP_SCALE = HP0 * Math.pow(k, 0.7);
   return { ...e0, power: e0.power * k, interval: e0.interval / Math.pow(k, 0.25) };
 }

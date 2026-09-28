@@ -31,7 +31,11 @@ Screens.dex = {
           <div class="dex-name">${st === 'none' ? '？？？' : e.name}</div></button>`;
       }).join('');
       return `<div class="dex-world w-${w.id}">ワールド ${wi + 1}　${w.name}</div><div class="dex-grid">${cells}</div>`;
-    }).join('');
+    }).join('') + `<div class="dex-world w-hidden">かくしステージ</div><div class="dex-grid">${HIDDEN_DEFS.map(h => {
+      const e = ENEMIES[h.idx], d = (Save.data.dex || {})[e.id] || {};
+      const st = d.wins > 0 ? 'won' : d.seen ? 'seen' : 'none';
+      return `<button class="dex-cell ${st} boss" data-g="${h.idx}"><span class="dex-no">かくし</span><div class="dex-sprite">${enemySVG(e.id)}</div><div class="dex-name">${st === 'none' ? '？？？' : e.name}</div></button>`;
+    }).join('')}</div>`;
     $('#dex-list').querySelectorAll('.dex-cell').forEach(b => { b.onclick = () => this.show(+b.dataset.g); });
     $('#btn-dex-back').onclick = () => App.show('home');
     this.show(null);
@@ -46,12 +50,12 @@ Screens.dex = {
     const d = (Save.data.dex || {})[e.id] || {};
     if (!d.seen) {
       box.innerHTML = `<div class="dd-sprite none">${enemySVG(e.id)}</div><div class="dd-name">？？？</div>
-        <div class="dd-desc">まだ であっていない モンスター。<br>${stageLabel(g)} で であえるかも…</div>`;
+        <div class="dd-desc">まだ であっていない モンスター。<br>${e.hidden ? `どこかに かくれている… (${hiddenOf(g).reveal.text}と 道が ひらく)` : `${stageLabel(g)} で であえるかも…`}</div>`;
       return;
     }
     box.innerHTML = `<div class="dd-sprite ${d.wins > 0 ? '' : 'seen'}">${enemySVG(e.id)}</div>
       <div class="dd-name">${e.name} ${e.boss ? '<span class="badge boss">BOSS</span>' : ''}</div>
-      <div class="dd-meta">No.${String(g + 1).padStart(2, '0')} ・ ${stageLabel(g)} ${WORLDS[e.world].name} ・ Lv.${e.lv}</div>
+      <div class="dd-meta">${e.hidden ? `かくしステージ ・ ${WORLDS[e.host].name}` : `No.${String(g + 1).padStart(2, '0')} ・ ${stageLabel(g)} ${WORLDS[e.world].name}`} ・ Lv.${e.lv}</div>
       <p class="dd-desc">${e.desc}</p>
       <div class="dd-ability">${e.abilityDesc}</div>
       <div class="dd-stats">
@@ -88,7 +92,7 @@ const ACHIEVEMENTS = [
   { id: 'world9', name: 'えいゆう', desc: 'ワールド 9 の ボスをたおす', check: () => Save.data.cleared > worldStages(8).slice(-1)[0] },
   { id: 'all_clear', name: 'でんせつの ゆうしゃ', desc: 'まおうを たおす', check: () => Save.data.cleared > ENEMIES.findIndex(e => e.final) },
   { id: 'world12', name: 'かげを こえし もの', desc: 'ワールド 12「かげのもり」の ボスを たおす', check: () => Save.data.cleared > worldStages(11).slice(-1)[0] },
-  { id: 'world13', name: 'ほしのはての ゆうしゃ', desc: 'しんまおうを たおして ぜんぶ クリア', check: () => Save.data.cleared >= ENEMIES.length },
+  { id: 'world13', name: 'ほしのはての ゆうしゃ', desc: 'しんまおうを たおして ぜんぶ クリア', check: () => Save.data.cleared >= MAIN_STAGES },
   { id: 'mid_boss', name: 'ちゅうきゅうの あかし', desc: '中級者で ワールドの ボスを たおす', check: r => r && r.mode === 'battle' && r.won && r.bdiff !== 'beg' && r.bdiff && ENEMIES[r.enemyIdx].boss },
   { id: 'adv_win', name: 'じょうきゅうへの いっぽ', desc: '上級者で バトルに 勝つ', check: r => r && r.mode === 'battle' && r.won && r.bdiff === 'adv' },
   { id: 'adv_demon', name: 'しんの ゆうしゃ', desc: '上級者で まおうを たおす', check: r => r && r.mode === 'battle' && r.won && r.bdiff === 'adv' && ENEMIES[r.enemyIdx].final },
@@ -114,6 +118,17 @@ const ACHIEVEMENTS = [
   { id: 'pt1h', name: 'スライムと なかよし', desc: 'プレイ時間 1 時間', check: () => PlayTime.total() >= 3600 },
   { id: 'pt10h', name: 'スライムの しんゆう', desc: 'プレイ時間 10 時間', check: () => PlayTime.total() >= 36000 },
   { id: 'pt30h', name: 'スライムの せかいの じゅうにん', desc: 'プレイ時間 30 時間', check: () => PlayTime.total() >= 108000 },
+  // ---- ★ むずかしい しょうごう ----
+  { id: 'kpm400', hard: true, name: 'ひかりを こえし ゆび', desc: 'れんしゅうで 打鍵/分 400 以上', check: r => r && r.mode === 'practice' && r.kpm >= 400 },
+  { id: 'rankSSS', hard: true, name: 'でんせつの タイパー', desc: 'れんしゅうで ランク SSS (スコア 500 以上)', check: r => r && r.mode === 'practice' && r.score >= 500 },
+  { id: 'acc300', hard: true, name: 'しんの かんぺき', desc: 'れんしゅうで 300 打鍵 以上 ミス 0', check: r => r && r.mode === 'practice' && r.correct >= 300 && r.miss === 0 },
+  { id: 'combo500', hard: true, name: 'コンボの かみさま', desc: '最大コンボ 500 以上', check: r => r && r.maxCombo >= 500 },
+  { id: 'nohit_boss', hard: true, name: 'むきずの ゆうしゃ', desc: 'HP を へらさずに ボスに 勝つ (推奨レベル 以下で)', check: r => r && r.mode === 'battle' && r.won && r.hpLeft >= 1 && ENEMIES[r.enemyIdx].boss && r.playerLv <= r.enemyLv },
+  { id: 'adv_w6', hard: true, name: 'じょうきゅう ゆうしゃ', desc: '上級者で ワールド 6 の ボスを たおす', check: r => r && r.mode === 'battle' && r.won && r.bdiff === 'adv' && r.enemyIdx === worldStages(5).slice(-1)[0] },
+  { id: 'sv_500', hard: true, name: 'せんめつの スライム', desc: 'サバイバル 1 回で 500 体 たおす', check: r => r && r.mode === 'survival' && r.kills >= 500 },
+  { id: 'lv124', hard: true, name: 'きわめし もの', desc: 'だれかを Lv124 にする (Lv120 + かくせい★4)', check: () => maxCharLv() >= 124 },
+  { id: 'keys300k', hard: true, name: 'タイピングの かみさま', desc: '合計 30 万回 正しく 打つ', check: () => Save.data.totals.keys >= 300000 },
+  { id: 'hidden_all', hard: true, name: 'ひみつを あばく もの', desc: 'かくしステージを ぜんぶ クリア', check: () => HIDDEN_DEFS.every(hiddenCleared) },
   { id: 'doors_all', name: 'とびらの かぎもち', desc: 'ぼうけんのとびらを ぜんぶ ひらく', check: () => doorCount() >= DOORS.length },
   { id: 'keys10k', name: 'タイピング だいすき', desc: '合計 1 万回 正しく打つ', check: () => Save.data.totals.keys >= 10000 },
   { id: 'keys100k', name: 'タイピングの たつじん', desc: '合計 10 万回 正しく打つ', check: () => Save.data.totals.keys >= 100000 },
@@ -147,6 +162,7 @@ function checkAchievements(r) {
   return got;
 }
 function achCount() { return Object.keys(Save.data.ach || {}).length; }
+function hardAchCount() { return ACHIEVEMENTS.filter(a => a.hard && (Save.data.ach || {})[a.id]).length; }
 function currentTitle() {
   const a = ACHIEVEMENTS.find(x => x.id === Save.data.title);
   return a && (Save.data.ach || {})[a.id] ? a.name : null;
@@ -165,7 +181,7 @@ Screens.ach = {
       const on = Save.data.title === a.id;
       return `<button class="ach-card ${ok ? 'got' : 'locked'} ${on ? 'on' : ''}" data-id="${a.id}" ${ok ? '' : 'disabled'}>
         <div class="ach-icon">${ok ? '🏅' : '🔒'}</div>
-        <div class="ach-body"><div class="ach-name">${ok ? a.name : '？？？'}</div><div class="ach-desc">${a.desc}${ok ? '' : ` <small class="ach-coin">🪙${ACH_COINS}</small>`}</div></div>
+        <div class="ach-body"><div class="ach-name">${a.hard ? '<span class="ach-hard">★ むずかしい</span> ' : ''}${ok ? a.name : '？？？'}</div><div class="ach-desc">${a.desc}${ok ? '' : ` <small class="ach-coin">🪙${ACH_COINS}</small>`}</div></div>
         ${on ? '<div class="ach-on">かざり中</div>' : ''}</button>`;
     }).join('');
     $('#ach-list').querySelectorAll('.ach-card.got').forEach(b => {

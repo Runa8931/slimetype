@@ -115,6 +115,12 @@ function typingExp(correct, miss, seconds, mult = 1, L = 1) {
   return p > 0 ? Math.max(1, Math.round(levelNeed(L) * p * mult)) : 0;
 }
 
+// お題を 打ち終わったとき「5.8 打/秒」を お題の 枠の 左上に 出す (hot: おんぷるの ボーナスが つく 速さ)
+function showKps(root, kps, extra = '', hot = false) {
+  const r = root.getBoundingClientRect(); // お題の 枠の 左上 (PERFECT! や ひっさつ欄と かさならない)
+  floatText(r.left + 90, r.top + 2, `${kps.toFixed(1)} 打/秒${extra}`, 'kps-pop' + (hot ? ' hot' : ''));
+}
+
 function recordMiss(key) {
   if (!key || key === ' ') return;
   Save.data.missKeys[key] = (Save.data.missKeys[key] || 0) + 1;
@@ -421,7 +427,7 @@ Screens.home = {
       <h3>きろく <small>(${lang === 'en' ? 'English' : '日本語'})</small></h3>
       <div class="rec-grid">
         ${Object.keys(diffName).map(k => `<div><span>${diffName[k]}</span><b>${best[lang + '-' + k] ?? '—'}</b></div>`).join('')}
-        <div><span>バトル突破</span><b>${Save.data.cleared}/${ENEMIES.length}</b></div>
+        <div><span>バトル突破</span><b>${Save.data.cleared}/${MAIN_STAGES}</b></div>
         <div><span>サバイバル</span><b>${svRecord(best)}</b></div>
         <div><span>プレイ時間</span><b>${(PlayTime.flush(), fmtHMS(PlayTime.total()))}</b></div>
       </div>

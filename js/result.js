@@ -34,10 +34,11 @@ Screens.result = {
         <div class="res-title">${r.won ? `${e.name} をたおした！` : `${ch.name} はたおれてしまった…`}</div>
         ${r.bdiff ? `<div class="res-diff" style="color:${BATTLE_DIFFS[r.bdiff].color}">難易度: ${BATTLE_DIFFS[r.bdiff].name}</div>` : ''}
         <div class="res-enemy ${r.won ? '' : 'gray'}">${enemySVG(e.id)}</div>
-        ${r.firstClear && r.enemyIdx + 1 < ENEMIES.length ? (ENEMIES[r.enemyIdx + 1].world !== e.world
+        ${e.hidden && r.won ? `<div class="unlock">かくしステージ「${e.name}」を たおした！</div>` : ''}
+        ${r.firstClear && r.enemyIdx + 1 < MAIN_STAGES ? (ENEMIES[r.enemyIdx + 1].world !== e.world
           ? `<div class="unlock">ワールド ${e.world + 2}「${WORLDS[e.world + 1].name}」への ゲートが ひらいた！</div>`
           : `<div class="unlock">あたらしいあいて「${ENEMIES[r.enemyIdx + 1].name}」があらわれた！</div>`) : ''}
-        ${r.firstClear && r.enemyIdx + 1 >= ENEMIES.length ? `<div class="unlock">${e.name}を たおした！ ぜんぶの ワールドを クリア！ おめでとう！</div>` : ''}
+        ${r.firstClear && r.enemyIdx + 1 >= MAIN_STAGES ? `<div class="unlock">${e.name}を たおした！ ぜんぶの ワールドを クリア！ おめでとう！</div>` : ''}
         ${!r.won ? '<div class="tip">ヒント: れんしゅうでレベルを上げたり、コンボを切らさないように打つと有利だよ</div>' : ''}
       </div>`;
     }
@@ -49,6 +50,8 @@ Screens.result = {
       <div><span>ジェム</span><b>${r.gems}</b></div>
     </div>` : `<div class="res-stats">
       <div><span>打鍵/分</span><b>${r.kpm}</b></div>
+      <div><span>平均 打/秒</span><b>${(r.kps || 0).toFixed(1)}</b></div>
+      <div><span>さいこう 打/秒</span><b>${r.bestKps ? r.bestKps.toFixed(1) : '—'}</b></div>
       <div><span>正確率</span><b>${(r.acc * 100).toFixed(1)}%</b></div>
       <div><span>正しく打った数</span><b>${r.correct}</b></div>
       <div><span>ミス</span><b>${r.miss}</b></div>

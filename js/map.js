@@ -36,6 +36,31 @@ WORLD_MAPS.forEach(m => {
   m.gatePath = m.gate ? [m.nodes[m.nodes.length - 1], m.gate] : null;
 });
 
+// ---------------- かくしステージの 道 ----------------
+// from の マスで つかっていない 向きの うち、ほかの 道と かさならない ところに かくしステージの マスを おく
+const HID_POS = 99; // マップの 上での かくしステージの 位置の 番号
+const DIR_VEC = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+function hiddenLink(h) {
+  if (h._link) return h._link;
+  const m = WORLD_MAPS[h.host], k = h.from, node = m.nodes[k];
+  const used = new Set();
+  const inPath = m.paths[k]; used.add(dirOf(inPath[inPath.length - 1], inPath[inPath.length - 2]));
+  if (k < m.nodes.length - 1) used.add(dirOf(m.paths[k + 1][0], m.paths[k + 1][1]));
+  else if (m.gatePath) used.add(dirOf(m.gatePath[0], m.gatePath[1]));
+  let best = null;
+  for (const dist of [170, 140, 200, 110]) {
+    for (const d of ['up', 'down', 'left', 'right']) {
+      if (used.has(d) || best) continue;
+      const p = P(node.x + DIR_VEC[d][0] * dist, node.y + DIR_VEC[d][1] * dist);
+      if (p.x < 80 || p.x > MAP_W - 80 || p.y < 110 || p.y > MAP_H - 60) continue;
+      if (nearRoad(m, p.x, p.y, 60)) continue;
+      best = { dir: d, pos: p };
+    }
+  }
+  if (!best) best = { dir: 'down', pos: P(node.x, Math.min(MAP_H - 50, node.y + 120)) };
+  return (h._link = { ...best, path: [node, best.pos] });
+}
+
 function dirOf(p, q) {
   const dx = q.x - p.x, dy = q.y - p.y;
   if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? 'right' : 'left';
@@ -371,6 +396,12 @@ Screens.stages = {
     this._onResize = () => this.fit();
     addEventListener('resize', this._onResize);
 
+    // かくしステージの 道が はじめて 見つかった
+    const hid = this.hidden();
+    if (hid && !(Save.data.hiddenOpen || {})[hid.e.id] && this.unlockAnim == null) {
+      (Save.data.hiddenOpen = Save.data.hiddenOpen || {})[hid.e.id] = Date.now(); Save.save();
+      this.unlockAnim = 'hidden'; this.build();
+    }
     if (this.unlockAnim != null) setTimeout(() => this.playUnlock(this.unlockAnim), 500);
   },
 
@@ -398,6 +429,7 @@ Screens.stages = {
     let maxPos = -1;
     list.forEach((g, i) => { if (g <= this.cleared) maxPos = i; });
     if (this.gateOpen()) maxPos = list.length;
+    if (this.pos === HID_POS) { if (!this.hidden()) this.pos = this.hidden() ? HID_POS : maxPos; return; }
     if (this.pos > maxPos) this.pos = maxPos;
   },
 
@@ -407,8 +439,12 @@ Screens.stages = {
     Save.save();
   },
 
+  // この ワールドの かくしステージ (道が ひらいていれば)
+  hidden() { const h = HIDDEN_DEFS.find(x => x.host === this.world); return h && hiddenOpen(h) ? h : null; },
+
   spotPos(pos) {
     const m = this.map();
+    if (pos === HID_POS && this.hidden()) return hiddenLink(this.hidden()).pos;
     if (pos < 0) return m.start;
     if (pos >= m.nodes.length) return m.gate;
     return m.nodes[pos];
@@ -436,6 +472,8 @@ Screens.stages = {
     };
     let roads = m.paths.map((pts, k) => road(pts, 'road-' + k, list[k] <= this.cleared && k !== this.unlockAnim)).join('');
     if (m.gatePath) roads += road(m.gatePath, 'road-gate', this.gateOpen() && this.unlockAnim !== 'gate');
+    const hid = this.hidden();
+    if (hid) roads += road(hiddenLink(hid).path, 'road-hidden', this.unlockAnim !== 'hidden');
     $('#map-svg').innerHTML = mapBackgroundSVG(this.world) + roads;
 
     const start = `<div class="node start" style="left:${m.start.x}px;top:${m.start.y}px">
@@ -462,9 +500,16 @@ Screens.stages = {
         <div class="node-icon">${portalSVG()}</div>
         <div class="node-label">ワールド${this.world + 2} ${nw.name}へ</div></div>`;
     }
-    $('#map-nodes').innerHTML = start + nodes + gate;
+    let hnode = '';
+    if (hid) {
+      const he = ENEMIES[hid.idx], hp = hiddenLink(hid).pos, done = hiddenCleared(hid);
+      hnode = `<div class="node hidden-node boss ${done ? 'cleared' : ''} ${this.unlockAnim === 'hidden' ? 'locked' : ''}" id="node-hidden" data-g="${hid.idx}" data-i="${HID_POS}" style="left:${hp.x}px;top:${hp.y}px">
+        <div class="node-pad"></div><div class="node-icon">${enemySVG(he.id)}</div>
+        ${done ? '<div class="node-star">★</div>' : ''}<div class="node-label">かくし ${he.name}</div></div>`;
+    }
+    $('#map-nodes').innerHTML = start + nodes + gate + hnode;
     $('#map-nodes').querySelectorAll('.node[data-g]').forEach(n => {
-      n.onclick = () => { const g = +n.dataset.g; if (g <= this.cleared) this.startBattle(g); };
+      n.onclick = () => { const g = +n.dataset.g; if (g <= this.cleared || ENEMIES[g].hidden) this.startBattle(g); };
     });
 
     $('#map-player .sprite').innerHTML = slimeSVG(this.ch.id, this.ch.stage);
@@ -556,6 +601,13 @@ Screens.stages = {
     } else if (this.pos === n - 1 && this.gateOpen() && this.unlockAnim !== 'gate') {
       ex[dirOf(m.gatePath[0], m.gatePath[1])] = { to: n, pts: m.gatePath };
     }
+    // かくしステージ: 道の ある マスから 行ける / かくしステージからは もどるだけ
+    const hid = this.hidden();
+    if (hid && this.unlockAnim !== 'hidden') {
+      const L = hiddenLink(hid);
+      if (this.pos === hid.from) ex[L.dir] = { to: HID_POS, pts: L.path };
+      if (this.pos === HID_POS) { const back = L.path.slice().reverse(); return { [dirOf(back[0], back[1])]: { to: hid.from, pts: back } }; }
+    }
     if (this.pos >= 0) {
       const back = (this.pos === n ? m.gatePath : m.paths[this.pos]).slice().reverse();
       ex[dirOf(back[0], back[1])] = { to: this.pos - 1, pts: back };
@@ -583,6 +635,20 @@ Screens.stages = {
       $('#map-world').innerHTML = `${head} <b>スタート</b>`;
       info.innerHTML = `<div class="mi-body"><div class="mi-name">スタートちてん</div>
         <div class="mi-desc">WASD で みちを すすもう${this.world > 0 ? '<br>ぎゃくほうこうで まえのワールドへ もどれる' : ''}</div></div>`;
+      return;
+    }
+    if (this.pos === HID_POS && this.hidden()) {
+      const h = this.hidden(), e = ENEMIES[h.idx];
+      const reward = DOORS.find(d => d.hidden === h.e.id);
+      $('#map-world').innerHTML = `${head} - <b>かくし</b>`;
+      info.innerHTML = `<div class="mi-sprite">${enemySVG(e.id)}</div>
+        <div class="mi-body">
+          <div class="mi-name">${e.name} <small>Lv.${e.lv}</small> <span class="badge boss">かくし</span> ${hiddenCleared(h) ? '<span class="mi-clear">CLEAR</span>' : ''}</div>
+          <div class="mi-desc">${e.abilityDesc}</div>
+          ${reward ? `<div class="mi-low">たおすと「${reward.name}」が なかまに なる</div>` : ''}
+          <div class="mi-go"><kbd>Space</kbd> で たたかう　難易度 <b style="color:${BATTLE_DIFFS[battleDiffKey()].color}">${BATTLE_DIFFS[battleDiffKey()].name}</b>・推奨 Lv.${e.lv}</div>
+        </div>`;
+      replayAnim(info, 'pop-in', 300);
       return;
     }
     if (this.pos >= list.length) {
@@ -718,8 +784,8 @@ Screens.stages = {
 
   // 敵をたおした直後: 次の道 (またはゲート) が少しずつ現れる
   playUnlock(k) {
-    const isGate = k === 'gate';
-    const g = $(isGate ? '#road-gate' : '#road-' + k);
+    const isGate = k === 'gate', isHidden = k === 'hidden';
+    const g = $(isGate ? '#road-gate' : isHidden ? '#road-hidden' : '#road-' + k);
     if (!g) return;
     g.classList.remove('locked');
     g.classList.add('open');
@@ -735,23 +801,24 @@ Screens.stages = {
     setTimeout(() => {
       g.querySelectorAll('path').forEach(p => { p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; p.style.transition = ''; });
       this.unlockAnim = null;
-      const node = $(isGate ? '#node-gate' : '#node-' + k);
+      const node = $(isGate ? '#node-gate' : isHidden ? '#node-hidden' : '#node-' + k);
       if (node) {
         node.classList.remove('locked');
         const r = node.getBoundingClientRect();
         FX.burst(r.left + r.width / 2, r.top + r.height / 2 - 40, { colors: ['#ffd23f', '#fff', '#ff8fab'], count: 40, shape: 'star', size: 7, speed: 6 });
         SFX.levelup();
       }
+      if (isHidden) { toast('❗ かくしステージへの みちが ひらいた！', 3000); SFX.win(); this.updateArrows(); return; }
       toast(isGate ? `ゲートが ひらいた！ ワールド ${this.world + 2}「${WORLDS[this.world + 1].name}」へ すすもう` : 'あたらしい みちが ひらけた！ WASD で すすもう', 2800);
       this.updateArrows();
     }, 1500);
   },
 
   startBattle(g) {
-    if (g > this.cleared) return;
     const e = ENEMIES[g];
-    Save.data.mapWorld = e.world;
-    Save.data.mapPos = worldStages(e.world).indexOf(g);
+    if (g > this.cleared && !e.hidden) return;
+    Save.data.mapWorld = e.hidden ? e.host : e.world;
+    Save.data.mapPos = e.hidden ? HID_POS : worldStages(e.world).indexOf(g);
     Save.save();
     SFX.select();
     App.show('battle', g);
@@ -771,6 +838,7 @@ Screens.stages = {
     const dn = parseInt(e.key, 10);
     if (dn >= 1 && dn <= BATTLE_DIFF_KEYS.length) { setBattleDiff(BATTLE_DIFF_KEYS[dn - 1]); this.updateInfo(); return; }
     if (KEY_DIR[k]) { this.held.add(k); e.preventDefault(); this.tryMove(KEY_DIR[k]); return; }
+    if ((e.key === ' ' || e.key === 'Enter') && !this.moving && this.pos === HID_POS && this.hidden()) { this.startBattle(this.hidden().idx); return; }
     if ((e.key === ' ' || e.key === 'Enter') && !this.moving && this.pos >= 0 && this.pos < this.stages().length) {
       this.startBattle(this.stages()[this.pos]);
     }

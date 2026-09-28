@@ -79,7 +79,7 @@ Screens.practice = {
     this.weak = s.diff === 'weak' ? practiceWeakKeys() : null;
     this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, [s.diff]);
     this.state = 'ready';
-    this.correct = 0; this.miss = 0; this.combo = 0; this.maxCombo = 0; this.words = 0;
+    this.correct = 0; this.miss = 0; this.combo = 0; this.maxCombo = 0; this.words = 0; this.bestKps = 0;
     this.wordMiss = false;
     this.missMap = {};
     this.timeLeft = this.duration;
@@ -136,6 +136,7 @@ Screens.practice = {
     this.word = this.deck.next();
     this.target = new TypingTarget(this.word.k);
     this.wordMiss = false;
+    this.wordStart = 0;
     const tp = $('#p-tp');
     replayAnim(tp, 'word-in', 300);
     this.render();
@@ -164,6 +165,7 @@ Screens.practice = {
     if (this.state !== 'run' || e.key.length !== 1) return;
 
     const key = e.key.toLowerCase();
+    if (!this.wordStart) this.wordStart = performance.now();
     const expected = this.target.nextKey();
     const r = this.target.input(key);
     if (r === 'miss') {
@@ -190,6 +192,11 @@ Screens.practice = {
   wordDone() {
     this.words++;
     SFX.word();
+    // 打/秒 (バトルと おなじ 計算)
+    const keys = this.target.totalKeys(), kps = keys / Math.max(0.2, (performance.now() - this.wordStart) / 1000);
+    if (keys >= 4) this.bestKps = Math.max(this.bestKps, kps);
+    const tr = this.char.trait;
+    showKps($('#p-tp'), kps, '', this.char.id === 'onpuru' && kps > tr.speedFrom);
     const from = FX.center($('#p-tp .tp-roma'));
     const sprite = $('#p-sprite');
     const to = FX.center(sprite);
@@ -239,7 +246,7 @@ Screens.practice = {
     this.overlay('<div class="count go">FINISH!</div>');
     SFX.win();
     setTimeout(() => App.show('result', {
-      mode: 'practice', diff: this.diff, correct, miss, acc, kpm, score, newBest,
+      mode: 'practice', diff: this.diff, correct, miss, acc, kpm, score, newBest, kps: correct / secs, bestKps: this.bestKps,
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
       coins, coinNote: '打鍵 ÷ 8 × 正確率² × 難易度',
       expBreakdown: [`1 レベルぶん ${levelNeed(this.char.L)} × (打鍵 ${correct} × 正確率² × (1 + ${kpm}/300) ÷ 600) × 難易度 ${DIFFS[this.diff].mult}`],

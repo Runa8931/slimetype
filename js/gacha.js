@@ -18,7 +18,7 @@ const RARITY = {
 };
 
 // ガチャの確率: まず キャラ枠か アイテム枠かを きめ、アイテムは レア度で きめる
-const GACHA_RATES = { newChar: 0.05, starterChar: 0.15 }; // ガチャ限定キャラは 5 たいで 5% (1 たい 1%)
+const GACHA_RATES = { newChar: 0.06, starterChar: 0.14 }; // ガチャ限定キャラは 6 たいで 6% (1 たい 1%)
 const ITEM_RATES = [['SSR', 0.03], ['SR', 0.12], ['R', 0.33], ['N', 0.52]];
 // かくせいが おわったキャラが かぶったときの かけら / こうかんに ひつような かけら
 const CHAR_SHARD = { gacha: 30, starter: 12 };
@@ -91,6 +91,8 @@ const GACHA_ITEMS = [
   { id: 'p_robo', kind: 'pet', rarity: 'SR', name: 'ミニロボ' },
   { id: 'p_fairy', kind: 'pet', rarity: 'SR', name: 'ほしのせい' },
   { id: 'p_dragon', kind: 'pet', rarity: 'SSR', name: 'ミニドラゴン' },
+  // とびらの ごほうび (ガチャでは 出ない)
+  { id: 'p_phoenix', kind: 'pet', rarity: 'SSR', name: 'ふしちょう', special: true },
 ];
 
 // ★4 に なったときの ごほうび: そのキャラ専用の いろ (ガチャでは 出ない)
@@ -107,6 +109,10 @@ const AWAKEN_COLORS = {
   fuwari: { name: 'はるかぜ', colors: { main: '#ffc9de', light: '#fff0f6', dark: '#a61e4d', accent: '#fff' } },
   metarun: { name: 'ゴールドメタル', colors: { main: '#fcc419', light: '#fff9db', dark: '#8a5a00', accent: '#e03131' } },
   onpuru: { name: 'ネオン', colors: { main: '#20c997', light: '#e6fcf5', dark: '#0b3d2e', accent: '#ff6bff' } },
+  dororin: { name: 'ヘドロ', colors: { main: '#5c940d', light: '#d8f5a2', dark: '#1b3a05', accent: '#e599f7' } },
+  gorurin: { name: 'ブラックゴールド', colors: { main: '#343a40', light: '#868e96', dark: '#000000', accent: '#ffd43b' } },
+  yukidarun: { name: 'ゆきどけ', colors: { main: '#ffc9de', light: '#ffffff', dark: '#e64980', accent: '#69db7c' } },
+  yuusharin: { name: 'まおうのよろい', colors: { main: '#3b1f6b', light: '#b197fc', dark: '#10002b', accent: '#ff006e' } },
   pitarin: { name: 'ブラッドムーン', colors: { main: '#c92a2a', light: '#ffc9c9', dark: '#3a0808', accent: '#ffe066' } },
 };
 for (const [id, a] of Object.entries(AWAKEN_COLORS)) {
@@ -216,7 +222,7 @@ function pullGacha(times) {
 
 // 1 回 引いたときに その ものが 出る 確率
 // ガチャに 出る「いつもの キャラ」: しょうごうで ひらく キャラは、ひらいたあと だけ (かくせい用)
-function starterPool() { return CHAR_ITEMS.filter(c => !CHARACTERS[c.char].gacha && (!CHARACTERS[c.char].title || hasChar(c.char))); }
+function starterPool() { return CHAR_ITEMS.filter(c => { const d = CHARACTERS[c.char]; return !d.gacha && (!(d.title || d.special) || hasChar(c.char)); }); }
 
 function itemRate(it) {
   if (it.kind === 'char') {
@@ -355,7 +361,7 @@ Screens.gacha = {
   // かけらの こうかんじょ
   shopHtml() {
     const g = gachaData();
-    const chars = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].title || hasChar(id)).map(id => {
+    const chars = Object.keys(CHARACTERS).filter(id => !(CHARACTERS[id].title || CHARACTERS[id].special) || hasChar(id)).map(id => {
       const gacha = !!CHARACTERS[id].gacha;
       const price = CHAR_PRICE[gacha ? 'gacha' : 'starter'];
       const aw = awakenOf(id);

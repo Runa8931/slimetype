@@ -107,9 +107,13 @@ const SV_WEAPONS = {
   wind: { name: 'かまいたち', icon: '🍃', color: '#63e6be', desc: '風の刃を まわり ぜんぶに とばす (つらぬく)' },
   sonic: { name: 'ソニックウェーブ', icon: '🎵', color: '#ff8cc6', desc: '音の 輪を 広げて まわりの 敵を はじく' },
   arrow: { name: 'つきのや', icon: '🏹', color: '#ffe066', desc: '近くで いちばん HP の 多い 敵を ねらう 強い 矢' },
+  poolw: { name: 'どくのぬま', icon: '☠️', color: '#9775fa', desc: '敵の 足もとに どくの ぬまを つくる (のっている 間 ダメージ)' },
+  coin: { name: 'こばんなげ', icon: '🪙', color: '#ffd43b', desc: 'こばんが 敵から 敵へ はねる' },
+  snowball: { name: 'ゆきだま', icon: '⛄', color: '#e7f5ff', desc: 'ゆきだまを なげて まわりの 敵を おそくする' },
+  sword: { name: 'ゆうしゃのけん', icon: '🗡️', color: '#4dabf7', desc: 'むいている 方向を おおきく なぎはらう' },
   drill: { name: 'ドリル', icon: '🔩', color: '#adb5bd', desc: '近くの敵へ ドリルを うちだす。どこまでも つらぬく' },
 };
-const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill', onpuru: 'sonic', pitarin: 'arrow' };
+const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill', onpuru: 'sonic', pitarin: 'arrow', dororin: 'poolw', gorurin: 'coin', yukidarun: 'snowball', yuusharin: 'sword' };
 
 // その 難易度が ぼうけんのとびらで ひらいているか (かんたんは さいしょから)
 function svDiffOpen(k) { return k === 'easy' || doorOpen('sv_' + k); }
@@ -128,6 +132,10 @@ function svWeaponStat(id, lv) {
     case 'meteor': return { cd: 3.2 - 0.3 * i, count: [1, 1, 2, 2, 3][i], dmg: 60 + 16 * i, radius: 95 + 8 * i };
     case 'icicle': return { cd: 1.6 - 0.12 * i, count: [2, 3, 3, 4, 5][i], dmg: 18 + 5 * i, area: 42 + 4 * i, slow: 1.2 + 0.2 * i };
     case 'wind': return { cd: 1.3 - 0.08 * i, count: [3, 4, 5, 6, 8][i], dmg: 11 + 3 * i, pierce: 3 };
+    case 'poolw': return { cd: 2.2 - 0.15 * i, count: [1, 1, 2, 2, 3][i], radius: 60 + 6 * i, dmg: 7 + 2 * i, life: 3 + 0.3 * i };
+    case 'coin': return { cd: 1.3 - 0.1 * i, count: [1, 1, 2, 2, 3][i], dmg: 16 + 4 * i, bounce: [3, 4, 4, 5, 6][i] };
+    case 'snowball': return { cd: 1.8 - 0.12 * i, count: [1, 2, 2, 3, 3][i], dmg: 22 + 6 * i, radius: 60 + 6 * i, slow: 1.5 + 0.2 * i };
+    case 'sword': return { cd: 1.2 - 0.08 * i, dmg: 24 + 7 * i, radius: 120 + 12 * i, arc: 1.9 + 0.15 * i };
     case 'sonic': return { cd: 1.5 - 0.1 * i, radius: 110 + 14 * i, dmg: 12 + 4 * i, rings: [1, 1, 2, 2, 3][i] };
     case 'arrow': return { cd: 1.4 - 0.1 * i, count: [1, 1, 2, 2, 3][i], dmg: 45 + 12 * i };
     case 'drill': return { cd: 2.0 - 0.15 * i, count: [1, 1, 2, 2, 3][i], dmg: 30 + 8 * i };
@@ -175,10 +183,12 @@ Screens.survival = {
     // とくせいは 進化すると強くなる
     if (this.ch.id === 'piriri') speed *= SV_CHAR.piriri.speed[this.ch.stage];
     if (this.ch.id === 'onpuru') speed *= SV_CHAR.onpuru.speed[this.ch.stage];
+    this.auraT = 0;
     this.p = { x: 0, y: 0, hp: max, max, speed, face: 1, dir: { x: 1, y: 0 }, inv: 0, regenT: 0, moving: false, slowUntil: 0 };
     this.dmgMult = 1 + (st.atk - 5) / 60;
     // ほむら: 武器のダメージが上がる (進化で もっと上がる)
     if (this.ch.id === 'homura') this.dmgMult *= SV_CHAR.homura.dmg[this.ch.stage];
+    if (this.ch.id === 'yuusharin') this.dmgMult *= SV_CHAR.yuusharin.dmg[this.ch.stage];
     // きらり: 武器を うつ間かくが みじかい
     this.cdMult = this.ch.id === 'kirari' ? SV_CHAR.kirari.cd[this.ch.stage] : 1;
     // こおりん: 敵が おそい / ふわり: ジェムを 遠くから すいよせる
@@ -393,6 +403,14 @@ Screens.survival = {
       if (p.regenT >= regenIv[this.ch.stage]) { p.regenT = 0; if (p.hp < p.max) p.hp = Math.min(p.max, p.hp + 1); }
     }
 
+    // どろりん: ちかくの 敵に 0.5 秒ごと どくの ダメージ
+    if (this.ch.id === 'dororin') {
+      this.auraT -= dt;
+      if (this.auraT <= 0) {
+        this.auraT = 0.5;
+        for (const e of this.enemies) if (Math.hypot(e.x - p.x, e.y - p.y) < 90 + e.r) this.hurt(e, SV_CHAR.dororin.aura[this.ch.stage], 0, 0, '#9775fa');
+      }
+    }
     // イベント
     if (!this.bossSpawned && this.time >= SV_BOSS_AT) this.spawnBoss();
     for (const t of [60, 110]) {
@@ -631,6 +649,45 @@ Screens.survival = {
       SFX.noise(0.12, { vol: 0.04, filter: 2200 });
       return true;
     }
+    if (id === 'poolw') {
+      if (!this.randomNear(420)) return false;
+      for (let i = 0; i < s.count; i++) {
+        const e = this.randomNear(420); if (!e) break;
+        this.fx.push({ kind: 'pool', x: e.x, y: e.y, r: s.radius, dmg: s.dmg, tick: 0, life: s.life, max: s.life });
+      }
+      SFX.noise(0.3, { vol: 0.03, filter: 500, type: 'bandpass', q: 3 });
+      return true;
+    }
+    if (id === 'coin') {
+      const t = this.nearest(s.count, 520); if (!t.length) return false;
+      for (let i = 0; i < s.count; i++) {
+        const e = t[i % t.length]; const a = Math.atan2(e.y - p.y, e.x - p.x);
+        this.shots.push({ kind: 'coin', x: p.x, y: p.y, vx: Math.cos(a) * 560, vy: Math.sin(a) * 560, r: 10, dmg: s.dmg, pierce: s.bounce, life: 2, hit: new Set(), spin: 0 });
+      }
+      SFX.tone(1568, 0.06, { type: 'square', vol: 0.02 });
+      return true;
+    }
+    if (id === 'snowball') {
+      if (!this.randomNear(480)) return false;
+      for (let i = 0; i < s.count; i++) {
+        const e = this.randomNear(480); if (!e) break;
+        this.fx.push({ kind: 'snowball', x: e.x, y: e.y, sx: p.x, sy: p.y, r: s.radius, dmg: s.dmg, slow: s.slow, life: 0.5 + i * 0.08, max: 0.5 + i * 0.08 });
+      }
+      return true;
+    }
+    if (id === 'sword') {
+      if (!this.enemies.length) return false;
+      let ang = Math.atan2(p.dir.y, p.dir.x);
+      if (!p.moving) { const t = this.nearest(1)[0]; if (t) ang = Math.atan2(t.y - p.y, t.x - p.x); }
+      this.fx.push({ kind: 'slash', x: p.x, y: p.y, ang, r: s.radius, arc: s.arc, life: 0.25, max: 0.25 });
+      for (const e of this.enemies) {
+        const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
+        let da = Math.abs(Math.atan2(dy, dx) - ang); if (da > Math.PI) da = Math.PI * 2 - da;
+        if (d < s.radius + e.r && da < s.arc / 2) this.hurt(e, s.dmg, dx / (d || 1) * 260, dy / (d || 1) * 260, '#4dabf7');
+      }
+      SFX.noise(0.12, { vol: 0.05, filter: 3000, type: 'bandpass', sweep: 7000 });
+      return true;
+    }
     if (id === 'sonic') {
       // 音の 輪: すこし ずつ おくれて 何重にも 広がる
       for (let k = 0; k < s.rings; k++) {
@@ -768,6 +825,7 @@ Screens.survival = {
         const a = Math.random() * Math.PI * 2, r = Math.hypot(this.W, this.H) / 2 + 40;
         e.x = p.x + Math.cos(a) * r; e.y = p.y + Math.sin(a) * r;
       }
+      if (d < e.r + SV_PLAYER_R && this.ch.id === 'yukidarun') e.slowUntil = this.time + SV_CHAR.yukidarun.chill[this.ch.stage]; // ゆきだるん: ふれた 敵が おそくなる
       if (d < e.r + SV_PLAYER_R && p.inv <= 0) this.hitPlayer(e.dmg * (e.boss && e.dash > 0 ? 1.5 : 1));
     }
     // 敵どうしが重なりすぎないようにする
@@ -840,6 +898,7 @@ Screens.survival = {
     const p = this.p;
     let d = dmg * 40 / (40 + this.ch.stats.def);
     if (this.ch.id === 'gotsun') d *= SV_CHAR.gotsun.hurt[this.ch.stage];
+    if (this.ch.id === 'yuusharin') d *= SV_CHAR.yuusharin.hurt[this.ch.stage];
     d = Math.max(1, Math.round(d));
     p.hp -= d;
     // かげまる: 攻撃をうけたあと 長めに むてき
@@ -880,6 +939,7 @@ Screens.survival = {
         this.parts.push({ x: s.x, y: s.y, vx: 0, vy: 0, life: 0.3, max: 0.3, color: '#ffd43b', size: 4, glow: true });
       }
       if (s.kind === 'drill') s.spin += dt * 30;
+      if (s.kind === 'coin') s.spin += dt * 16;
       if (s.kind === 'water' && Math.random() < 0.5) this.parts.push({ x: s.x, y: s.y, vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40, life: 0.3, max: 0.3, color: '#b5e3ff', size: 3 });
       if (s.kind === 'tornado') {
         s.spin += dt * 12;
@@ -912,11 +972,16 @@ Screens.survival = {
         } else {
           if (s.hit.has(e)) continue;
           s.hit.add(e);
-          const col = { water: '#4fb3ff', star: '#ffd43b', ice: '#a5d8ff', wind: '#63e6be', drill: '#dee2e6', arrow: '#ffe066' }[s.kind];
+          const col = { water: '#4fb3ff', star: '#ffd43b', ice: '#a5d8ff', wind: '#63e6be', drill: '#dee2e6', arrow: '#ffe066', coin: '#ffd43b' }[s.kind];
           this.hurt(e, s.dmg, s.vx * (s.kind === 'drill' ? 0.6 : 0.25), s.vy * (s.kind === 'drill' ? 0.6 : 0.25), col);
           if (s.kind === 'ice') e.slowUntil = this.time + s.slow;
           if (s.kind === 'water') this.fx.push({ kind: 'ring', x: s.x, y: s.y, r0: 4, r1: 30, life: 0.25, max: 0.25, color: '#b5e3ff', width: 4 });
           if (s.kind === 'star') this.burst(s.x, s.y, ['#ffd43b', '#fff'], 8, 200, true);
+          if (s.kind === 'coin' && s.pierce > 1) {
+            // つぎの 敵へ はねる
+            const nx = this.enemies.filter(o => !o.dead && !s.hit.has(o) && Math.hypot(o.x - s.x, o.y - s.y) < 320).sort((a, b) => Math.hypot(a.x - s.x, a.y - s.y) - Math.hypot(b.x - s.x, b.y - s.y))[0];
+            if (nx) { const a = Math.atan2(nx.y - s.y, nx.x - s.x); s.vx = Math.cos(a) * 560; s.vy = Math.sin(a) * 560; } else s.pierce = 1;
+          }
           if (--s.pierce <= 0) s.life = 0;
         }
       }
@@ -974,6 +1039,17 @@ Screens.survival = {
     for (const f of this.fx) {
       f.life -= dt;
       if (f.kind === 'meteor' && f.life <= 0 && !f.done) { f.done = true; this.explode(f); }
+      if (f.kind === 'pool') {
+        f.tick -= dt;
+        if (f.tick <= 0) { f.tick = 0.4; for (const e of this.enemies) if (Math.hypot(e.x - f.x, e.y - f.y) < f.r + e.r * 0.5) this.hurt(e, f.dmg, 0, 0, '#9775fa'); }
+      }
+      if (f.kind === 'snowball' && f.life <= 0 && !f.done) {
+        f.done = true;
+        this.fx.push({ kind: 'ring', x: f.x, y: f.y, r0: 8, r1: f.r * 1.3, life: 0.3, max: 0.3, color: '#e7f5ff', width: 7 });
+        this.burst(f.x, f.y, ['#ffffff', '#e7f5ff', '#a5d8ff'], 16, 240, false);
+        for (const e of this.enemies) if (Math.hypot(e.x - f.x, e.y - f.y) < f.r + e.r) { this.hurt(e, f.dmg, 0, 0, '#a5d8ff'); e.slowUntil = this.time + f.slow; }
+        SFX.noise(0.12, { vol: 0.04, filter: 900 });
+      }
       if (f.kind === 'icicle' && f.life <= 0 && !f.done) {
         f.done = true;
         this.fx.push({ kind: 'ring', x: f.x, y: f.y, r0: 6, r1: f.r * 1.3, life: 0.3, max: 0.3, color: '#d0ebff', width: 6 });
@@ -1182,6 +1258,30 @@ Screens.survival = {
         ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, Math.PI * 2); ctx.stroke();
         ctx.globalAlpha = 1;
       }
+      if (f.kind === 'pool') {
+        const a = Math.min(1, f.life / 0.4, (f.max - f.life) / 0.2);
+        ctx.save(); ctx.globalCompositeOperation = 'source-over'; // 光の 足し算で 白く ならないように
+        ctx.globalAlpha = 0.55 * a; ctx.fillStyle = '#5f3dc4';
+        ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 0.6 * a; ctx.fillStyle = '#8ce99a';
+        for (let j = 0; j < 3; j++) { const bx = f.x + Math.sin(f.life * 5 + j * 2) * f.r * 0.5, by = f.y + Math.cos(f.life * 4 + j) * f.r * 0.25; ctx.beginPath(); ctx.arc(bx, by, 4 + j, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+      }
+      if (f.kind === 'snowball') {
+        ctx.save(); ctx.globalCompositeOperation = 'source-over';
+        const t = 1 - k, x = f.sx + (f.x - f.sx) * t, y = f.sy + (f.y - f.sy) * t - Math.sin(t * Math.PI) * 120;
+        ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#74c0fc'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.restore();
+      }
+      if (f.kind === 'slash') {
+        ctx.save(); ctx.globalAlpha = k;
+        ctx.strokeStyle = '#a5d8ff'; ctx.lineWidth = 14; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.7 + 0.3 * (1 - k)), f.ang - f.arc / 2, f.ang + f.arc / 2); ctx.stroke();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.7 + 0.3 * (1 - k)), f.ang - f.arc / 2, f.ang + f.arc / 2); ctx.stroke();
+        ctx.restore();
+      }
       if (f.kind === 'icicle') {
         const y = f.y - 170 * k;
         ctx.save(); ctx.translate(f.x, y);
@@ -1294,6 +1394,12 @@ Screens.survival = {
       ctx.fillStyle = '#f1f9ff';
       ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-6, -7); ctx.lineTo(-13, 0); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.restore();
+    } else if (s.kind === 'coin') {
+      ctx.save(); ctx.translate(s.x, s.y); ctx.scale(Math.abs(Math.cos(s.spin)) * 0.8 + 0.2, 1);
+      this.drawGlow(ctx, 'rgba(255,212,59,.5)', 0, 0, 18);
+      ctx.fillStyle = '#ffd43b'; ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
     } else if (s.kind === 'arrow') {
       ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang);
       this.drawGlow(ctx, 'rgba(255,224,102,.5)', 0, 0, 20);
@@ -1404,7 +1510,7 @@ Screens.survival = {
     const better = !prev || (won && !prev.cleared) || (won === !!prev.cleared && (won ? this.time < prev.time : this.time > prev.time));
     if (better) Save.data.best[key] = { time: Math.floor(this.time), cleared: won };
     const expRes = grantExp(this.ch.id, exp);
-    const coins = grantCoins((this.kills / 4 + this.time / 2 + (won ? 150 : 0)) * d.exp);
+    const coins = grantCoins((this.kills / 4 + this.time / 2 + (won ? 150 : 0)) * d.exp * (this.ch.id === 'gorurin' ? SV_CHAR.gorurin.coin[this.ch.stage] : 1));
     setTimeout(() => App.show('result', {
       mode: 'survival', won, time: this.time, kills: this.kills, gems: this.gems, diffName: d.name, diffColor: d.color, boss: d.boss,
       weapons: Object.entries(this.weapons).map(([id, w]) => ({ id, lv: w.lv })), expRes, newBest: better,
