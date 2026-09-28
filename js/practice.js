@@ -242,7 +242,7 @@ Screens.practice = {
       mode: 'practice', diff: this.diff, correct, miss, acc, kpm, score, newBest,
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
       coins, coinNote: '打鍵 ÷ 8 × 正確率² × 難易度',
-      expBreakdown: [`打鍵 ${correct} × 正確率² × (1 + ${kpm}/300) × 難易度 ${DIFFS[this.diff].mult} × レベル補正 ${(1 + this.char.L / 15).toFixed(1)}`],
+      expBreakdown: [`1 レベルぶん ${levelNeed(this.char.L)} × (打鍵 ${correct} × 正確率² × (1 + ${kpm}/300) ÷ 600) × 難易度 ${DIFFS[this.diff].mult}`],
     }), 1100);
   },
 };

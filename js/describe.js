@@ -75,6 +75,16 @@ function traitLines(id, t) {
       L.push(`お題を 打ち切ると ${pct(t.double)} の 確率で もう 1 回 おいうち (ダメージは 半分)`);
       L.push(statusLine(t.statusCut));
       break;
+    case 'onpuru': {
+      const full = t.speedFrom + t.speedMax / t.speedStep;
+      L.push(`お題を 1 秒に ${t.speedFrom} 打より 速く 打つと、1 打 速いごとに 攻撃 +${pct(t.speedStep)} (1 秒に ${+full.toFixed(1)} 打 以上で 最大 +${pct(t.speedMax)})`);
+      L.push(statusLine(t.statusCut));
+      break;
+    }
+    case 'pitarin':
+      L.push(`ノーミスで 打ち切った お題は かならず 会心 (ダメージ ${times(t.perfectCrit)})。ミスした お題は ふつうと 同じ 6%・1.5 倍`);
+      L.push(statusLine(t.statusCut));
+      break;
     case 'metarun': {
       const full = t.longFrom + Math.ceil(t.longMax / t.longStep - 1e-9);
       L.push(`${t.longFrom + 1} キー 以上の お題は、1 キー ふえるごとに 攻撃 +${pct(t.longStep)} (${full} キー 以上で 最大 +${pct(t.longMax)})`);
@@ -134,6 +144,14 @@ function skillLines(id, s, def) {
       L.push(`かぜの 刃で ${pw}`);
       L.push(`つぎの 敵の 攻撃を ${s.evade} 回 かわす`);
       break;
+    case 'onpuru':
+      L.push(`おとの 波で ${pw}`);
+      L.push(`つぎの ${s.tempo} お題の 攻撃が ${times(s.tempoMult)} (テンポアップ)`);
+      break;
+    case 'pitarin':
+      L.push(`つきの 光で ${pw}`);
+      L.push(`つぎの 敵の 攻撃を ${s.reflect} 回 はね返す (うける はずの ダメージを 敵に 返す)`);
+      break;
     case 'metarun':
       L.push(`てつの こぶしで ${pw}`);
       L.push(`敵を ${s.brk} 秒 ブレイク: その間 敵が うける ダメージ +30%`);
@@ -160,6 +178,8 @@ function survivalLine(id, stage, t) {
   if (id === 'koorin') x = `敵の 動きが ${pct(1 - sv.eslow[stage])} おそい`;
   if (id === 'fuwari') x = `ジェムを すいよせる 範囲 ${times(sv.magnet[stage])}`;
   if (id === 'metarun') x = `最大HP ${times(sv.hp[stage])}`;
+  if (id === 'onpuru') x = `足の 速さ ${times(sv.speed[stage])}`;
+  if (id === 'pitarin') x = `武器が ${pct(sv.crit[stage])} の 確率で 会心 (ダメージ 2 倍)`;
   return `${x}${w ? `。さいしょの 武器「${w.name}」` : ''}`;
 }
 

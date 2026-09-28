@@ -11,6 +11,9 @@ const ENEMY_HP_SCALE = 3.6;      // 敵はさらに少し多め
 // 必要経験値: Lv^3 の 0.5 倍 (Lv20 = 4000, Lv50 = 62500, Lv99 = 約48万)
 function expForLevel(L) { return L <= 1 ? 0 : Math.floor(0.5 * L * L * L); }
 
+// いまの レベルから 1 つ 上がるのに ひつような 経験値
+function levelNeed(L) { return expForLevel(L + 1) - expForLevel(L); }
+
 function levelFromExp(exp, cap = MAX_LV) {
   let L = 1;
   while (L < cap && exp >= expForLevel(L + 1)) L++;
@@ -460,10 +463,69 @@ const CHARACTERS = {
         skill: { name: 'アダマンブレイク', desc: '威力 490。7 秒 ブレイク。ゲージ +20%', power: 490, brk: 7, charge: 1.2 } },
     ],
   },
+  // ---- ここから しょうごうで ひらく キャラ ----
+  onpuru: {
+    id: 'onpuru',
+    title: 'kpm250',
+    names: ['おんぷる', 'おんぷるる', 'リズムおんぷる', 'ビートおんぷる', 'シンフォニーおんぷる'],
+    type: 'おと',
+    role: 'スピード型',
+    colors: { main: '#ff8cc6', light: '#fff0f6', dark: '#a61e4d', accent: '#ffe066' },
+    stageColors: [
+      { main: '#ff8cc6', light: '#fff0f6', dark: '#a61e4d', accent: '#ffe066' },
+      { main: '#f06595', light: '#ffdeeb', dark: '#870b3a', accent: '#63e6be' },
+      { main: '#845ef7', light: '#e5dbff', dark: '#3b1c8c', accent: '#ffe066' },
+      { main: '#4c6ef5', light: '#dbe4ff', dark: '#1c2c80', accent: '#ff8cc6' },
+      { main: '#fcc2d7', light: '#ffffff', dark: '#c2255c', accent: '#ffd43b' },
+    ],
+    base: { hp: 80, atk: 101, def: 65, spd: 96 },
+    desc: 'リズムに のって はずむ おとの スライム。はやく 打つほど ノリノリに なる。',
+    forms: [
+      { trait: { name: 'アップテンポ', desc: '1 秒に 5 打より 速く お題を 打つと、1 打 はやいごとに 攻撃 +8% (最大 +24%)', speedFrom: 5, speedStep: 0.08, speedMax: 0.24, statusCut: 0 },
+        skill: { name: 'ソニックビート', desc: '威力 200。つぎの 3 お題の 攻撃が 1.4 倍', power: 200, tempo: 3, tempoMult: 1.4, charge: 1 } },
+      { trait: { name: 'アップテンポ+', desc: '1 打 はやいごとに +8% (最大 +30%)', speedFrom: 5, speedStep: 0.08, speedMax: 0.3, statusCut: 0 },
+        skill: { name: 'ソニックビート+', desc: '威力 270。つぎの 3 お題が 1.45 倍。ゲージ +5%', power: 270, tempo: 3, tempoMult: 1.45, charge: 1.05 } },
+      { trait: { name: 'ハイテンポ', desc: '1 打 はやいごとに +9% (最大 +36%)。どく・やけどの時間が半分', speedFrom: 5, speedStep: 0.09, speedMax: 0.36, statusCut: 0.5 },
+        skill: { name: 'ビートラッシュ', desc: '威力 340。つぎの 4 お題が 1.5 倍。ゲージ +10%', power: 340, tempo: 4, tempoMult: 1.5, charge: 1.1 } },
+      { trait: { name: 'プレスト', desc: '1 打 はやいごとに +9% (最大 +42%)。どく・やけどの時間が半分', speedFrom: 5, speedStep: 0.09, speedMax: 0.42, statusCut: 0.5 },
+        skill: { name: 'フォルテッシモ', desc: '威力 410。つぎの 4 お題が 1.55 倍。ゲージ +15%', power: 410, tempo: 4, tempoMult: 1.55, charge: 1.15 } },
+      { trait: { name: 'ヴィヴァーチェ', desc: '1 打 はやいごとに +10% (最大 +48%)。状態異常が きかない', speedFrom: 5, speedStep: 0.1, speedMax: 0.48, statusCut: 1 },
+        skill: { name: 'グランドフィナーレ', desc: '威力 480。つぎの 5 お題が 1.6 倍。ゲージ +20%', power: 480, tempo: 5, tempoMult: 1.6, charge: 1.2 } },
+    ],
+  },
+  pitarin: {
+    id: 'pitarin',
+    title: 'acc100',
+    names: ['ぴたりん', 'ぴたぴたりん', 'ムーンぴたりん', 'クレセントぴたりん', 'フルムーンぴたりん'],
+    type: 'つき',
+    role: 'せいかく型',
+    colors: { main: '#91a7ff', light: '#edf2ff', dark: '#364fc7', accent: '#ffe066' },
+    stageColors: [
+      { main: '#91a7ff', light: '#edf2ff', dark: '#364fc7', accent: '#ffe066' },
+      { main: '#748ffc', light: '#dbe4ff', dark: '#1c2c80', accent: '#fff3bf' },
+      { main: '#5c7cfa', light: '#e7f5ff', dark: '#0b1a5c', accent: '#ffd43b' },
+      { main: '#3b5bdb', light: '#bac8ff', dark: '#060e3a', accent: '#ffe066' },
+      { main: '#e7f5ff', light: '#ffffff', dark: '#364fc7', accent: '#ffd43b' },
+    ],
+    base: { hp: 75, atk: 82, def: 65, spd: 70 },
+    desc: 'つきの ひかりを あびた しずかな スライム。まちがえずに 打つと かならず 急所を つく。',
+    forms: [
+      { trait: { name: 'みきりの一撃', desc: 'ノーミスで 打ち切った お題は かならず 会心 (1.3 倍)', perfectCrit: 1.3, statusCut: 0 },
+        skill: { name: 'ムーンリフレクト', desc: '威力 190。つぎの 敵の 攻撃を 1 回 はね返す', power: 190, reflect: 1, charge: 1 } },
+      { trait: { name: 'みきりの一撃+', desc: 'ノーミスは かならず 会心 (1.35 倍)', perfectCrit: 1.35, statusCut: 0 },
+        skill: { name: 'ムーンリフレクト+', desc: '威力 260。1 回 はね返す。ゲージ +5%', power: 260, reflect: 1, charge: 1.05 } },
+      { trait: { name: 'つきよの みきり', desc: 'ノーミスは かならず 会心 (1.4 倍)。どく・やけどの時間が半分', perfectCrit: 1.4, statusCut: 0.5 },
+        skill: { name: 'クレセントミラー', desc: '威力 330。2 回 はね返す。ゲージ +10%', power: 330, reflect: 2, charge: 1.1 } },
+      { trait: { name: 'げっこうの みきり', desc: 'ノーミスは かならず 会心 (1.45 倍)。どく・やけどの時間が半分', perfectCrit: 1.45, statusCut: 0.5 },
+        skill: { name: 'ルナミラー', desc: '威力 400。2 回 はね返す。ゲージ +15%', power: 400, reflect: 2, charge: 1.15 } },
+      { trait: { name: 'まんげつの みきり', desc: 'ノーミスは かならず 会心 (1.5 倍)。状態異常が きかない', perfectCrit: 1.5, statusCut: 1 },
+        skill: { name: 'フルムーンミラー', desc: '威力 470。3 回 はね返す。ゲージ +20%', power: 470, reflect: 3, charge: 1.2 } },
+    ],
+  },
 };
 
-// さいしょから つかえるキャラ (ガチャ限定キャラを のぞく)
-const STARTERS = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].gacha);
+// さいしょから つかえるキャラ (ガチャ限定・しょうごうで ひらく キャラを のぞく)
+const STARTERS = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].gacha && !CHARACTERS[id].title);
 
 // ---------------- せんざいかくせい (ガチャで キャラが かぶると ★ が ふえる) ----------------
 // ★ 1 つごとに: 能力値 +2%、レベルの上限 +1、そのキャラの とくせいが 少し のびる
@@ -481,6 +543,8 @@ const AWAKEN_BONUS = {
   koorin: { desc: 'やりかえす 確率 +2%', apply: (t, n) => ({ ...t, counter: t.counter + 0.02 * n }) },
   fuwari: { desc: 'おいうちの 確率 +2%', apply: (t, n) => ({ ...t, double: t.double + 0.02 * n }) },
   metarun: { desc: 'ためうちの 上限 +3%', apply: (t, n) => ({ ...t, longMax: t.longMax + 0.03 * n }) },
+  onpuru: { desc: 'テンポの 上限 +3%', apply: (t, n) => ({ ...t, speedMax: t.speedMax + 0.03 * n }) },
+  pitarin: { desc: 'ノーミス会心 +0.03 倍', apply: (t, n) => ({ ...t, perfectCrit: t.perfectCrit + 0.03 * n }) },
 };
 
 // サバイバルでの とくせい (進化の 段階ごと)。説明文も ここから 作る
@@ -495,6 +559,8 @@ const SV_CHAR = {
   koorin: { eslow: [0.94, 0.92, 0.9, 0.88, 0.86] },  // 敵の 動く 速さ
   fuwari: { magnet: [1.3, 1.4, 1.5, 1.6, 1.7] },     // ジェムを すいよせる 範囲
   metarun: { hp: [1.15, 1.2, 1.25, 1.3, 1.35] },     // 最大HP
+  onpuru: { speed: [1.1, 1.12, 1.14, 1.16, 1.18] },  // 足の速さ
+  pitarin: { crit: [0.15, 0.18, 0.21, 0.24, 0.27] }, // 武器が 会心 (ダメージ 2 倍) に なる 確率
 };
 
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく
@@ -677,6 +743,14 @@ WORLD_DEFS.forEach((w, wi) => {
 const ENEMY_VARIANT = {};
 for (const e of ENEMIES) if (e.sprite) ENEMY_VARIANT[e.id] = { base: e.sprite, filter: VARIANT_FILTER[WORLD_DEFS[e.world].id] };
 
+// バトルに 勝ったときの 経験値: このステージの レベルから つぎの ステージの レベルまでの 6 わり
+// (推奨レベルで 勝ちすすむと つぎの 推奨レベルの すこし 手前に なる。れんしゅうで おいつく)
+function stageExp(i) {
+  const lv = ENEMIES[i].lv;
+  const next = i + 1 < ENEMIES.length ? Math.max(ENEMIES[i + 1].lv, lv + 1) : lv + 2;
+  return (expForLevel(next) - expForLevel(lv)) * 0.6;
+}
+
 // 決めてある威力を反映
 function applyEnemyPower() { for (const e of ENEMIES) if (ENEMY_POWER[e.id]) e.power = ENEMY_POWER[e.id]; }
 applyEnemyPower();
@@ -713,5 +787,5 @@ function rankFor(score) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
+  module.exports = { levelNeed, stageExp, STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
 }

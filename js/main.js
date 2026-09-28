@@ -101,13 +101,18 @@ function grantExp(id, amount) {
   return { before, after, amount, leveled: after.L > before.L, evolved: after.stage > before.stage };
 }
 
-// 練習モードと同じ式で「打鍵から得られる経験値」を計算する
-function typingExp(correct, miss, seconds, mult = 1, L = 1) {
+// 打鍵から 得られる 経験値 (れんしゅう・バトル 共通)
+//   打鍵 × 正確率² × (1 + 打鍵/分 ÷ 300) を「いまの レベルの 1 レベルぶん」に 対する わりあいに する
+//   → 60 秒・1 分 200 打鍵で だいたい 0.5 レベルぶん。レベルが ひくくても 高くても 同じ ペースで 上がる
+function typingPerf(correct, miss, seconds) {
   if (correct <= 0) return 0;
   const acc = correct / (correct + miss);
   const kpm = correct / (seconds / 60);
-  // レベルが上がっても れんしゅうの経験値が少なすぎないよう、レベルに合わせて増やす
-  return Math.round(correct * acc * acc * (1 + kpm / 300) * mult * (1 + L / 15));
+  return correct * acc * acc * (1 + kpm / 300) / 600;
+}
+function typingExp(correct, miss, seconds, mult = 1, L = 1) {
+  const p = typingPerf(correct, miss, seconds);
+  return p > 0 ? Math.max(1, Math.round(levelNeed(L) * p * mult)) : 0;
 }
 
 function recordMiss(key) {

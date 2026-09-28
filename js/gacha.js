@@ -24,7 +24,7 @@ const ITEM_RATES = [['SSR', 0.03], ['SR', 0.12], ['R', 0.33], ['N', 0.52]];
 const CHAR_SHARD = { gacha: 30, starter: 12 };
 const CHAR_PRICE = { gacha: 200, starter: 80 };
 
-const KIND_NAME = { char: 'キャラ', color: 'いろ', hat: 'ぼうし', fx: 'エフェクト' };
+const KIND_NAME = { char: 'キャラ', color: 'いろ', hat: 'ぼうし', fx: 'エフェクト', pet: 'おとも' };
 
 const GACHA_ITEMS = [
   // ---- 色ちがい (どのキャラにも ぬれる) ----
@@ -41,6 +41,13 @@ const GACHA_ITEMS = [
   { id: 'c_gold', kind: 'color', rarity: 'SSR', name: 'きんいろ', colors: { main: '#fcc419', light: '#fff9db', dark: '#b8860b', accent: '#ffffff' } },
   { id: 'c_rainbow', kind: 'color', rarity: 'SSR', name: 'にじいろ', rainbow: true, colors: { main: '#ffe066', light: '#ffffff', dark: '#5f3dc4', accent: '#ffffff' } },
   // ---- ぼうし・アクセサリー ----
+  // (v5.2 で ふやした いろ)
+  { id: 'c_peach', kind: 'color', rarity: 'N', name: 'ピーチいろ', colors: { main: '#ffc9a8', light: '#fff4e6', dark: '#e8590c', accent: '#ffffff' } },
+  { id: 'c_sky', kind: 'color', rarity: 'N', name: 'そらいろ', colors: { main: '#a5d8ff', light: '#e7f5ff', dark: '#1c7ed6', accent: '#ffffff' } },
+  { id: 'c_matcha', kind: 'color', rarity: 'R', name: 'まっちゃいろ', colors: { main: '#94d82d', light: '#f4fce3', dark: '#5c940d', accent: '#fff3bf' } },
+  { id: 'c_berry', kind: 'color', rarity: 'R', name: 'ベリーいろ', colors: { main: '#cc5de8', light: '#f8f0fc', dark: '#862e9c', accent: '#ffdeeb' } },
+  { id: 'c_lava', kind: 'color', rarity: 'SR', name: 'マグマいろ', colors: { main: '#fa5252', light: '#ffd43b', dark: '#5c0f0f', accent: '#ff922b' } },
+  { id: 'c_galaxy', kind: 'color', rarity: 'SSR', name: 'ぎんがいろ', colors: { main: '#5f3dc4', light: '#f783ac', dark: '#10002b', accent: '#66d9e8' } },
   { id: 'h_ribbon', kind: 'hat', rarity: 'N', name: 'リボン' },
   { id: 'h_hachimaki', kind: 'hat', rarity: 'N', name: 'はちまき' },
   { id: 'h_beret', kind: 'hat', rarity: 'N', name: 'ベレーぼう' },
@@ -53,6 +60,12 @@ const GACHA_ITEMS = [
   { id: 'h_pirate', kind: 'hat', rarity: 'SR', name: 'かいぞくぼうし' },
   { id: 'h_starcrown', kind: 'hat', rarity: 'SSR', name: 'ほしのかんむり' },
   { id: 'h_kabuto', kind: 'hat', rarity: 'SSR', name: 'でんせつのかぶと' },
+  { id: 'h_flower', kind: 'hat', rarity: 'N', name: 'はなかざり' },
+  { id: 'h_cap', kind: 'hat', rarity: 'N', name: 'キャップ' },
+  { id: 'h_chef', kind: 'hat', rarity: 'R', name: 'コックぼうし' },
+  { id: 'h_bunny', kind: 'hat', rarity: 'R', name: 'うさみみ' },
+  { id: 'h_santa', kind: 'hat', rarity: 'SR', name: 'サンタぼうし' },
+  { id: 'h_dragonhorn', kind: 'hat', rarity: 'SSR', name: 'りゅうのつの' },
   // ---- 打つときのエフェクト ----
   { id: 'f_kira', kind: 'fx', rarity: 'N', name: 'きらきら', icon: '✨', shape: 'star', colors: ['#fff3bf', '#ffffff', '#ffd43b'], size: 5 },
   { id: 'f_bubble', kind: 'fx', rarity: 'N', name: 'あわ', icon: '🫧', shape: 'circle', colors: ['#a5d8ff', '#e7f5ff', '#74c0fc'], size: 5, gravity: -0.06 },
@@ -63,6 +76,21 @@ const GACHA_ITEMS = [
   { id: 'f_sakura', kind: 'fx', rarity: 'SR', name: 'さくらふぶき', icon: '🌸', shape: 'petal', colors: ['#ffc9de', '#ffa8c5', '#fff0f6'], size: 6, gravity: 0.03 },
   { id: 'f_rainbow', kind: 'fx', rarity: 'SSR', name: 'にじのほし', icon: '🌈', shape: 'star', colors: RAINBOW, size: 7 },
   { id: 'f_thunder', kind: 'fx', rarity: 'SSR', name: 'いなずま', icon: '⚡', shape: 'star', colors: ['#fff27a', '#ffffff', '#74c0fc'], size: 6, bolt: true },
+  { id: 'f_leaf', kind: 'fx', rarity: 'N', name: 'はっぱ', icon: '🍃', shape: 'petal', colors: ['#69db7c', '#8ce99a', '#40c057'], size: 6, gravity: 0.03 },
+  { id: 'f_coin', kind: 'fx', rarity: 'N', name: 'コイン', icon: '🪙', shape: 'circle', colors: ['#ffd43b', '#fab005', '#fff3bf'], size: 5 },
+  { id: 'f_candy', kind: 'fx', rarity: 'R', name: 'あめだま', icon: '🍬', shape: 'circle', colors: ['#ffa8c5', '#a5d8ff', '#b2f2bb', '#ffe066'], size: 6 },
+  { id: 'f_moon', kind: 'fx', rarity: 'R', name: 'みかづき', icon: '🌙', shape: 'text', text: '☾', colors: ['#ffe066', '#fff3bf'], size: 8, gravity: -0.03 },
+  { id: 'f_ghost', kind: 'fx', rarity: 'SR', name: 'おばけ', icon: '👻', shape: 'text', text: '👻', colors: ['#fff'], size: 7, gravity: -0.05 },
+  { id: 'f_fireworks', kind: 'fx', rarity: 'SSR', name: 'はなび', icon: '🎆', shape: 'star', colors: ['#ff6b6b', '#ffd43b', '#4dabf7', '#f783ac', '#69db7c', '#ffffff'], size: 8 },
+  // ---- おとも (スライムの そばに いる 小さな なかま) ----
+  { id: 'p_chick', kind: 'pet', rarity: 'N', name: 'ひよこ' },
+  { id: 'p_cat', kind: 'pet', rarity: 'N', name: 'こねこ' },
+  { id: 'p_bunny', kind: 'pet', rarity: 'R', name: 'こうさぎ' },
+  { id: 'p_bat', kind: 'pet', rarity: 'R', name: 'ミニこうもり' },
+  { id: 'p_ghost', kind: 'pet', rarity: 'R', name: 'ちびおばけ' },
+  { id: 'p_robo', kind: 'pet', rarity: 'SR', name: 'ミニロボ' },
+  { id: 'p_fairy', kind: 'pet', rarity: 'SR', name: 'ほしのせい' },
+  { id: 'p_dragon', kind: 'pet', rarity: 'SSR', name: 'ミニドラゴン' },
 ];
 
 // ★4 に なったときの ごほうび: そのキャラ専用の いろ (ガチャでは 出ない)
@@ -78,6 +106,8 @@ const AWAKEN_COLORS = {
   koorin: { name: 'オーロラ', colors: { main: '#b197fc', light: '#e3fafc', dark: '#087f5b', accent: '#63e6be' } },
   fuwari: { name: 'はるかぜ', colors: { main: '#ffc9de', light: '#fff0f6', dark: '#a61e4d', accent: '#fff' } },
   metarun: { name: 'ゴールドメタル', colors: { main: '#fcc419', light: '#fff9db', dark: '#8a5a00', accent: '#e03131' } },
+  onpuru: { name: 'ネオン', colors: { main: '#20c997', light: '#e6fcf5', dark: '#0b3d2e', accent: '#ff6bff' } },
+  pitarin: { name: 'ブラッドムーン', colors: { main: '#c92a2a', light: '#ffc9c9', dark: '#3a0808', accent: '#ffe066' } },
 };
 for (const [id, a] of Object.entries(AWAKEN_COLORS)) {
   GACHA_ITEMS.push({ id: 'aw_' + id, kind: 'color', rarity: 'SSR', name: a.name, colors: a.colors, only: id, special: true });
@@ -112,6 +142,7 @@ function slimeLook(id) {
     colors: col ? col.colors : null,
     rainbow: col ? !!col.rainbow : false,
     hat: w.hat && hasItem(w.hat) ? w.hat.slice(2) : null,
+    pet: w.pet && hasItem(w.pet) ? w.pet.slice(2) : null,
     stars: awakenOf(id),
   };
 }
@@ -132,7 +163,7 @@ function rollOne(minSR = false) {
     const r = Math.random();
     let it;
     if (r < GACHA_RATES.newChar) it = pick(CHAR_ITEMS.filter(c => CHARACTERS[c.char].gacha));
-    else if (r < GACHA_RATES.newChar + GACHA_RATES.starterChar) it = pick(CHAR_ITEMS.filter(c => !CHARACTERS[c.char].gacha));
+    else if (r < GACHA_RATES.newChar + GACHA_RATES.starterChar) it = pick(starterPool());
     else {
       let q = Math.random(), rar = 'N';
       for (const [k, p] of ITEM_RATES) { if (q < p) { rar = k; break; } q -= p; }
@@ -184,10 +215,14 @@ function pullGacha(times) {
 }
 
 // 1 回 引いたときに その ものが 出る 確率
+// ガチャに 出る「いつもの キャラ」: しょうごうで ひらく キャラは、ひらいたあと だけ (かくせい用)
+function starterPool() { return CHAR_ITEMS.filter(c => !CHARACTERS[c.char].gacha && (!CHARACTERS[c.char].title || hasChar(c.char))); }
+
 function itemRate(it) {
   if (it.kind === 'char') {
     const gacha = !!CHARACTERS[it.char].gacha;
-    const n = CHAR_ITEMS.filter(c => !!CHARACTERS[c.char].gacha === gacha).length;
+    if (!gacha && !starterPool().includes(it)) return 0;
+    const n = gacha ? CHAR_ITEMS.filter(c => CHARACTERS[c.char].gacha).length : starterPool().length;
     return (gacha ? GACHA_RATES.newChar : GACHA_RATES.starterChar) / n;
   }
   if (it.special) return 0;
@@ -238,6 +273,7 @@ function itemIcon(it, charId = Save.data.active) {
   if (it.kind === 'char') return `<div class="sprite">${slimeSVG(it.char, st, {})}</div>`;
   if (it.kind === 'color') return `<div class="sprite">${slimeSVG(it.only || charId, st, { colors: it.colors, rainbow: !!it.rainbow })}</div>`;
   if (it.kind === 'hat') return `<div class="sprite">${slimeSVG(charId, st, { hat: it.id.slice(2) })}</div>`;
+  if (it.kind === 'pet') return `<div class="sprite pet-icon"><svg viewBox="80 70 68 46" xmlns="http://www.w3.org/2000/svg"><g transform="translate(114,111) scale(1.5)">${PET_SVG[it.id.slice(2)]()}</g></svg></div>`;
   return `<div class="fx-icon" style="--fc:${it.colors[0]}">${it.icon}</div>`;
 }
 
@@ -319,7 +355,7 @@ Screens.gacha = {
   // かけらの こうかんじょ
   shopHtml() {
     const g = gachaData();
-    const chars = Object.keys(CHARACTERS).map(id => {
+    const chars = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].title || hasChar(id)).map(id => {
       const gacha = !!CHARACTERS[id].gacha;
       const price = CHAR_PRICE[gacha ? 'gacha' : 'starter'];
       const aw = awakenOf(id);
@@ -364,7 +400,7 @@ Screens.gacha = {
   // ラインナップ (ガチャずかん)
   listHtml() {
     const f = p => `${+(p * 100).toFixed(2)}%`;
-    const kinds = ['char', 'color', 'hat', 'fx'];
+    const kinds = ['char', 'color', 'hat', 'fx', 'pet'];
     const rars = ['SSR', 'SR', 'R', 'N'];
     const all = [...CHAR_ITEMS, ...POOL_ITEMS];
     // レア度 × しゅるいの 表
@@ -612,9 +648,9 @@ Screens.wardrobe = {
   },
 
   onKey(e) {
-    const tabs = ['color', 'hat', 'fx'];
+    const tabs = ['color', 'hat', 'fx', 'pet'];
     const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= 3) { this.tab = tabs[n - 1]; SFX.select(); this.render(); }
+    if (n >= 1 && n <= tabs.length) { this.tab = tabs[n - 1]; SFX.select(); this.render(); }
     if (e.key === 'Escape') App.show('home');
   },
 };

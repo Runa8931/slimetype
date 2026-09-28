@@ -31,12 +31,12 @@ Screens.battle = {
     this.ch = ch;
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
-    this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, evade: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
+    this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, evade: 0, reflect: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
     const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.k, 0.7)); // 難易度で HP が かわる
     this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
-    this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0;
+    this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0; this.tempo = 0; this.tempoMult = 1;
     this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
     // 新しい敵の特殊能力で使う状態
     this.shellUntil = 0; this.nextShell = 4000; this.nextRegen = 8000;
@@ -87,7 +87,7 @@ Screens.battle = {
     const box = $('#b-diff');
     if (!box) return;
     box.innerHTML = `<span>難易度</span>${BATTLE_DIFF_KEYS.map((k, i) => `<button class="${k === this.dk ? 'on' : ''}" data-k="${k}" style="--dc:${BATTLE_DIFFS[k].color}"><kbd>${i + 1}</kbd> ${BATTLE_DIFFS[k].name}</button>`).join('')}
-      <small>推奨 Lv.${this.ed.lv}・敵の 攻撃 ×${this.k.toFixed(2)}・HP ×${Math.pow(this.k, 0.7).toFixed(2)}${this.bd.reward > 1 ? `・経験値と コイン ×${this.bd.reward}` : ''} (${this.bd.note})</small>`;
+      <small>推奨 Lv.${this.ed.lv}・敵の 攻撃 ×${this.k.toFixed(2)}・HP ×${Math.pow(this.k, 0.7).toFixed(2)}${this.bd.reward > 1 ? `・コイン ×${this.bd.reward}` : ''} (${this.bd.note})</small>`;
     box.querySelectorAll('button').forEach(b => { b.onclick = () => this.pickDiff(b.dataset.k); });
   },
   pickDiff(k) {
@@ -166,6 +166,8 @@ Screens.battle = {
       this.p.shield > 0 ? `<i class="st shield">シールド×${this.p.shield}</i>` : '',
       this.p.barrier > 0 ? `<i class="st barrier">バリア×${this.p.barrier}</i>` : '',
       this.p.evade > 0 ? `<i class="st evade">かわす×${this.p.evade}</i>` : '',
+      this.p.reflect > 0 ? `<i class="st reflect">はね返し×${this.p.reflect}</i>` : '',
+      this.tempo > 0 ? `<i class="st boost">テンポ×${this.tempo}</i>` : '',
       this.p.boost > 1 ? '<i class="st boost">こうげきUP</i>' : '',
       this.raging() ? '<i class="st rage">いかり</i>' : '',
       this.streakBonus() > 0 ? `<i class="st boost">リズム+${Math.round(this.streakBonus() * 100)}%</i>` : '',
@@ -180,6 +182,7 @@ Screens.battle = {
       this.e.hp -= d;
       const ec = FX.center($('#b-esprite'));
       floatText(ec.x + (Math.random() - 0.5) * 30, ec.y - 30, d, 'dmg burn');
+      SFX.impact('burn');
       this.updateBars();
       if (this.e.hp <= 0) { this.win(); return; }
     }
@@ -465,6 +468,10 @@ Screens.battle = {
       this.streak = perfect ? this.streak + 1 : 0;
       dmg *= 1 + this.streakBonus();
     }
+    // おんぷる: 速く 打つほど 強い / ひっさつの あとは テンポアップ
+    if (this.ch.id === 'onpuru' && kps > this.ch.trait.speedFrom) dmg *= 1 + Math.min(this.ch.trait.speedMax, (kps - this.ch.trait.speedFrom) * this.ch.trait.speedStep);
+    const tempoHit = this.tempo > 0;
+    if (tempoHit) { dmg *= this.tempoMult; this.tempo--; }
     // メタルン: ながい お題ほど 強い
     if (this.ch.id === 'metarun' && keys > this.ch.trait.longFrom) dmg *= 1 + Math.min(this.ch.trait.longMax, (keys - this.ch.trait.longFrom) * this.ch.trait.longStep);
 
@@ -474,6 +481,8 @@ Screens.battle = {
       critRate = 0.1 + clamp((kps - 2) * 0.2, 0, this.ch.trait.critMax - 0.1);
       critMult = this.ch.trait.critMult;
     }
+    // ぴたりん: ノーミスの お題は かならず 会心
+    if (this.ch.id === 'pitarin' && perfect) { critRate = 1; critMult = this.ch.trait.perfectCrit; }
     const crit = Math.random() < critRate;
     if (crit) dmg *= critMult;
 
@@ -495,15 +504,17 @@ Screens.battle = {
       }
     }
 
-    this.playerAttackFx(dmg, { crit, boosted, armorMsg, perfect });
+    // ふつうと ちがう 攻撃の 音: りゅうまるの いかり / きらりの リズム (3 回 いじょう)
+    const sound = this.raging() ? 'rage' : this.ch.id === 'kirari' && this.streak >= 3 ? 'sparkle:' + this.streak : tempoHit ? 'beat' : null;
+    this.playerAttackFx(dmg, { crit, boosted, armorMsg, perfect, sound });
     // ふわり: ときどき もう 1 回 おいうち
     if (this.ch.id === 'fuwari' && Math.random() < this.ch.trait.double) {
-      this.after(() => { if (this.state === 'run') { this.playerAttackFx(Math.max(1, Math.round(dmg * 0.5)), { crit: false, boosted: false, armorMsg: '', perfect: false }); this.log('おいかぜで おいうち！', 'good'); } }, 180);
+      this.after(() => { if (this.state === 'run') { this.playerAttackFx(Math.max(1, Math.round(dmg * 0.5)), { crit: false, boosted: false, armorMsg: '', perfect: false, sound: 'swish' }); this.log('おいかぜで おいうち！', 'good'); } }, 180);
     }
     this.nextWord();
   },
 
-  playerAttackFx(dmg, { crit, boosted, armorMsg, perfect }) {
+  playerAttackFx(dmg, { crit, boosted, armorMsg, perfect, sound = null }) {
     const col = this.ch.def.colors;
     const ps = $('#b-psprite');
     replayAnim(ps, 'lunge-r', 350);
@@ -523,6 +534,8 @@ Screens.battle = {
       koorin: { color: '#d0ebff', size: 10, arc: -50, frames: 18 },
       fuwari: { color: '#96f2d7', size: 8, arc: 40, frames: 12 },
       metarun: { color: '#868e96', size: 14, arc: -20, frames: 22 },
+      onpuru: { color: '#ff8cc6', size: 9, arc: 60, frames: 14 },
+      pitarin: { color: '#ffe066', size: 8, arc: -10, frames: 12 },
     };
     // きせかえの エフェクト: 攻撃の 弾が その形の 尾を ひいて 飛び、当たると はじける
     const f = fxStyle(this.ch.id);
@@ -534,7 +547,7 @@ Screens.battle = {
         if (this.state !== 'run' && this.state !== 'pause') return;
         if (this.ch.id === 'piriri' || (f && f.bolt)) FX.bolt(to.x - 60, to.y - 40, to.x, to.y, '#fff27a', 10);
         if (f) FX.burst(to.x, to.y, { colors: f.colors, shape: f.shape, text: f.text, count: 14, speed: 6, size: f.size, gravity: f.gravity ?? 0.12 });
-        this.hitEnemy(dmg, { crit, colors: f ? f.colors : [col.main, col.light, '#fff'] });
+        this.hitEnemy(dmg, { crit, colors: f ? f.colors : [col.main, col.light, '#fff'], sound });
         if (boosted) this.log('アクアパワーで こうげきが 1.5ばい！', 'good');
         if (armorMsg === 'block') this.log('いしのよろいで ダメージがへった… (コンボ30で貫通)', 'enemy');
         if (armorMsg === 'break' && Math.random() < 0.4) this.log('コンボの力で よろいを つらぬいた！', 'good');
@@ -543,8 +556,9 @@ Screens.battle = {
     });
   },
 
-  hitEnemy(dmg, { crit = false, colors = ['#fff'], big = false } = {}) {
-    if (this.e.breakUntil > this.elapsed) dmg = Math.round(dmg * 1.3); // メタルンの ブレイク
+  hitEnemy(dmg, { crit = false, colors = ['#fff'], big = false, sound = null } = {}) {
+    const broken = this.e.breakUntil > this.elapsed;
+    if (broken) dmg = Math.round(dmg * 1.3); // メタルンの ブレイク
     const es = $('#b-esprite');
     const c = FX.center(es);
     this.e.hp -= dmg;
@@ -552,8 +566,12 @@ Screens.battle = {
     FX.burst(c.x, c.y, { colors, count: crit || big ? 40 : 18, speed: crit || big ? 8 : 5, size: crit ? 6 : 4 });
     FX.ring(c.x, c.y, crit ? '#ffd23f' : '#fff', crit ? 110 : 70);
     floatText(c.x + (Math.random() - 0.5) * 40, c.y - 40, dmg, crit ? 'dmg crit' : big ? 'dmg big' : 'dmg');
+    // ふつうと ちがう 当たり方は 音も かえる (ブレイク中は おもい 音)
+    const special = sound || (broken ? 'heavy' : null);
+    if (special) SFX.impact(special);
     if (crit) { floatText(c.x, c.y - 90, 'かいしん！', 'crit-label'); SFX.crit(); shake($('#arena')); }
-    else SFX.hit();
+    else if (!special) SFX.hit();
+    if (broken && !big) shake($('#arena'));
     if (big) shake($('#arena'), true);
     this.updateBars();
     this.checkPhase();
@@ -621,6 +639,7 @@ Screens.battle = {
     const col = ch.def.colors;
     const sk = ch.skill;
     cutin(sk.name, ch.name, col.main, slimeSVG(ch.id, ch.stage));
+    SFX.skill(ch.id); // キャラごとの ひっさつの 音
     const pc = FX.center($('#b-psprite'));
 
     if (ch.id === 'purun') {
@@ -666,7 +685,7 @@ Screens.battle = {
     }
 
     // ほむら・もりりん・かげまる・りゅうまる・きらり: 攻撃 + それぞれの効果
-    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun'].includes(ch.id)) {
+    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun', 'onpuru', 'pitarin'].includes(ch.id)) {
       this.after(() => {
         if (this.state !== 'run') return;
         const ec = FX.center($('#b-esprite'));
@@ -677,14 +696,15 @@ Screens.battle = {
         dmg = Math.round(dmg);
         const fxCol = { homura: ['#ff6b35', '#ffe066', '#fff'], moririn: ['#51cf66', '#d3f9d8', '#fff'], kagemaru: ['#7048e8', '#1a1a2e', '#e5dbff'],
           ryumaru: ['#ff922b', '#ffd43b', '#fff'], kirari: ['#f783ac', '#fff3bf', '#99e9f2'],
-          koorin: ['#a5d8ff', '#e7f5ff', '#fff'], fuwari: ['#96f2d7', '#e6fcf5', '#fff'], metarun: ['#adb5bd', '#ffd43b', '#fff'] }[ch.id];
+          koorin: ['#a5d8ff', '#e7f5ff', '#fff'], fuwari: ['#96f2d7', '#e6fcf5', '#fff'], metarun: ['#adb5bd', '#ffd43b', '#fff'],
+          onpuru: ['#ff8cc6', '#ffe066', '#fff'], pitarin: ['#91a7ff', '#ffe066', '#fff'] }[ch.id];
         for (let i = 0; i < 16; i++) {
           this.after(() => this.proj({ x: pc.x + 20, y: pc.y + (Math.random() - 0.5) * 40 }, { x: ec.x + (Math.random() - 0.5) * 60, y: ec.y + (Math.random() - 0.5) * 60 },
             { color: fxCol[i % 3], size: 5 + Math.random() * 7, frames: 16, arc: (Math.random() - 0.5) * 100, trail: false }), i * 20);
         }
         this.after(() => {
           if (this.state !== 'run') return;
-          this.hitEnemy(dmg, { big: true, colors: fxCol });
+          this.hitEnemy(dmg, { big: true, colors: fxCol, sound: 'skill-' + ch.id });
           if (ch.id === 'homura') { this.e.burnUntil = this.elapsed + sk.burn * 1000; this.e.nextBurn = this.elapsed + 1000; this.log(`${sk.name}！ ${dmg} のダメージ！ 敵が やけどした！`, 'good'); }
           if (ch.id === 'moririn') {
             const h = Math.round(this.p.max * sk.heal);
@@ -697,6 +717,8 @@ Screens.battle = {
           if (ch.id === 'ryumaru') this.log(`${sk.name}！ ${dmg} のダメージ！`, 'good');
           if (ch.id === 'koorin') { this.e.chillUntil = this.elapsed + sk.chill * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.chill} 秒 こごえさせた！`, 'good'); }
           if (ch.id === 'fuwari') { this.p.evade = sk.evade; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの 攻撃を ${sk.evade} 回 かわす！`, 'good'); }
+          if (ch.id === 'onpuru') { this.tempo = sk.tempo; this.tempoMult = sk.tempoMult; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの ${sk.tempo} お題が ${sk.tempoMult} 倍！`, 'good'); }
+          if (ch.id === 'pitarin') { this.p.reflect = sk.reflect; this.log(`${sk.name}！ ${dmg} ダメージ、敵の 攻撃を ${sk.reflect} 回 はね返す！`, 'good'); }
           if (ch.id === 'metarun') { this.e.breakUntil = this.elapsed + sk.brk * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.brk} 秒 ブレイク！`, 'good'); }
           if (ch.id === 'kirari') {
             if (sk.barrier) { this.p.barrier = Math.max(this.p.barrier, sk.barrier); $('#b-player').classList.add('bubbled'); }
@@ -818,6 +840,14 @@ Screens.battle = {
       floatText(pc.x, pc.y - 50, 'バリア！', 'guard');
       return;
     }
+    // ぴたりん: 敵の 攻撃を はね返す
+    if (this.p.reflect > 0) {
+      this.p.reflect--;
+      floatText(pc.x, pc.y - 50, 'はね返した！', 'guard');
+      const ec = FX.center($('#b-esprite'));
+      this.proj(pc, ec, { color: '#ffe066', size: 12, frames: 14, arc: -30, onHit: () => { if (this.state === 'run') { this.hitEnemy(dmg, { colors: ['#ffe066', '#91a7ff', '#fff'], sound: 'reflect' }); this.log(`はね返して ${dmg} ダメージ！`, 'good'); } } });
+      return;
+    }
     // ふわり: ひっさつで 攻撃を かわす
     if (this.p.evade > 0) {
       this.p.evade--;
@@ -851,7 +881,7 @@ Screens.battle = {
       const ec = FX.center($('#b-esprite'));
       this.proj(pc, ec, {
         color: this.ch.def.colors.dark, size: 14, frames: 18, arc: -60,
-        onHit: () => { if (this.state === 'run') { this.hitEnemy(back, { colors: ['#b08a64', '#9be7a0', '#fff'] }); this.log(`はんげき！ ${back} ダメージ！`, 'good'); } },
+        onHit: () => { if (this.state === 'run') { this.hitEnemy(back, { colors: ['#b08a64', '#9be7a0', '#fff'], sound: 'rock' }); this.log(`はんげき！ ${back} ダメージ！`, 'good'); } },
       });
       return;
     }
@@ -862,6 +892,7 @@ Screens.battle = {
       const ec = FX.center($('#b-esprite'));
       FX.burst(ec.x, ec.y, { colors: ['#d0ebff', '#fff', '#74c0fc'], count: 18, speed: 5, shape: 'snow', size: 6 });
       this.log('ひんやり やりかえした！ 敵の 攻撃が おくれる', 'good');
+      SFX.impact('ice');
     }
     // 状態異常への強さ (進化で手に入る)
     const statusCut = this.ch.id === 'gotsun' ? (this.ch.trait.freezeImmune ? 1 : 0.4) : (this.ch.trait.statusCut || 0);
@@ -940,9 +971,9 @@ Screens.battle = {
     const secs = Math.max(1, this.elapsed / 1000);
     // 格下をたおしたときは 経験値がへる (レベル差の補正)
     const gap = levelGapMult(this.ed.lv, this.ch.L);
-    const rw = this.bd.reward; // 難易度が 高いほど 経験値と コインが ふえる
-    const typing = Math.round(typingExp(this.correct, this.miss, secs, 1, this.ch.L) * 0.5 * gap * rw);
-    const bonus = won ? Math.floor(this.ed.exp * this.ed.lv / 5 * gap * rw) : 0;
+    const rw = this.bd.reward; // 難易度が 高いほど コインが ふえる (経験値は どの 難易度でも おなじ)
+    const typing = Math.round(typingExp(this.correct, this.miss, secs, 0.3, this.ch.L) * gap);
+    const bonus = won ? Math.floor(stageExp(this.idx) * gap) : 0;
     if (won) {
       Save.data.bbest = Save.data.bbest || {};
       Save.data.bbest[this.idx] = Math.max(stageBest(this.idx), BATTLE_DIFF_KEYS.indexOf(this.dk) + 1);
@@ -965,8 +996,7 @@ Screens.battle = {
       kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs),
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
       bdiff: this.dk, coins, coinNote: `${won ? `勝利 ${winCoins}` : `打鍵 ${winCoins}`}${rw > 1 ? ` (${this.bd.name} ×${rw})` : ''}${firstCoins ? ` + はじめて たおした ${firstCoins}` : ''}${gap < 1 ? '・格下なので へった' : ''}`,
-      expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (敵の基礎EXP ${this.ed.exp} × Lv.${this.ed.lv} ÷ 5)` : '勝利ボーナスなし',
-        ...(rw > 1 ? [`難易度 ${this.bd.name} ×${rw}`] : []),
+      expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (Lv.${this.ed.lv} から つぎの ステージの レベルまでの 6 わり)` : '勝利ボーナスなし',
         `レベル差の補正 ×${gap.toFixed(2)} (敵 Lv.${this.ed.lv} / 自分 Lv.${this.ch.L}${gap < 1 ? '・格下なので へった' : gap > 1 ? '・格上なので ふえた' : ''})`],
     });
   },

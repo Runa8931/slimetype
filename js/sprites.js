@@ -50,6 +50,16 @@ function slimeSVG(id, stage = 0, look) {
       'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
       'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
     ],
+    onpuru: [
+      'M60,34 C88,34 104,56 104,80 C104,98 92,104 80,104 L40,104 C28,104 16,98 16,80 C16,56 32,34 60,34 Z',
+      'M60,30 C92,30 108,54 108,80 C108,100 94,105 80,105 L40,105 C26,105 12,100 12,80 C12,54 28,30 60,30 Z',
+      'M60,30 C92,30 108,54 108,80 C108,100 94,105 80,105 L40,105 C26,105 12,100 12,80 C12,54 28,30 60,30 Z',
+    ],
+    pitarin: [
+      'M60,30 C86,30 104,50 104,76 C104,96 90,104 76,104 L44,104 C30,104 16,96 16,76 C16,50 34,30 60,30 Z',
+      'M60,26 C90,26 108,48 108,76 C108,98 92,105 76,105 L44,105 C28,105 12,98 12,76 C12,48 30,26 60,26 Z',
+      'M60,26 C90,26 108,48 108,76 C108,98 92,105 76,105 L44,105 C28,105 12,98 12,76 C12,48 30,26 60,26 Z',
+    ],
     koorin: [
       'M60,32 C90,32 106,56 106,80 C106,98 94,104 82,104 L38,104 C26,104 14,98 14,80 C14,56 30,32 60,32 Z',
       'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
@@ -164,6 +174,22 @@ function slimeSVG(id, stage = 0, look) {
     if (stage >= 1) behind += `<path d="M6,52 L16,44 L16,72 L6,66 Z M114,52 L104,44 L104,72 L114,66 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round"/>`;
   }
 
+  if (id === 'onpuru') {
+    // あたまから のびる おんぷの しっぽ と ヘッドホン
+    behind += `<path d="M84,44 L84,6 C94,10 102,16 104,26 C98,20 92,18 88,18 L88,44 Z" fill="${c.dark}"/>`;
+    front += `<path d="M18,70 C18,40 102,40 102,70" fill="none" stroke="#343a40" stroke-width="5" stroke-linecap="round"/>
+      <rect x="8" y="62" width="14" height="22" rx="6" fill="${c.accent}" stroke="#343a40" stroke-width="2.5"/>
+      <rect x="98" y="62" width="14" height="22" rx="6" fill="${c.accent}" stroke="#343a40" stroke-width="2.5"/>
+      <circle cx="36" cy="86" r="5" fill="#ff8787" opacity=".6"/><circle cx="84" cy="86" r="5" fill="#ff8787" opacity=".6"/>`;
+    if (stage >= 1) front += `<g class="orbit">${[[4, 34, '♪'], [116, 40, '♫'], [110, 12, '♪']].map(([x, y, t]) => `<text x="${x}" y="${y}" font-size="16" font-weight="bold" fill="${c.dark}" text-anchor="middle">${t}</text>`).join('')}</g>`;
+  }
+  if (id === 'pitarin') {
+    // うしろに 大きな みかづき、おでこに ほし
+    behind += `<path d="M24,40 C10,10 40,-12 70,-2 C48,-2 32,14 34,40 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round" class="spark-soft"/>`;
+    front += `<path d="M60,44 L62,50 L68,50 L63,54 L65,60 L60,56 L55,60 L57,54 L52,50 L58,50 Z" fill="${c.accent}"/>`;
+    if (stage >= 1) front += `<circle cx="14" cy="96" r="2.5" fill="#fff" class="spark"/><circle cx="108" cy="92" r="2" fill="#fff" class="spark"/><circle cx="100" cy="30" r="2.5" fill="${c.accent}" class="spark"/>`;
+  }
+
   // ---- 1 段階目の進化: 見た目がはっきり変わる飾り ----
   if (stage >= 1) {
     if (id === 'purun') {
@@ -194,7 +220,7 @@ function slimeSVG(id, stage = 0, look) {
 
   // ---- 最終進化: 王冠 + オーラ ----
   if (stage >= 2) {
-    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10 }[id] ?? 6;
+    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10, onpuru: 8, pitarin: 6 }[id] ?? 6;
     // ぼうしを かぶっているときは 王冠を はずす
     if (!look.hat) front += `<g transform="translate(60,${crownY})">
       <path d="M-20,18 L-22,0 L-11,9 L0,-6 L11,9 L22,0 L20,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
@@ -263,20 +289,21 @@ function slimeSVG(id, stage = 0, look) {
       <ellipse cx="40" cy="56" rx="9" ry="5" fill="#fff" opacity=".7" transform="rotate(-30 40 56)"/>
       <circle cx="30" cy="66" r="3" fill="#fff" opacity=".6"/>
       ${mid}
-      <g class="eyes">
+      ${FACES[id] ? FACES[id](c, stage) : `<g class="eyes">
         <ellipse cx="46" cy="72" rx="6" ry="8" fill="#1d1d2b"/><ellipse cx="74" cy="72" rx="6" ry="8" fill="#1d1d2b"/>
         <circle cx="48" cy="69" r="2.4" fill="#fff"/><circle cx="76" cy="69" r="2.4" fill="#fff"/>
       </g>
-      <path d="M52,86 Q60,94 68,86" fill="none" stroke="#1d1d2b" stroke-width="3" stroke-linecap="round"/>
+      <path d="M52,86 Q60,94 68,86" fill="none" stroke="#1d1d2b" stroke-width="3" stroke-linecap="round"/>`}
       ${front}
     </g>
+    ${look.pet && PET_SVG[look.pet] ? `<g class="pet" transform="translate(114,111) scale(1.5)">${PET_SVG[look.pet]()}</g>` : ''}
   </svg>`;
 }
 
 const RAINBOW = ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa', '#f783ac'];
 
 // 頭の てっぺんの 高さ [最初の すがた, 進化後]。ぼうしの 位置に つかう
-const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32] };
+const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32], onpuru: [34, 30], pitarin: [30, 26] };
 
 // ぼうし・アクセサリーの絵 (下のはしが y=0。eyes は 目の 高さに つける)
 const HAT_SVG = {
@@ -291,7 +318,40 @@ const HAT_SVG = {
   tiara: { draw: () => `<path d="M-22,2 L-17,-10 L-9,-3 L0,-18 L9,-3 L17,-10 L22,2 Z" fill="#e9ecef" stroke="#868e96" stroke-width="2" stroke-linejoin="round"/><circle cx="0" cy="-8" r="3.8" fill="#f783ac"/><circle cx="-13" cy="-3" r="2.4" fill="#74c0fc"/><circle cx="13" cy="-3" r="2.4" fill="#74c0fc"/><circle cx="0" cy="-18" r="2" fill="#fff" class="spark"/>` },
   pirate: { draw: () => `<path d="M-34,2 C-24,-30 24,-30 34,2 C20,-4 -20,-4 -34,2 Z" fill="#212529" stroke="#000" stroke-width="2"/><path d="M-30,-2 C-18,-8 18,-8 30,-2" stroke="#ffd43b" stroke-width="2.5" fill="none"/><circle cx="0" cy="-16" r="5" fill="#fff"/><path d="M-7,-8 L7,-3 M7,-8 L-7,-3" stroke="#fff" stroke-width="2"/><circle cx="-2" cy="-17" r="1.3" fill="#000"/><circle cx="2" cy="-17" r="1.3" fill="#000"/>` },
   starcrown: { draw: () => `<path d="M-24,2 L-26,-18 L-13,-8 L0,-26 L13,-8 L26,-18 L24,2 Z" fill="#ffd43b" stroke="#b8860b" stroke-width="2.5" stroke-linejoin="round"/>${[[-26, -18, 5], [0, -26, 7], [26, -18, 5]].map(([x, y, r]) => `<path transform="translate(${x},${y - r}) scale(${r / 10})" d="M0,-11 L3.2,-3.4 L11,-3.4 L4.8,1.8 L7,10 L0,5.2 L-7,10 L-4.8,1.8 L-11,-3.4 L-3.2,-3.4 Z" fill="#fff3bf" stroke="#e67700" stroke-width="2.5"/>`).join('')}<circle cx="0" cy="-6" r="4" fill="#4dabf7"/><circle cx="-14" cy="-3" r="2.6" fill="#ff6b6b"/><circle cx="14" cy="-3" r="2.6" fill="#69db7c"/><circle cx="-30" cy="-30" r="2.4" fill="#fff" class="spark"/><circle cx="30" cy="-34" r="2" fill="#fff" class="spark"/>` },
+  flower: { draw: () => `<g transform="translate(-14,4)">${[0, 72, 144, 216, 288].map(a => `<ellipse cx="${Math.cos(a * Math.PI / 180) * 6}" cy="${Math.sin(a * Math.PI / 180) * 6}" rx="5" ry="4" fill="#ffa8c5" stroke="#e64980" stroke-width="1.2" transform="rotate(${a} ${Math.cos(a * Math.PI / 180) * 6} ${Math.sin(a * Math.PI / 180) * 6})"/>`).join('')}<circle r="3.5" fill="#ffd43b"/></g><path d="M-4,6 C4,2 10,2 16,6" stroke="#2b8a3e" stroke-width="2.5" fill="none"/>` },
+  cap: { draw: () => `<path d="M-22,2 C-22,-18 20,-18 20,2 Z" fill="#228be6" stroke="#1864ab" stroke-width="2"/><path d="M14,0 L36,4 L34,8 L12,4 Z" fill="#1971c2" stroke="#1864ab" stroke-width="1.5"/><circle cx="-1" cy="-15" r="2.5" fill="#fff"/><path d="M-10,-6 L8,-6" stroke="#fff" stroke-width="2" opacity=".6"/>` },
+  chef: { draw: () => `<rect x="-16" y="-10" width="32" height="12" rx="2" fill="#fff" stroke="#ced4da" stroke-width="2"/><circle cx="-10" cy="-18" r="10" fill="#fff" stroke="#ced4da" stroke-width="2"/><circle cx="10" cy="-18" r="10" fill="#fff" stroke="#ced4da" stroke-width="2"/><circle cx="0" cy="-24" r="11" fill="#fff" stroke="#ced4da" stroke-width="2"/><rect x="-15" y="-12" width="30" height="6" fill="#fff"/>` },
+  bunny: { draw: () => `<path d="M-14,4 C-22,-20 -18,-40 -10,-40 C-2,-40 -4,-16 -6,4 Z" fill="#fff" stroke="#ced4da" stroke-width="2"/><path d="M-12,-2 C-16,-18 -14,-32 -10,-32 C-7,-32 -8,-16 -9,-2 Z" fill="#ffc9de"/><path d="M14,4 C22,-20 18,-40 10,-40 C2,-40 4,-16 6,4 Z" fill="#fff" stroke="#ced4da" stroke-width="2"/><path d="M12,-2 C16,-18 14,-32 10,-32 C7,-32 8,-16 9,-2 Z" fill="#ffc9de"/>` },
+  santa: { draw: () => `<path d="M-22,0 C-18,-26 10,-34 26,-18 C20,-18 14,-12 16,0 Z" fill="#e03131" stroke="#a61e1e" stroke-width="2"/><circle cx="28" cy="-18" r="6" fill="#fff" stroke="#dee2e6" stroke-width="1.5"/><rect x="-25" y="-4" width="44" height="9" rx="4.5" fill="#fff" stroke="#dee2e6" stroke-width="1.5"/>` },
+  dragonhorn: { draw: () => `<path d="M-18,6 C-26,-8 -30,-24 -22,-40 C-18,-28 -12,-16 -8,2 Z" fill="#ffd43b" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/><path d="M18,6 C26,-8 30,-24 22,-40 C18,-28 12,-16 8,2 Z" fill="#ffd43b" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/><path d="M-22,-16 L-14,-18 M-24,-26 L-17,-28 M22,-16 L14,-18 M24,-26 L17,-28" stroke="#b8860b" stroke-width="1.5"/><circle cx="-22" cy="-40" r="2" fill="#fff" class="spark"/>` },
   kabuto: { draw: () => `<path d="M-28,6 C-28,-24 28,-24 28,6 L22,6 C22,-14 -22,-14 -22,6 Z" fill="#343a40" stroke="#000" stroke-width="2"/><path d="M-28,2 L-36,10 L-24,8 Z M28,2 L36,10 L24,8 Z" fill="#495057" stroke="#000" stroke-width="1.5"/><path d="M-4,-14 C-12,-26 -22,-40 -20,-52 C-14,-40 -6,-30 2,-18 M4,-14 C12,-26 22,-40 20,-52 C14,-40 6,-30 -2,-18" fill="#ffd43b" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/><circle cx="0" cy="-15" r="6" fill="#ffd43b" stroke="#b8860b" stroke-width="2"/><circle cx="0" cy="-15" r="2.5" fill="#e03131"/>` },
+};
+
+// おとも: スライムの 右下に いる 小さな なかま (-14〜14 くらいの 大きさ、下の はしが y=0)
+const PET_SVG = {
+  chick: () => `<ellipse cx="0" cy="-9" rx="10" ry="9" fill="#ffe066" stroke="#e67700" stroke-width="1.5"/><circle cx="-3" cy="-12" r="1.6" fill="#1d1d2b"/><circle cx="3" cy="-12" r="1.6" fill="#1d1d2b"/><path d="M-2,-8 L2,-8 L0,-5 Z" fill="#ff922b"/><path d="M-1,-18 L1,-22 L2,-18" stroke="#e67700" stroke-width="1.5" fill="none"/>`,
+  cat: () => `<ellipse cx="0" cy="-8" rx="11" ry="8" fill="#ffa94d" stroke="#d9480f" stroke-width="1.5"/><path d="M-9,-13 L-7,-21 L-2,-15 Z M9,-13 L7,-21 L2,-15 Z" fill="#ffa94d" stroke="#d9480f" stroke-width="1.5" stroke-linejoin="round"/><circle cx="-4" cy="-9" r="1.6" fill="#1d1d2b"/><circle cx="4" cy="-9" r="1.6" fill="#1d1d2b"/><path d="M-2,-5 Q0,-3 2,-5" stroke="#1d1d2b" stroke-width="1.2" fill="none"/><path d="M11,-6 C17,-8 18,-16 14,-18" stroke="#d9480f" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
+  bunny: () => `<ellipse cx="0" cy="-8" rx="10" ry="8" fill="#fff" stroke="#adb5bd" stroke-width="1.5"/><ellipse cx="-4" cy="-20" rx="3" ry="8" fill="#fff" stroke="#adb5bd" stroke-width="1.5"/><ellipse cx="4" cy="-20" rx="3" ry="8" fill="#fff" stroke="#adb5bd" stroke-width="1.5"/><circle cx="-3" cy="-9" r="1.6" fill="#1d1d2b"/><circle cx="3" cy="-9" r="1.6" fill="#1d1d2b"/><circle cx="0" cy="-6" r="1.2" fill="#ff8fab"/>`,
+  bat: () => `<g class="float"><path d="M-4,-12 C-10,-20 -18,-18 -20,-12 C-16,-12 -14,-8 -14,-6 C-10,-8 -6,-8 -4,-6 Z M4,-12 C10,-20 18,-18 20,-12 C16,-12 14,-8 14,-6 C10,-8 6,-8 4,-6 Z" fill="#6d4aa8" stroke="#2b1a4a" stroke-width="1.2"/><circle cx="0" cy="-10" r="6" fill="#8c6cc4" stroke="#2b1a4a" stroke-width="1.2"/><circle cx="-2" cy="-11" r="1.3" fill="#ffe14d"/><circle cx="2" cy="-11" r="1.3" fill="#ffe14d"/></g>`,
+  ghost: () => `<g class="float"><path d="M-9,-2 L-9,-14 C-9,-22 9,-22 9,-14 L9,-2 L6,-5 L3,-2 L0,-5 L-3,-2 L-6,-5 Z" fill="#f8f9fa" stroke="#adb5bd" stroke-width="1.5" opacity=".9"/><ellipse cx="-3" cy="-13" rx="1.6" ry="2.2" fill="#1d1d2b"/><ellipse cx="3" cy="-13" rx="1.6" ry="2.2" fill="#1d1d2b"/></g>`,
+  robo: () => `<rect x="-9" y="-16" width="18" height="15" rx="3" fill="#ced4da" stroke="#495057" stroke-width="1.5"/><rect x="-6" y="-13" width="12" height="6" rx="2" fill="#212529"/><circle cx="-3" cy="-10" r="1.4" fill="#63e6be"/><circle cx="3" cy="-10" r="1.4" fill="#63e6be"/><path d="M0,-16 L0,-21" stroke="#495057" stroke-width="1.5"/><circle cx="0" cy="-22" r="2" fill="#ff6b6b" class="spark-soft"/>`,
+  fairy: () => `<g class="float"><path d="M-2,-12 C-10,-20 -16,-14 -12,-8 Z M2,-12 C10,-20 16,-14 12,-8 Z" fill="#c5f6fa" stroke="#3bc9db" stroke-width="1" opacity=".9"/><path transform="translate(0,-11) scale(.7)" d="M0,-11 L3.2,-3.4 L11,-3.4 L4.8,1.8 L7,10 L0,5.2 L-7,10 L-4.8,1.8 L-11,-3.4 L-3.2,-3.4 Z" fill="#ffe066" stroke="#e67700" stroke-width="1.5"/><circle cx="0" cy="-10" r="1" fill="#1d1d2b"/></g>`,
+  dragon: () => `<path d="M8,-6 C16,-6 18,-12 16,-16 L20,-14 C20,-6 16,-2 8,-2 Z" fill="#40c057" stroke="#2b8a3e" stroke-width="1.2"/><ellipse cx="0" cy="-8" rx="9" ry="7" fill="#51cf66" stroke="#2b8a3e" stroke-width="1.5"/><path d="M-4,-14 L-6,-20 L-1,-15 Z M4,-14 L6,-20 L1,-15 Z" fill="#ffe066" stroke="#e67700" stroke-width="1"/><path d="M-8,-10 C-16,-18 -14,-4 -8,-6 Z" fill="#96f2d7" stroke="#2b8a3e" stroke-width="1"/><circle cx="-3" cy="-9" r="1.5" fill="#1d1d2b"/><circle cx="3" cy="-9" r="1.5" fill="#1d1d2b"/><circle cx="16" cy="-20" r="1.5" fill="#ff922b" class="spark"/>`,
+};
+
+// キャラごとの 顔 (目と 口)。ない キャラは いつもの まるい 目
+const FACES = {
+  // おんぷる: にっこり とじた 目 + うたっている 口
+  onpuru: () => `<g class="eyes"><path d="M38,72 Q46,62 54,72" fill="none" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/>
+      <path d="M66,72 Q74,62 82,72" fill="none" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/></g>
+    <ellipse cx="60" cy="88" rx="7" ry="8" fill="#1d1d2b"/><ellipse cx="60" cy="91" rx="4" ry="3.5" fill="#ff8787"/>`,
+  // ぴたりん: はんぶん まぶたの おりた おちついた 目 + すこし 口角が 上がった 口
+  pitarin: c => `<g class="eyes">
+      <ellipse cx="46" cy="72" rx="7" ry="7" fill="#1d1d2b"/><ellipse cx="74" cy="72" rx="7" ry="7" fill="#1d1d2b"/>
+      <path d="M38,71 L54,71 L54,63 L38,63 Z M66,71 L82,71 L82,63 L66,63 Z" fill="${c.main}"/>
+      <path d="M38,71 L54,71 M66,71 L82,71" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="49" cy="74" r="2" fill="${c.accent}"/><circle cx="77" cy="74" r="2" fill="${c.accent}"/></g>
+    <path d="M54,87 Q62,91 68,85" fill="none" stroke="#1d1d2b" stroke-width="3" stroke-linecap="round"/>`,
 };
 
 // SVG 文字列をキャンバスで描ける画像に変換する

@@ -105,9 +105,11 @@ const SV_WEAPONS = {
   tornado: { name: 'たつまき', icon: '🌪️', color: '#96f2d7', desc: '敵を まきこむ たつまきを 生みだす' },
   icicle: { name: 'つららのあめ', icon: '🧊', color: '#74c0fc', desc: '近くの敵に つららを 落として おそくする' },
   wind: { name: 'かまいたち', icon: '🍃', color: '#63e6be', desc: '風の刃を まわり ぜんぶに とばす (つらぬく)' },
+  sonic: { name: 'ソニックウェーブ', icon: '🎵', color: '#ff8cc6', desc: '音の 輪を 広げて まわりの 敵を はじく' },
+  arrow: { name: 'つきのや', icon: '🏹', color: '#ffe066', desc: '近くで いちばん HP の 多い 敵を ねらう 強い 矢' },
   drill: { name: 'ドリル', icon: '🔩', color: '#adb5bd', desc: '近くの敵へ ドリルを うちだす。どこまでも つらぬく' },
 };
-const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill' };
+const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill', onpuru: 'sonic', pitarin: 'arrow' };
 
 // その 難易度が ぼうけんのとびらで ひらいているか (かんたんは さいしょから)
 function svDiffOpen(k) { return k === 'easy' || doorOpen('sv_' + k); }
@@ -126,6 +128,8 @@ function svWeaponStat(id, lv) {
     case 'meteor': return { cd: 3.2 - 0.3 * i, count: [1, 1, 2, 2, 3][i], dmg: 60 + 16 * i, radius: 95 + 8 * i };
     case 'icicle': return { cd: 1.6 - 0.12 * i, count: [2, 3, 3, 4, 5][i], dmg: 18 + 5 * i, area: 42 + 4 * i, slow: 1.2 + 0.2 * i };
     case 'wind': return { cd: 1.3 - 0.08 * i, count: [3, 4, 5, 6, 8][i], dmg: 11 + 3 * i, pierce: 3 };
+    case 'sonic': return { cd: 1.5 - 0.1 * i, radius: 110 + 14 * i, dmg: 12 + 4 * i, rings: [1, 1, 2, 2, 3][i] };
+    case 'arrow': return { cd: 1.4 - 0.1 * i, count: [1, 1, 2, 2, 3][i], dmg: 45 + 12 * i };
     case 'drill': return { cd: 2.0 - 0.15 * i, count: [1, 1, 2, 2, 3][i], dmg: 30 + 8 * i };
     case 'tornado': return { cd: 3.4 - 0.25 * i, count: [1, 1, 2, 2, 3][i], dmg: 7 + 2 * i, radius: 52 + 5 * i, life: 3 + 0.3 * i };
   }
@@ -170,6 +174,7 @@ Screens.survival = {
     let speed = 175 * (0.85 + base.spd / 300);
     // とくせいは 進化すると強くなる
     if (this.ch.id === 'piriri') speed *= SV_CHAR.piriri.speed[this.ch.stage];
+    if (this.ch.id === 'onpuru') speed *= SV_CHAR.onpuru.speed[this.ch.stage];
     this.p = { x: 0, y: 0, hp: max, max, speed, face: 1, dir: { x: 1, y: 0 }, inv: 0, regenT: 0, moving: false, slowUntil: 0 };
     this.dmgMult = 1 + (st.atk - 5) / 60;
     // ほむら: 武器のダメージが上がる (進化で もっと上がる)
@@ -626,6 +631,34 @@ Screens.survival = {
       SFX.noise(0.12, { vol: 0.04, filter: 2200 });
       return true;
     }
+    if (id === 'sonic') {
+      // 音の 輪: すこし ずつ おくれて 何重にも 広がる
+      for (let k = 0; k < s.rings; k++) {
+        setTimeout(() => {
+          if (this.state !== 'run') return;
+          const q = this.p;
+          this.fx.push({ kind: 'ring', x: q.x, y: q.y, r0: 20, r1: s.radius, life: 0.4, max: 0.4, color: '#ff8cc6', width: 7 });
+          this.fx.push({ kind: 'ring', x: q.x, y: q.y, r0: 10, r1: s.radius * 0.7, life: 0.35, max: 0.35, color: '#ffe066', width: 4 });
+          for (const e of this.enemies) {
+            const d = Math.hypot(e.x - q.x, e.y - q.y);
+            if (d < s.radius + e.r) this.hurt(e, s.dmg, (e.x - q.x) / (d || 1) * 320, (e.y - q.y) / (d || 1) * 320, '#ff8cc6');
+          }
+          SFX.tone(660 + k * 220, 0.08, { type: 'triangle', vol: 0.025 });
+        }, k * 160);
+      }
+      return true;
+    }
+    if (id === 'arrow') {
+      const near = this.enemies.filter(e => Math.hypot(e.x - p.x, e.y - p.y) < 650).sort((a, b) => b.hp - a.hp);
+      if (!near.length) return false;
+      for (let i = 0; i < s.count; i++) {
+        const e = near[i % near.length];
+        const a = Math.atan2(e.y - p.y, e.x - p.x);
+        this.shots.push({ kind: 'arrow', x: p.x, y: p.y, vx: Math.cos(a) * 760, vy: Math.sin(a) * 760, r: 12, dmg: s.dmg, pierce: 1, life: 1.2, hit: new Set(), ang: a });
+      }
+      SFX.tone(1800, 0.06, { type: 'sine', vol: 0.03, slide: 900 });
+      return true;
+    }
     if (id === 'drill') {
       const targets = this.nearest(s.count, 700);
       if (!targets.length) return false;
@@ -675,7 +708,9 @@ Screens.survival = {
     if (e.dead) return;
     // りゅうまる: HP が へると こうげきアップ
     const rage = this.ch.id === 'ryumaru' && this.p.hp / this.p.max < this.ch.trait.rageAt ? this.ch.trait.rageMult : 1;
-    const dmg = Math.max(1, Math.round(base * this.dmgMult * rage * (0.9 + Math.random() * 0.2)));
+    // ぴたりん: 武器が ときどき 会心 (2 倍)
+    const pcrit = this.ch.id === 'pitarin' && Math.random() < SV_CHAR.pitarin.crit[this.ch.stage] ? 2 : 1;
+    const dmg = Math.max(1, Math.round(base * this.dmgMult * rage * pcrit * (0.9 + Math.random() * 0.2)));
     e.hp -= dmg;
     e.flash = 0.1;
     if (!e.boss) { e.kbx += kbx; e.kby += kby; }
@@ -877,7 +912,7 @@ Screens.survival = {
         } else {
           if (s.hit.has(e)) continue;
           s.hit.add(e);
-          const col = { water: '#4fb3ff', star: '#ffd43b', ice: '#a5d8ff', wind: '#63e6be', drill: '#dee2e6' }[s.kind];
+          const col = { water: '#4fb3ff', star: '#ffd43b', ice: '#a5d8ff', wind: '#63e6be', drill: '#dee2e6', arrow: '#ffe066' }[s.kind];
           this.hurt(e, s.dmg, s.vx * (s.kind === 'drill' ? 0.6 : 0.25), s.vy * (s.kind === 'drill' ? 0.6 : 0.25), col);
           if (s.kind === 'ice') e.slowUntil = this.time + s.slow;
           if (s.kind === 'water') this.fx.push({ kind: 'ring', x: s.x, y: s.y, r0: 4, r1: 30, life: 0.25, max: 0.25, color: '#b5e3ff', width: 4 });
@@ -1259,6 +1294,15 @@ Screens.survival = {
       ctx.fillStyle = '#f1f9ff';
       ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-6, -7); ctx.lineTo(-13, 0); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.restore();
+    } else if (s.kind === 'arrow') {
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang);
+      this.drawGlow(ctx, 'rgba(255,224,102,.5)', 0, 0, 20);
+      ctx.strokeStyle = '#f8f9fa'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-22, 0); ctx.lineTo(10, 0); ctx.stroke();
+      ctx.fillStyle = '#ffe066'; ctx.strokeStyle = '#364fc7'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(8, -6); ctx.lineTo(8, 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#91a7ff'; ctx.beginPath(); ctx.moveTo(-22, 0); ctx.lineTo(-28, -6); ctx.lineTo(-18, 0); ctx.lineTo(-28, 6); ctx.closePath(); ctx.fill();
+      ctx.restore();
     } else if (s.kind === 'wind') {
       // 風の 刃: 緑の 光 + こい ふち で 草原でも 見やすく
       ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang);
@@ -1351,9 +1395,10 @@ Screens.survival = {
       this.overlay('<div class="count lose">GAME OVER</div>');
     }
     const d = this.diff();
-    const bonus = won ? 300 : 0;
-    const timeBonus = Math.floor(this.time);
-    const exp = Math.round((this.gems + timeBonus + bonus) * d.exp);
+    // 経験値: いまの レベルの 1 レベルぶんが もと。生きのこった 時間と 難易度で ふえ、クリアで 1.5 倍
+    //   (かんたんを クリアで 約 0.6 レベル、じごくを クリアで 約 3 レベル)
+    const surv = 0.4 + 0.6 * Math.min(1, this.time / SV_BOSS_AT);
+    const exp = Math.round(levelNeed(this.ch.L) * 0.6 * d.exp * surv * (won ? 1.5 : 1));
     const key = 'sv-' + this.diffKey;
     const prev = Save.data.best[key];
     const better = !prev || (won && !prev.cleared) || (won === !!prev.cleared && (won ? this.time < prev.time : this.time > prev.time));
@@ -1364,7 +1409,7 @@ Screens.survival = {
       mode: 'survival', won, time: this.time, kills: this.kills, gems: this.gems, diffName: d.name, diffColor: d.color, boss: d.boss,
       weapons: Object.entries(this.weapons).map(([id, w]) => ({ id, lv: w.lv })), expRes, newBest: better,
       coins, coinNote: `(たおした数 ÷ 4 + 秒 ÷ 2${won ? ' + クリア 150' : ''}) × 難易度 ${d.exp}`,
-      expBreakdown: [`(ジェム ${this.gems} + 時間 ${timeBonus}${won ? ` + ボス ${bonus}` : ''}) × 難易度 ${d.exp}`],
+      expBreakdown: [`1 レベルぶん × 0.6 × 難易度 ${d.exp} × 生きのこった 時間 ${surv.toFixed(2)}${won ? ' × クリア 1.5' : ''}`],
     }), 1800);
   },
 
