@@ -1,6 +1,6 @@
 // ---------------- タイトル・ホームの 背景: 草原と 仲間の スライム ----------------
 // 空の 色は パソコンの 時刻で かわる (朝・昼・夕方・夜)。手に 入れた キャラが 丘の 上を 歩く。
-// クリックすると ぴょんと はねる。「ひかえめ」の ときは 動かさない。
+// クリックすると ぴょんと はねる。「ひかえめ」でも キャラは 歩く (雲は 止める)。
 const Meadow = {
   walkers: [],
   on: false,
@@ -35,87 +35,99 @@ const Meadow = {
   },
 
   // タイトル・ホームに 入ったとき
-  show() {
+  // walkers: キャラを 歩かせるか (タイトルだけ。ホームでは 背景だけ)
+  show(walkers) {
     if (!$('#meadow').firstChild) this.build();
+    document.body.classList.toggle('md-walk', !!walkers);
     const t = this.timeOfDay();
     document.body.classList.add('scene-meadow');
     document.body.classList.toggle('md-night', t === 'night');
     $('#meadow').className = 'meadow t-' + t;
+    if (!walkers) { this.hideWalkers(); return; }
     this.spawn();
     if (!this.on) { this.on = true; this.last = performance.now(); this.raf = requestAnimationFrame(n => this.tick(n)); }
   },
   hide() {
-    document.body.classList.remove('scene-meadow', 'md-night');
-    this.on = false; cancelAnimationFrame(this.raf);
+    document.body.classList.remove('scene-meadow', 'md-night', 'md-walk');
+    this.hideWalkers();
   },
+  hideWalkers() { this.on = false; cancelAnimationFrame(this.raf); },
 
-  // 手に 入れた キャラを 丘に ならべる (多すぎると じゃまなので 8 たいまで。えらんでいる キャラは かならず 出す)
+  // 手に 入れた キャラを 出す (多すぎると じゃまなので 8 たいまで。えらんでいる キャラは かならず 出す)
+  // z = おくゆき (0 = 山の おく、1 = いちばん 手前)。おくほど 小さく、画面の 上の ほうに 見える
   spawn() {
     let ids = Object.keys(CHARACTERS).filter(hasChar);
     const act = Save.data.active;
     ids = ids.filter(id => id !== act).sort(() => Math.random() - 0.5).slice(0, act ? 7 : 8);
     if (act && hasChar(act)) ids.unshift(act);
-    const key = ids.slice().sort().join(',') + ids.map(id => charInfo(id).stage).join('');
-    if (key === this.key) return; // 前と 同じ なら 歩いている 位置を そのまま
-    this.key = key;
-    const W = innerWidth;
     const box = $('#md-walkers');
+    box.innerHTML = '';
+    // タイトルを ひらく たびに 山の おくから 1 ぴきずつ はねてきて、それぞれの 場所で その場で はねる
+    // 場所は 横に ならべ、おくゆきを 2 れつに ずらす。まっすぐ 手前に くるので 道は かさならない
+    const W = innerWidth, n = ids.length;
+    const order = ids.map((_, i) => i).sort(() => Math.random() - 0.5); // 出てくる じゅんばんは ばらばらに
     this.walkers = ids.map((id, i) => {
       const d = document.createElement('div');
       d.className = 'md-walker';
+      d.style.setProperty('--dl', -(Math.random() * 1.2).toFixed(2) + 's'); // その場で ゆれる タイミングを ずらす
       d.innerHTML = `<div class="sprite">${slimeSVG(id, charInfo(id).stage)}</div>`;
-      return { el: d, id, x: (i + 0.5) / ids.length * W + (Math.random() - 0.5) * 60, y: 0, vy: 0,
-        dir: Math.random() < 0.5 ? -1 : 1, speed: 22 + Math.random() * 22, wait: Math.random() * 3,
-        lane: 0.6 + (i % 3) * 1.6 }; // 足もとの 高さ (vh)。3 れつに ずらす
+      box.appendChild(d);
+      const x = (i + 0.5) / n * W + (Math.random() - 0.5) * 0.3 * W / n;
+      const w = { el: d, id, x, z: 0, tz: i % 2 ? 0.62 + Math.random() * 0.1 : 0.88 + Math.random() * 0.12,
+        y: 0, vy: 0, rest: 0, delay: 0.4 + order[i] * 0.7 + Math.random() * 0.3, dir: x < W / 2 ? 1 : -1 };
+      this.place(w);
+      return w;
     });
-    box.innerHTML = '';
-    this.walkers.forEach(w => { box.appendChild(w.el); this.place(w); });
   },
 
+  scaleOf(z) { return 0.3 + 0.7 * z; },
+
   place(w) {
-    w.el.style.transform = `translate(${w.x - 32}px, ${-w.y}px)`;
-    w.el.style.bottom = w.lane + 'vh';
+    const k = this.scaleOf(w.z);
+    const ground = innerHeight * (0.205 - 0.195 * w.z); // 足もとの 高さ (下から)
+    w.el.style.transform = `translate(${w.x - 32}px, ${-(ground + w.y * k)}px) scale(${k})`;
+    w.el.style.zIndex = Math.round(w.z * 100);
+    // 山の おくでは すうっと あらわれる
+    w.el.style.opacity = w.delay > 0 ? 0 : clamp(w.z / 0.12, 0, 1);
     w.el.classList.toggle('flip', w.dir < 0);
-    w.el.classList.toggle('walking', w.wait <= 0 && w.y === 0);
+    w.el.classList.toggle('air', w.y > 0);
   },
 
   tick(now) {
     if (!this.on) return;
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
-    if (!document.body.classList.contains('lite')) {
-      const W = innerWidth;
-      for (const w of this.walkers) {
-        // ジャンプ中
-        if (w.y > 0 || w.vy > 0) {
-          w.vy -= 1400 * dt; w.y = Math.max(0, w.y + w.vy * dt);
-          if (w.y === 0) w.vy = 0;
-        }
-        if (w.wait > 0) {
-          // ひとやすみ。ときどき その場で ぴょん
-          w.wait -= dt;
-          if (w.wait <= 0) { w.dir = Math.random() < 0.5 ? -1 : 1; w.walk = 2 + Math.random() * 5; }
-          else if (w.y === 0 && Math.random() < dt * 0.25) w.vy = 300;
-        } else {
-          w.x += w.dir * w.speed * dt;
-          w.walk -= dt;
-          if (w.x < 30) { w.x = 30; w.dir = 1; }
-          if (w.x > W - 30) { w.x = W - 30; w.dir = -1; }
-          if (w.walk <= 0) w.wait = 1 + Math.random() * 3;
-        }
-        this.place(w);
+    // 「ひかえめ」でも 動かす (8 たい だけなので 軽い)
+    for (const w of this.walkers) {
+      if (w.delay > 0) { w.delay -= dt; continue; }
+      // ジャンプ中
+      if (w.y > 0 || w.vy > 0) {
+        w.vy -= 1100 * dt; w.y = Math.max(0, w.y + w.vy * dt);
+        if (w.y === 0) { w.vy = 0; w.rest = w.z < w.tz ? 0.35 + Math.random() * 0.3 : 0.6 + Math.random() * 1.2; } // 着地したら ひと息
       }
+      if (w.y === 0) {
+        w.rest -= dt;
+        if (w.rest <= 0) {
+          // 手前へ くる あいだは ぴょんぴょん、ついたら その場で ぴょん (ときどき 高く・ときどき 向きを かえる)
+          const home = w.z >= w.tz;
+          w.vy = home && Math.random() < 0.2 ? 440 : 300 + Math.random() * 60;
+          if (home && Math.random() < 0.3) w.dir = -w.dir;
+        }
+      }
+      // 空中に いる あいだだけ 手前へ すすむ (おくでは すこし ゆっくり 見える)
+      if (w.z < w.tz && (w.y > 0 || w.vy > 0)) w.z = Math.min(w.tz, w.z + 0.5 * (0.45 + 0.55 * this.scaleOf(w.z)) * dt);
     }
+    for (const w of this.walkers) this.place(w);
     this.raf = requestAnimationFrame(n => this.tick(n));
   },
 
   // クリックした ところに スライムが いたら はねる (ボタンや パネルの 上は のぞく)
   poke(e) {
-    if (!document.body.classList.contains('scene-meadow')) return;
+    if (!document.body.classList.contains('md-walk')) return;
     if (e.target.closest('button, input, label, a, summary')) return;
     for (const w of this.walkers) {
       const r = w.el.getBoundingClientRect();
-      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && w.y === 0) {
+      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && w.y === 0 && w.delay <= 0) {
         w.vy = 520; SFX.key();
         replayAnim(w.el.querySelector('.sprite'), 'md-squish', 400);
       }
@@ -125,35 +137,31 @@ const Meadow = {
 document.addEventListener('pointerdown', e => Meadow.poke(e));
 
 // ---------------- タイトルの 文字を 1 文字ずつ 打つ ----------------
-// ローマ字が 打たれていき、1 音 そろうと カナが ぽんと 出る
+// キーを 打つ 音と いっしょに カナが 1 文字ずつ ぽんと 出る。うしろで カーソルが 点滅する
 const TITLE_UNITS = [['ス', 'su'], ['ラ', 'ra'], ['イ', 'i'], ['ム', 'mu'], null, ['タ', 'ta'], ['イ', 'i'], ['ピ', 'pi'], ['ン', 'nn'], ['グ', 'gu']];
 function typeTitle() {
-  const logo = $('#logo-text'), roma = $('#logo-roma');
+  const logo = $('#logo-text');
   logo.innerHTML = TITLE_UNITS.map(u => u ? `<span class="ch">${u[0]}</span>` : '<br>').join('');
   const chars = [...logo.querySelectorAll('.ch')];
   const units = TITLE_UNITS.filter(Boolean);
-  const all = units.map(u => u[1]);
-  // ガイド: まだ 打っていない ところは うすく
-  const draw = (u, n) => {
-    roma.innerHTML = all.map((r, k) => k < u ? `<b>${r}</b>` : k === u ? `<b>${r.slice(0, n)}</b>${r.slice(n)}` : r)
-      .map((s, k) => k === 3 ? s + '&nbsp;' : s).join('') + '<i class="logo-caret"></i>';
-  };
+  const caret = document.createElement('i');
+  caret.className = 'logo-caret';
+  logo.insertBefore(caret, chars[0]);
   clearTimeout(typeTitle.t);
+  const scr = $('#scr-title');
+  scr.classList.remove('typed');
   let u = 0, n = 0;
-  draw(0, 0);
   const step = () => {
-    if (!$('#scr-title').classList.contains('active')) return;
+    if (!scr.classList.contains('active')) return;
     n++;
     SFX.key();
     if (n >= units[u][1].length) {
       chars[u].classList.add('on');
+      chars[u].after(caret);
       u++; n = 0;
     }
-    draw(u, n);
     if (u < units.length) typeTitle.t = setTimeout(step, 90 + Math.random() * 110 + (n === 0 ? 70 : 0));
-    else { roma.classList.add('done'); $('#scr-title').classList.add('typed'); }
+    else typeTitle.t = setTimeout(() => { scr.classList.add('typed'); }, 250);
   };
-  roma.classList.remove('done');
-  $('#scr-title').classList.remove('typed');
   typeTitle.t = setTimeout(step, 600);
 }

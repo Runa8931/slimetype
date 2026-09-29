@@ -205,8 +205,8 @@ const App = {
     this.current = name;
     this.shownAt = performance.now();
     if (Screens[name] && Screens[name].enter) Screens[name].enter(arg);
-    // タイトル・ホームは 草原の 背景
-    if (name === 'title' || name === 'home') Meadow.show(); else Meadow.hide();
+    // タイトル・ホームは 草原の 背景 (キャラが 歩くのは タイトルだけ)
+    if (name === 'title' || name === 'home') Meadow.show(name === 'title'); else Meadow.hide();
   },
 
   boot() {

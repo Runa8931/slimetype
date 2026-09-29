@@ -1303,17 +1303,19 @@ body.scene-meadow:not(.md-night) .sky { display: none; }
 .md-hills .h3 { fill: var(--h3); } .md-hills .h2 { fill: var(--h2); } .md-hills .h1 { fill: var(--h1); }
 .md-grass { fill: none; stroke: color-mix(in srgb, var(--h1) 70%, #000); stroke-width: 2.5; stroke-linecap: round; }
 .md-walkers { position: fixed; inset: 0; pointer-events: none; z-index: 30; display: none; }
-body.scene-meadow .md-walkers { display: block; }
-/* 下を 歩く キャラと メニューが かさならないよう 下に 余白 */
-body.scene-meadow #scr-home { padding-bottom: 96px; }
-.md-walker { position: absolute; left: 0; width: 64px; height: 64px; will-change: transform; }
+body.md-walk .md-walkers { display: block; }
+.md-walker { position: absolute; left: 0; bottom: 0; width: 64px; height: 64px; will-change: transform; transform-origin: 50% 100%; }
 .md-walker .sprite { width: 64px; height: 64px; }
 .md-walker.flip .sprite svg { scale: -1 1; }
-.md-walker.walking .sprite { animation: run-bob .4s ease-in-out infinite; }
+.md-walker .sprite { animation: md-idle 1.1s ease-in-out infinite; animation-delay: var(--dl, 0s); transform-origin: 50% 95%; }
+.md-walker.air .sprite { animation: none; transform: scale(.92, 1.1); }
+@keyframes md-idle { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.08, .92); } }
 .md-walker::after { content: ''; position: absolute; left: 18px; right: 18px; bottom: -2px; height: 8px; border-radius: 50%; background: rgba(0,0,0,.18); z-index: -1; }
-.md-squish { animation: md-squish .4s ease-out; }
+.md-squish, .md-walker .sprite.md-squish { animation: md-squish .4s ease-out; }
 @keyframes md-squish { 0% { transform: scale(1.25, .75); } 50% { transform: scale(.85, 1.2); } 100% { transform: none; } }
-body.lite .md-cloud, body.lite .md-walker .sprite { animation: none !important; }
+body.lite .md-cloud { animation: none !important; }
+/* 「ひかえめ」は 動きを 1 回で 止めるが、歩く キャラの ぷるぷるは つづける */
+body.lite .md-walker .sprite { animation-iteration-count: infinite !important; }
 /* 明るい 空でも 文字が 読めるよう パネルを こくする */
 body.scene-meadow .panel, body.scene-meadow .menu-card { background-color: rgba(18, 20, 48, .84); backdrop-filter: blur(3px); }
 body.scene-meadow .topbar { background: rgba(18, 20, 48, .7); border-radius: 14px; padding: 6px 12px; }
@@ -1328,10 +1330,8 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 /* 外側の h1 にも 文字の グラデーションが あると 内側の 文字が 消えるので 外して 1 文字ずつに かける */
 #scr-title .logo { background: none; -webkit-background-clip: border-box; background-clip: border-box; }
 .logo #logo-text .ch { background: linear-gradient(180deg, #fff 20%, #9fd8ff 60%, #4fb3ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.logo-roma { font-family: var(--pixel); font-size: 24px; letter-spacing: .12em; color: rgba(255,255,255,.45); margin: -18px auto 26px;
-  display: table; padding: 6px 18px; border-radius: 12px; background: rgba(18, 20, 48, .6); min-height: 1.6em; }
-.logo-roma b { color: #fff; font-weight: normal; text-shadow: 0 0 8px rgba(159,216,255,.8); }
-.logo-caret { display: inline-block; width: 3px; height: 1em; margin-left: 3px; vertical-align: -2px; background: var(--gold); animation: caret-blink .8s steps(1) infinite; }
+.logo-caret { display: inline-block; width: 6px; height: .9em; margin: 0 4px; vertical-align: -.08em; background: var(--gold); border-radius: 2px; animation: caret-blink .8s steps(1) infinite; }
+#scr-title.typed .logo-caret { display: none; }
 @keyframes caret-blink { 50% { opacity: 0; } }
 #scr-title .btn.big { opacity: .35; transition: opacity .4s; }
 #scr-title.typed .btn.big { opacity: 1; }
