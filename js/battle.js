@@ -78,7 +78,7 @@ Screens.battle = {
       <div class="ov-title">${this.ed.name} があらわれた！</div>
       <div class="ov-sub">${this.ed.abilityDesc}</div>
       <div class="ov-diff" id="b-diff"></div>
-      <div class="ov-key"><kbd>Space</kbd> でバトル開始</div></div>`);
+      <div class="ov-key"><kbd>A</kbd><kbd>D</kbd> で 難易度　<kbd>Space</kbd> でバトル開始</div></div>`);
     this.renderDiff();
   },
 
@@ -397,6 +397,9 @@ Screens.battle = {
     if (this.state === 'ready') {
       const n = parseInt(e.key, 10);
       if (n >= 1 && n <= BATTLE_DIFF_KEYS.length) { this.pickDiff(BATTLE_DIFF_KEYS[n - 1]); return; }
+      // A/D (W/S) で 難易度を ひとつ ずらす
+      const dk = { a: -1, w: -1, d: 1, s: 1 }[e.key.toLowerCase()];
+      if (dk) { const i = BATTLE_DIFF_KEYS.indexOf(this.dk) + dk; if (i >= 0 && i < BATTLE_DIFF_KEYS.length) this.pickDiff(BATTLE_DIFF_KEYS[i]); return; }
       if (e.key === ' ') this.countdown();
       if (e.key === 'Escape') App.show('stages');
       return;

@@ -65,6 +65,14 @@ Screens.psetup = {
     const keys = Object.keys(DIFFS);
     const n = parseInt(e.key, 10);
     if (n >= 1 && n <= keys.length) this.setDiff(keys[n - 1]);
+    // WASD で えらぶ (3 れつ ならび: A/D で となり、W/S で 上下)。ひらいていない ものは とばす
+    const mv = { a: -1, d: 1, w: -3, s: 3 }[e.key.toLowerCase()];
+    if (mv) {
+      let i = keys.indexOf(Save.data.settings.diff) + mv;
+      while (i >= 0 && i < keys.length && keys[i] === 'weak' && !doorOpen('weak')) i += Math.sign(mv);
+      if (i >= 0 && i < keys.length) this.setDiff(keys[i]);
+      return;
+    }
     if (e.key === ' ' || e.key === 'Enter') App.show('practice');
     if (e.key === 'Escape') App.show('home');
   },

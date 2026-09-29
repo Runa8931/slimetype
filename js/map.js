@@ -52,7 +52,7 @@ function hiddenLink(h) {
     for (const d of ['up', 'down', 'left', 'right']) {
       if (used.has(d) || best) continue;
       const p = P(node.x + DIR_VEC[d][0] * dist, node.y + DIR_VEC[d][1] * dist);
-      if (p.x < 80 || p.x > MAP_W - 80 || p.y < 110 || p.y > MAP_H - 60) continue;
+      if (p.x < 80 || p.x > MAP_W - 80 || p.y < 110 || p.y > MAP_H - 90) continue;
       if (nearRoad(m, p.x, p.y, 60)) continue;
       best = { dir: d, pos: p };
     }
@@ -410,6 +410,7 @@ Screens.stages = {
     cancelAnimationFrame(this.raf);
     removeEventListener('resize', this._onResize);
     $('#drawer').classList.remove('open');
+    this.stopSelRepeat();
   },
 
   // 行けるワールドの最大番号
@@ -440,7 +441,9 @@ Screens.stages = {
   },
 
   // この ワールドの かくしステージ (道が ひらいていれば)
-  hidden() { const h = HIDDEN_DEFS.find(x => x.host === this.world); return h && hiddenOpen(h) ? h : null; },
+  hidden() { const h = this.hiddenDef(); return h && hiddenOpen(h) ? h : null; },
+  // この ワールドに ある かくしステージ (道が ひらいて いなくても)
+  hiddenDef() { return HIDDEN_DEFS.find(x => x.host === this.world) || null; },
 
   spotPos(pos) {
     const m = this.map();
@@ -472,9 +475,16 @@ Screens.stages = {
     };
     let roads = m.paths.map((pts, k) => road(pts, 'road-' + k, list[k] <= this.cleared && k !== this.unlockAnim)).join('');
     if (m.gatePath) roads += road(m.gatePath, 'road-gate', this.gateOpen() && this.unlockAnim !== 'gate');
+    // かくしステージ: マスは はじめから はなれた 島に ある。道は 条件を たっせいすると のびる
+    const hdef = this.hiddenDef();
     const hid = this.hidden();
+    let island = '';
+    if (hdef) {
+      const hp = hiddenLink(hdef).pos;
+      island = `<ellipse cx="${hp.x}" cy="${hp.y + 6}" rx="78" ry="56" class="hidden-island"/>`;
+    }
     if (hid) roads += road(hiddenLink(hid).path, 'road-hidden', this.unlockAnim !== 'hidden');
-    $('#map-svg').innerHTML = mapBackgroundSVG(this.world) + roads;
+    $('#map-svg').innerHTML = mapBackgroundSVG(this.world) + island + roads;
 
     const start = `<div class="node start" style="left:${m.start.x}px;top:${m.start.y}px">
       <div class="node-pad"></div><div class="node-flag">${this.world === 0 ? 'START' : '◀ もどる'}</div></div>`;
@@ -501,15 +511,21 @@ Screens.stages = {
         <div class="node-label">ワールド${this.world + 2} ${nw.name}へ</div></div>`;
     }
     let hnode = '';
-    if (hid) {
-      const he = ENEMIES[hid.idx], hp = hiddenLink(hid).pos, done = hiddenCleared(hid);
-      hnode = `<div class="node hidden-node boss ${done ? 'cleared' : ''} ${this.unlockAnim === 'hidden' ? 'locked' : ''}" id="node-hidden" data-g="${hid.idx}" data-i="${HID_POS}" style="left:${hp.x}px;top:${hp.y}px">
+    if (hdef) {
+      const he = ENEMIES[hdef.idx], hp = hiddenLink(hdef).pos, done = hiddenCleared(hdef);
+      const open = !!hid && this.unlockAnim !== 'hidden';
+      hnode = `<div class="node hidden-node boss ${done ? 'cleared' : ''} ${open ? '' : 'locked sealed'}" id="node-hidden" data-g="${hdef.idx}" data-i="${HID_POS}" style="left:${hp.x}px;top:${hp.y}px" title="${open ? '' : '🔒 ' + hdef.reveal.text + 'と 道が のびる'}">
         <div class="node-pad"></div><div class="node-icon">${enemySVG(he.id)}</div>
-        ${done ? '<div class="node-star">★</div>' : ''}<div class="node-label">かくし ${he.name}</div></div>`;
+        ${done ? '<div class="node-star">★</div>' : ''}<div class="node-label">${open ? 'かくし ' + he.name : '？？？'}</div></div>`;
     }
     $('#map-nodes').innerHTML = start + nodes + gate + hnode;
     $('#map-nodes').querySelectorAll('.node[data-g]').forEach(n => {
-      n.onclick = () => { const g = +n.dataset.g; if (g <= this.cleared || ENEMIES[g].hidden) this.startBattle(g); };
+      n.onclick = () => {
+        const g = +n.dataset.g;
+        // まだ 道が ない かくしステージは 条件を 知らせる
+        if (ENEMIES[g].hidden && !this.hidden()) { SFX.miss(); toast(`🔒 ${this.hiddenDef().reveal.text}と 道が のびる`, 2800); return; }
+        if (g <= this.cleared || ENEMIES[g].hidden) this.startBattle(g);
+      };
     });
 
     $('#map-player .sprite').innerHTML = slimeSVG(this.ch.id, this.ch.stage);
@@ -521,18 +537,21 @@ Screens.stages = {
     const c = this.ch;
     const diffStars = { easy: '★', normal: '★★', hard: '★★★' };
     $('#stage-list').innerHTML = WORLDS.map((wd, w) => {
-      const cards = worldStages(w).map((g, i) => {
+      // 道の ひらいた かくしステージも 一覧の さいごに 出す (i = HID_POS)
+      const hdef = HIDDEN_DEFS.find(h => h.host === w && hiddenOpen(h));
+      const items = worldStages(w).map((g, i) => [g, i]).concat(hdef ? [[hdef.idx, HID_POS]] : []);
+      const cards = items.map(([g, i]) => {
         const e = ENEMIES[g];
-        const locked = g > this.cleared;
-        const cleared = g < this.cleared;
+        const locked = g > this.cleared && !e.hidden;
+        const cleared = e.hidden ? hiddenCleared(hiddenOf(g)) : g < this.cleared;
         const warn = !locked && c.L < e.lv - 2 ? '<span class="warn">レベル不足かも</span>' : '';
-        const key = w === this.world ? `<span class="mc-key">${i + 1}</span>` : '';
+        const key = w === this.world ? `<span class="mc-key">${e.hidden ? worldStages(w).length + 1 : i + 1}</span>` : '';
         const here = w === this.world && i === this.pos;
         return `<div class="stage-card ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''} ${here ? 'here' : ''}" data-g="${g}" title="${locked ? '' : 'クリックで このステージへ ワープ'}">
           ${key}
           <div class="st-sprite">${locked ? '<div class="lock">?</div>' : enemySVG(e.id)}</div>
           <div class="st-body">
-            <div class="st-name">${locked ? '？？？' : e.name}${e.boss && !locked ? ' <span class="badge boss">BOSS</span>' : ''}</div>
+            <div class="st-name">${locked ? '？？？' : e.name}${e.hidden ? ' <span class="badge boss">かくし</span>' : e.boss && !locked ? ' <span class="badge boss">BOSS</span>' : ''}</div>
             <div class="st-meta">${stageLabel(g)} ・ Lv.${e.lv} ・ お題 ${diffStars[e.diff]} ${warn}</div>
             <div class="st-desc">${locked ? 'まえのあいてをたおすと あらわれる' : e.desc}</div>
             ${locked ? '' : `<div class="st-ability">${e.abilityDesc}</div>`}
@@ -568,10 +587,53 @@ Screens.stages = {
     $('#stage-list').querySelectorAll('.st-fight').forEach(b => {
       b.onclick = ev => { ev.stopPropagation(); this.startBattle(+b.dataset.g); };
     });
+    this.markSel(false);
+  },
+
+  // ---- ステージ一覧の カーソル (W/S で 上下、A/D で ワールドを かえる、Space で ワープ) ----
+  selCards() { return [...$('#stage-list').querySelectorAll('.drawer-group.open .stage-card:not(.locked)')]; },
+  markSel(scroll = true) {
+    const cards = this.selCards();
+    if (!cards.some(c => +c.dataset.g === this.dSel)) this.dSel = cards.length ? +cards[0].dataset.g : null;
+    cards.forEach(c => c.classList.toggle('sel', +c.dataset.g === this.dSel));
+    const cur = cards.find(c => +c.dataset.g === this.dSel);
+    if (cur && scroll) cur.scrollIntoView({ block: 'nearest' });
+  },
+  moveSel(d) {
+    const cards = this.selCards();
+    const i = cards.findIndex(c => +c.dataset.g === this.dSel);
+    const j = clamp(i + d, 0, cards.length - 1);
+    if (j === i || !cards[j]) return;
+    this.dSel = +cards[j].dataset.g; SFX.select(); this.markSel();
+  },
+  // 長押しで 動きつづける (ゲーム全体では 押しっぱなしを 止めているので ここで くりかえす)
+  startSelRepeat(k, fn) {
+    this.stopSelRepeat();
+    fn();
+    this.selKey = k;
+    this.selT = setTimeout(function loop() {
+      if (!this.drawerOpen || this.selKey !== k) return;
+      fn(); this.selT = setTimeout(loop.bind(this), k === 'a' || k === 'd' ? 220 : 90);
+    }.bind(this), 350);
+  },
+  stopSelRepeat() { clearTimeout(this.selT); this.selKey = null; },
+
+  // A/D: となりの ワールドへ (まだ いけない ワールドは とばす)
+  moveSelWorld(d) {
+    const cur = this.dSel == null ? this.world : (ENEMIES[this.dSel].hidden ? ENEMIES[this.dSel].host : ENEMIES[this.dSel].world);
+    let w = cur + d;
+    while (w >= 0 && w < WORLDS.length && !(worldStages(w)[0] <= this.cleared)) w += d;
+    if (w < 0 || w >= WORLDS.length) return;
+    if (!this.openWorlds.has(w)) { this.openWorlds.add(w); this.buildDrawer(); }
+    this.dSel = worldStages(w)[0];
+    SFX.select(); this.markSel();
+    const grp = $('#stage-list').querySelector(`.drawer-group[data-w="${w}"]`);
+    if (grp) grp.scrollIntoView({ block: 'nearest' });
   },
 
   toggleDrawer(force) {
     this.drawerOpen = force ?? !this.drawerOpen;
+    this.stopSelRepeat();
     $('#drawer').classList.toggle('open', this.drawerOpen);
     SFX.select();
     if (this.drawerOpen) {
@@ -579,6 +641,10 @@ Screens.stages = {
       if (!this.openWorlds.has(this.world)) { this.openWorlds.add(this.world); this.buildDrawer(); }
       const cur = $('#stage-list').querySelector(`.drawer-group[data-w="${this.world}"]`);
       if (cur) cur.scrollIntoView({ block: 'start' });
+      // カーソルは 今いる ステージから (スタート地点なら そのワールドの 1 つめ)
+      const list = this.stages();
+      this.dSel = this.pos === HID_POS && this.hidden() ? this.hidden().idx : list[clamp(this.pos, 0, list.length - 1)];
+      this.markSel();
     }
   },
 
@@ -760,11 +826,13 @@ Screens.stages = {
 
   // ステージ一覧から そのステージへ ワープする
   warpTo(g) {
-    if (g > this.cleared || this.moving) return;
     const e = ENEMIES[g];
-    const pos = worldStages(e.world).indexOf(g);
+    if ((g > this.cleared && !e.hidden) || this.moving) return;
+    if (e.hidden && !hiddenOpen(hiddenOf(g))) return;
+    const w = e.hidden ? e.host : e.world;
+    const pos = e.hidden ? HID_POS : worldStages(w).indexOf(g);
     this.toggleDrawer(false);
-    if (e.world !== this.world) { this.changeWorld(e.world, pos); return; }
+    if (w !== this.world) { this.changeWorld(w, pos); return; }
     if (pos === this.pos) return;
     // 同じワールドの中: ぱっと消えて ぱっと現れる
     const pl = $('#map-player');
@@ -808,7 +876,11 @@ Screens.stages = {
         FX.burst(r.left + r.width / 2, r.top + r.height / 2 - 40, { colors: ['#ffd23f', '#fff', '#ff8fab'], count: 40, shape: 'star', size: 7, speed: 6 });
         SFX.levelup();
       }
-      if (isHidden) { toast('❗ かくしステージへの みちが ひらいた！', 3000); SFX.win(); this.updateArrows(); return; }
+      if (isHidden) {
+        node.classList.remove('sealed');
+        node.querySelector('.node-label').textContent = 'かくし ' + ENEMIES[this.hidden().idx].name;
+        toast('❗ かくしステージへの 道が のびた！', 3000); SFX.win(); this.updateArrows(); return;
+      }
       toast(isGate ? `ゲートが ひらいた！ ワールド ${this.world + 2}「${WORLDS[this.world + 1].name}」へ すすもう` : 'あたらしい みちが ひらけた！ WASD で すすもう', 2800);
       this.updateArrows();
     }, 1500);
@@ -831,6 +903,12 @@ Screens.stages = {
       const n = parseInt(e.key, 10);
       const list = this.stages();
       if (n >= 1 && n <= list.length && list[n - 1] <= this.cleared) this.warpTo(list[n - 1]);
+      // ステージ数 + 1 の 数字で かくしステージへ
+      else if (n === list.length + 1 && this.hidden()) this.warpTo(this.hidden().idx);
+      const selMove = { w: () => this.moveSel(-1), s: () => this.moveSel(1), a: () => this.moveSelWorld(-1), d: () => this.moveSelWorld(1) }[k];
+      if (selMove) { e.preventDefault(); this.startSelRepeat(k, selMove); }
+      if (e.key === ' ' && this.dSel != null) { e.preventDefault(); this.warpTo(this.dSel); }
+      if (e.key === 'Enter' && this.dSel != null) { e.preventDefault(); this.startBattle(this.dSel); }
       if (e.key === 'Escape') this.toggleDrawer(false);
       return;
     }
@@ -844,6 +922,6 @@ Screens.stages = {
     }
   },
 
-  onKeyUp(e) { this.held.delete(e.key.toLowerCase()); },
-  onBlur() { this.held.clear(); },
+  onKeyUp(e) { const k = e.key.toLowerCase(); this.held.delete(k); if (k === this.selKey) this.stopSelRepeat(); },
+  onBlur() { this.held.clear(); this.stopSelRepeat(); },
 };
