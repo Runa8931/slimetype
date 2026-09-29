@@ -189,14 +189,16 @@ function replayAnim(el, cls, ms) {
 function shake(el, strong = false) { replayAnim(el, strong ? 'shake-strong' : 'shake', 450); }
 
 // 画面を横切る必殺技のカットイン
-function cutin(title, sub, color, svgHtml) {
+// rank: とくべつな キャラ ('ssr' / 'special') は 画面が 暗くなり、ふちが 光る 大きな カットインに なる
+function cutin(title, sub, color, svgHtml, rank) {
   const el = document.createElement('div');
-  el.className = 'cutin';
+  el.className = 'cutin' + (rank ? ' cutin-rank cutin-' + rank : '');
   el.style.setProperty('--cut', color);
-  el.innerHTML = `<div class="cutin-band"><div class="cutin-sprite">${svgHtml || ''}</div>
-    <div class="cutin-text"><div class="cutin-sub">${sub}</div><div class="cutin-title">${title}</div></div></div>`;
+  const label = rank === 'ssr' ? '<div class="cutin-label">✦ SSR ✦</div>' : rank === 'special' ? '<div class="cutin-label">★ とくべつ ★</div>' : '';
+  el.innerHTML = `<div class="cutin-band">${rank ? '<div class="cutin-lines"></div>' : ''}<div class="cutin-sprite">${svgHtml || ''}</div>
+    <div class="cutin-text">${label}<div class="cutin-sub">${sub}</div><div class="cutin-title">${title}</div></div></div>`;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1300);
+  setTimeout(() => el.remove(), rank ? 1500 : 1300);
 }
 
 function toast(msg, ms = 2200) {

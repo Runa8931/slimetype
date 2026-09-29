@@ -116,6 +116,7 @@ Screens.battle = {
 
   async countdown() {
     this.state = 'count';
+    this.entrance();
     for (const n of ['3', '2', '1']) {
       if (this.state !== 'count') return;
       this.overlay(`<div class="count">${n}</div>`);
@@ -130,6 +131,24 @@ Screens.battle = {
     this.last = performance.now();
     this.nextFog = 6000;
     this.raf = requestAnimationFrame(t => this.tick(t));
+  },
+
+  // とくべつな キャラの 登場: 光の 柱が 立って 上から ふってくる
+  entrance() {
+    const r = charRank(this.ch.id);
+    if (!r) return;
+    const el = $('#b-player');
+    el.classList.remove('entry', 'entry-ssr', 'entry-special');
+    void el.offsetWidth;
+    el.classList.add('entry', 'entry-' + r);
+    this.after(() => el.classList.remove('entry', 'entry-ssr', 'entry-special'), 1900);
+    SFX.entrance();
+    this.after(() => {
+      const pc = FX.center($('#b-psprite'));
+      const colors = r === 'ssr' ? ['#ffd43b', '#fff3bf', '#fff'] : ['#ff8787', '#ffd43b', '#69db7c', '#4dabf7', '#b197fc'];
+      FX.burst(pc.x, pc.y + 30, { colors, count: 40, shape: 'star', size: 7, speed: 7 });
+      FX.ring(pc.x, pc.y + 50, colors[0], 110, 30, 6);
+    }, 650);
   },
 
   interval() {
@@ -680,7 +699,8 @@ Screens.battle = {
     const ch = this.ch;
     const col = ch.def.colors;
     const sk = ch.skill;
-    cutin(sk.name, ch.name, col.main, slimeSVG(ch.id, ch.stage));
+    cutin(sk.name, ch.name, col.main, slimeSVG(ch.id, ch.stage), charRank(ch.id));
+    if (charRank(ch.id)) SFX.rankCut();
     SFX.skill(ch.id); // キャラごとの ひっさつの 音
     const pc = FX.center($('#b-psprite'));
 

@@ -136,5 +136,8 @@ const SFX = {
     }
   },
 
+  // とくべつな キャラの 登場 (ファンファーレ) と ひっさつの カットイン (キラーン)
+  entrance() { [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.18, { type: 'triangle', vol: 0.045, delay: 0.25 + i * 0.07 })); this.noise(0.6, { vol: 0.03, filter: 5000, type: 'highpass', delay: 0.6 }); },
+  rankCut() { [2093, 2637, 3136, 4186].forEach((f, i) => this.tone(f, 0.12, { type: 'sine', vol: 0.025, delay: i * 0.04 })); this.noise(0.25, { vol: 0.03, filter: 6000, type: 'highpass' }); },
   select() { this.tone(900, 0.05, { vol: 0.04 }); this.tone(1200, 0.06, { vol: 0.04, delay: 0.04 }); },
 };

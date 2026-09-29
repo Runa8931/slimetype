@@ -125,7 +125,7 @@ const ACHIEVEMENTS = [
   { id: 'combo500', hard: true, name: 'コンボの かみさま', desc: '最大コンボ 500 以上', check: r => r && r.maxCombo >= 500 },
   { id: 'nohit_boss', hard: true, name: 'むきずの ゆうしゃ', desc: 'HP を 8 わり 以上 のこして ボスに 勝つ (推奨レベル 以下で)', check: r => r && r.mode === 'battle' && r.won && r.hpLeft >= 0.8 && ENEMIES[r.enemyIdx].boss && r.playerLv <= r.enemyLv },
   { id: 'adv_w6', hard: true, name: 'じょうきゅう ゆうしゃ', desc: '上級者で ワールド 6 の ボスを たおす', check: r => r && r.mode === 'battle' && r.won && r.bdiff === 'adv' && r.enemyIdx === worldStages(5).slice(-1)[0] },
-  { id: 'sv_500', hard: true, name: 'せんめつの スライム', desc: 'サバイバル 1 回で 500 体 たおす', check: r => r && r.mode === 'survival' && r.kills >= 500 },
+  { id: 'sv_500', hard: true, name: 'せんめつの スライム', desc: 'サバイバル 1 回で 300 体 たおす', check: r => r && r.mode === 'survival' && r.kills >= 300 },
   { id: 'lv124', hard: true, name: 'きわめし もの', desc: 'だれかを Lv124 にする (Lv120 + かくせい★4)', check: () => maxCharLv() >= 124 },
   { id: 'keys300k', hard: true, name: 'タイピングの かみさま', desc: '合計 30 万回 正しく 打つ', check: () => Save.data.totals.keys >= 300000 },
   { id: 'hidden_all', hard: true, name: 'ひみつを あばく もの', desc: 'かくしステージを ぜんぶ クリア', check: () => HIDDEN_DEFS.every(hiddenCleared) },

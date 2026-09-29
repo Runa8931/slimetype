@@ -69,6 +69,16 @@ function hasChar(id) {
 // せんざいかくせいの ★ の数 (0〜4)
 function awakenOf(id) { return Math.min(AWAKEN_MAX, (Save.data.gacha && Save.data.gacha.awaken[id]) || 0); }
 
+// とくべつな キャラの 能力 (キャラ選びで 見せる 基本の 数字) と バッジ
+function rankBase(id) {
+  const b = CHARACTERS[id].base;
+  return charRank(id) ? { hp: Math.round(b.hp * SPECIAL_STAT), atk: Math.round(b.atk * SPECIAL_STAT), def: Math.round(b.def * SPECIAL_STAT), spd: b.spd } : b;
+}
+function rankBadge(id) {
+  const r = charRank(id);
+  return r === 'ssr' ? '<span class="badge rank-ssr">✦ SSR</span>' : r === 'special' ? '<span class="badge rank-sp">★ とくべつ</span>' : '';
+}
+
 // 正しく 1 回 打ったときに ふえる コンボ (ふえりんは 1.5〜2 ずつ。はんぱは o.comboAcc に ためる)
 function comboStep(o, trait) {
   if (!trait.comboGain) return 1;
@@ -95,7 +105,8 @@ function charInfo(id) {
     // 進化段階に合わせた とくせい・ひっさつ (かくせいで とくせいが 少し のびる)
     trait: awaken && AWAKEN_BONUS[id] ? AWAKEN_BONUS[id].apply(trait, awaken) : trait,
     skill: def.forms[stage].skill,
-    stats: Object.fromEntries(Object.entries(raw).map(([key, v]) => [key, Math.round(v * k)])),
+    // とくべつな キャラは HP・こうげき・ぼうぎょ +5%
+    stats: Object.fromEntries(Object.entries(raw).map(([key, v]) => [key, Math.round(v * k * (key !== 'spd' && charRank(id) ? SPECIAL_STAT : 1))])),
     curLvExp: expForLevel(L),
     nextLvExp: L >= cap ? null : expForLevel(L + 1),
   };
@@ -291,7 +302,7 @@ Screens.select = {
       const c = charInfo(id);
       const d = c.def;
       if (!hasChar(id)) {
-        return `<button class="char-card locked" data-id="${id}" disabled>
+        return `<button class="char-card locked ${charRank(id) ? 'rank-' + charRank(id) : ''}" data-id="${id}" disabled>
           <span class="mc-key">${i + 1}</span>
           <div class="sprite">${slimeSVG(id, 0, {})}</div>
           <div class="cc-name">？？？</div>
@@ -299,14 +310,14 @@ Screens.select = {
           <p class="cc-desc">${d.gacha ? 'ガチャで であえる ふしぎな スライム。こうかんじょで かけらと こうかんも できる。' : lockNote('ch_' + id)}</p>
         </button>`;
       }
-      return `<button class="char-card ${Save.data.active === id ? 'current' : ''}" data-id="${id}" style="--cc:${d.colors.main};--cd:${d.colors.dark}">
+      return `<button class="char-card ${Save.data.active === id ? 'current' : ''} ${charRank(id) ? 'rank-' + charRank(id) : ''}" data-id="${id}" style="--cc:${d.colors.main};--cd:${d.colors.dark}">
         <span class="mc-key">${i + 1}</span>
         <div class="sprite bounce d${i}">${slimeSVG(id, c.stage)}</div>
         <div class="cc-name">${c.name} <small>Lv.${c.L}</small></div>
         ${c.awaken ? `<div class="cc-stars">${starText(c.awaken)}</div>` : ''}
-        <div class="badges"><span class="badge type-${id}">${d.type}</span><span class="badge">${d.role}</span></div>
+        <div class="badges">${rankBadge(id)}<span class="badge type-${id}">${d.type}</span><span class="badge">${d.role}</span></div>
         <p class="cc-desc">${d.desc}</p>
-        <div class="stats">${statBars(d.base, 100)}</div>
+        <div class="stats">${statBars(rankBase(id), 100)}</div>
         ${abilityHtml(c)}
         <div class="evo-note">Lv.20・40・60・80 で進化すると とくせい・ひっさつも パワーアップ</div>
       </button>`;
@@ -394,13 +405,14 @@ Screens.home = {
     const expPct = c.nextLvExp ? (c.exp - c.curLvExp) / (c.nextLvExp - c.curLvExp) * 100 : 100;
     const nextEvo = c.stage < EVO_LEVELS.length ? `Lv.${EVO_LEVELS[c.stage]} で${c.stage === EVO_LEVELS.length - 1 ? '最終' : ''}進化！` : 'さいごの すがた';
     $('#home-char').style.setProperty('--cc', d.colors.main);
+    $('#home-char').className = 'panel home-char' + (charRank(c.id) ? ' rank-' + charRank(c.id) : '');
     $('#home-char').innerHTML = `
       <div class="hc-top">
         <div class="sprite big bounce">${slimeSVG(c.id, c.stage)}</div>
         <div class="hc-id">
           <div class="hc-name">${c.name}${c.awaken ? ` <span class="hc-stars">${starText(c.awaken)}</span>` : ''}</div>
           ${currentTitle() ? `<div class="hc-title">🏅 ${currentTitle()}</div>` : ''}
-          <div class="badges"><span class="badge type-${c.id}">${d.type}</span><span class="badge">${d.role}</span><span class="badge evo">${nextEvo}</span></div>
+          <div class="badges">${rankBadge(c.id)}<span class="badge type-${c.id}">${d.type}</span><span class="badge">${d.role}</span><span class="badge evo">${nextEvo}</span></div>
           <div class="hc-lv">Lv.<b>${c.L}</b></div>
           <div class="expbar"><div class="exp-fill" style="width:${expPct}%"></div></div>
           <div class="exp-text">${c.nextLvExp ? `つぎのレベルまで あと <b>${c.nextLvExp - c.exp}</b> EXP` : 'レベル MAX！'}</div>

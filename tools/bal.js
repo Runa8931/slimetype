@@ -1,5 +1,7 @@
 // キャラごとに 能力値 (HP・こうげき・ぼうぎょ) の 倍率を さがして 強さを そろえる
 // つかいかた: node tools/bal.js onpuru pitarin   (名前を わたすと その キャラだけ)
+// とくべつな キャラの +5% は のぞいて そろえる (そろえた あとに 5% ぶん 強く なる)
+global.NO_SPECIAL = true;
 const D = require('../js/data.js'); const { score } = require('./chars.js');
 const one = (c, n) => { const s = score(c, n); return (s.beg.n + s.mid.n + s.adv.n + 1.5 * (s.beg.b + s.mid.b + s.adv.b)) / 7.5; };
 const all = Object.keys(D.CHARACTERS);

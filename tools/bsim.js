@@ -12,6 +12,7 @@ function sim(cid, L, e, kpm, acc) {
   const c = D.CHARACTERS[cid], f = c.forms[D.evoStage(L)], tr = f.trait, sk = f.skill;
   const st = D.calcStats(c.base, L);
   if (global.STATK) for (const k in st) st[k] = Math.round(st[k] * global.STATK); // かくせいの ぶん
+  if (!global.NO_SPECIAL && D.charRank(cid)) for (const k of ['hp', 'atk', 'def']) st[k] = Math.round(st[k] * D.SPECIAL_STAT); // とくべつな キャラ +5%
   const es = D.calcStats({ ...e.base, spd: 50 }, e.lv);
   const has = a => e.abilities.includes(a);
   const p = { hp: st.hp * 3, max: st.hp * 3, skill: 0, shield: 0, boost: 1, barrier: 0, evade: 0, reflect: 0, poison: 0 };

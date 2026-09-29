@@ -669,6 +669,11 @@ const CHARACTERS = {
   },
 };
 
+// とくべつな キャラ: ガチャ限定 = SSR / しょうごう・かくしステージ・ミッションで ひらく = とくべつ
+// HP・こうげき・ぼうぎょが 5% 高く、カード・登場・ひっさつの 演出が はでに なる
+const SPECIAL_STAT = 1.05;
+function charRank(id) { const d = CHARACTERS[id]; return d.gacha ? 'ssr' : d.title || d.special ? 'special' : ''; }
+
 // さいしょから つかえるキャラ (ガチャ限定・しょうごうや とびらで ひらく キャラを のぞく)
 const STARTERS = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].gacha && !CHARACTERS[id].title && !CHARACTERS[id].special);
 
@@ -969,5 +974,5 @@ function rankFor(score) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { MAIN_STAGES, HIDDEN_DEFS, levelNeed, stageExp, STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
+  module.exports = { SPECIAL_STAT, charRank, MAIN_STAGES, HIDDEN_DEFS, levelNeed, stageExp, STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
 }

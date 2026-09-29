@@ -1335,3 +1335,58 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 @keyframes caret-blink { 50% { opacity: 0; } }
 #scr-title .btn.big { opacity: .35; transition: opacity .4s; }
 #scr-title.typed .btn.big { opacity: 1; }
+
+/* ---------- とくべつな キャラ (SSR = 金 / とくべつ = にじ) ---------- */
+@property --rank-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.char-card.rank-ssr, .char-card.rank-special, .home-char.rank-ssr, .home-char.rank-special { position: relative; }
+.char-card.rank-ssr:not(.current), .char-card.rank-special:not(.current), .home-char.rank-ssr, .home-char.rank-special { border-color: transparent; }
+/* まわる 光の ふち */
+.rank-ssr::before, .rank-special::before {
+  content: ''; position: absolute; inset: -2px; border-radius: inherit; padding: 3px; pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: rank-spin 4s linear infinite;
+}
+.rank-ssr::before { background: conic-gradient(from var(--rank-ang), #ffd43b, #fff3bf, #f59f00, #ffe066, #fff9db, #ffd43b); }
+.rank-special::before { background: conic-gradient(from var(--rank-ang), #ff6b6b, #ffd43b, #69db7c, #4dabf7, #b197fc, #f783ac, #ff6b6b); }
+@keyframes rank-spin { to { --rank-ang: 360deg; } }
+.char-card.rank-ssr { box-shadow: 0 0 22px rgba(255, 212, 59, .25); }
+.char-card.rank-special { box-shadow: 0 0 22px rgba(177, 151, 252, .25); }
+.char-card.locked.rank-ssr::before, .char-card.locked.rank-special::before { opacity: .5; }
+/* 足もとの 光の 輪 */
+.rank-ssr .sprite::before, .rank-special .sprite::before {
+  content: ''; position: absolute; left: 8%; right: 8%; bottom: -2%; height: 18%; border-radius: 50%;
+  animation: rank-ring 2s ease-in-out infinite;
+}
+.rank-ssr .sprite::before { background: radial-gradient(closest-side, rgba(255, 212, 59, .8), transparent); }
+.rank-special .sprite::before { background: radial-gradient(closest-side, rgba(177, 151, 252, .85), rgba(116, 192, 252, .4) 60%, transparent); }
+@keyframes rank-ring { 50% { transform: scale(1.15); opacity: .6; } }
+.badge.rank-ssr { background: linear-gradient(90deg, #f59f00, #ffd43b, #f59f00); color: #3b2500; }
+.badge.rank-sp { background: linear-gradient(90deg, #ff6b6b, #ffa94d, #51cf66, #4dabf7, #9775fa); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+
+/* バトルの 登場: 光の 柱 + 上から ふってくる */
+.fighter.entry::before {
+  content: ''; position: absolute; left: 50%; bottom: 40px; width: 150px; height: 420px; transform: translateX(-50%); border-radius: 75px 75px 0 0;
+  background: linear-gradient(to top, var(--pill), transparent); filter: blur(4px); pointer-events: none; z-index: -1;
+  animation: rank-pillar 1.8s ease-out forwards;
+}
+.fighter.entry-ssr { --pill: rgba(255, 212, 59, .85); }
+.fighter.entry-special { --pill: rgba(177, 151, 252, .85); }
+.fighter.entry .sprite { animation: rank-drop .8s .25s cubic-bezier(.3, 1.5, .5, 1) backwards; }
+@keyframes rank-pillar { 0% { opacity: 0; transform: translateX(-50%) scaleX(.2); } 25% { opacity: 1; transform: translateX(-50%) scaleX(1); } 70% { opacity: .8; } 100% { opacity: 0; transform: translateX(-50%) scaleX(.6); } }
+@keyframes rank-drop { from { transform: translateY(-260px) scale(.7); opacity: 0; } 60% { opacity: 1; } }
+
+/* ひっさつの カットイン (とくべつ): 画面が 暗くなり、ふちが 光り、線が ながれる */
+.cutin-rank { background: radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,.6)); animation: rank-dim 1.5s ease-in-out forwards; }
+@keyframes rank-dim { 0% { opacity: 0; } 12%, 80% { opacity: 1; } 100% { opacity: 0; } }
+.cutin-rank .cutin-band { height: 200px; animation-duration: 1.5s; position: relative; overflow: hidden; }
+.cutin-ssr .cutin-band { border-top: 5px solid #ffd43b; border-bottom: 5px solid #ffd43b; box-shadow: 0 0 60px var(--cut), 0 0 40px #ffd43b; }
+.cutin-special .cutin-band { border-top: 5px solid; border-bottom: 5px solid; border-image: linear-gradient(90deg, #ff6b6b, #ffd43b, #69db7c, #4dabf7, #b197fc) 1; box-shadow: 0 0 60px var(--cut), 0 0 40px #b197fc; }
+.cutin-rank .cutin-sprite { width: 190px; height: 190px; animation: rank-zoom 1.5s ease-out; }
+@keyframes rank-zoom { 0% { transform: scale(.6) rotate(-10deg); } 25% { transform: scale(1.12) rotate(4deg); } 40%, 100% { transform: none; } }
+.cutin-lines { position: absolute; inset: 0; pointer-events: none; opacity: .35;
+  background: repeating-linear-gradient(90deg, transparent 0 60px, rgba(255,255,255,.9) 60px 64px, transparent 64px 140px);
+  animation: rank-lines .35s linear infinite; }
+@keyframes rank-lines { to { background-position: -140px 0; } }
+.cutin-label { font-family: var(--pixel); font-size: 18px; letter-spacing: .35em; color: #ffd43b; text-shadow: 0 0 10px rgba(255, 212, 59, .8), 0 2px 0 rgba(0,0,0,.5); }
+.cutin-special .cutin-label { color: #fff; text-shadow: 0 0 10px #b197fc, 0 2px 0 rgba(0,0,0,.5); }
+.cutin-rank .cutin-title { font-size: 62px; }
