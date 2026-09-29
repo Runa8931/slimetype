@@ -356,7 +356,8 @@ Screens.gacha = {
         ★4 の あとや、ほかのものが かぶると <b>かけら 💎</b> に なる。<br>かけらは <b>こうかんじょ</b> で 好きなものと こうかんできる。</p>
         <p class="gc-help">コインは れんしゅう・バトル・サバイバル・しょうごう で もらえるよ</p></div>`;
     }
-    return `<div class="gc-results ${this.last.length > 1 ? 'ten' : 'one'}">${this.last.map((r, i) => resultCard(r, i * 0.05)).join('')}</div>`;
+    return `<div class="gc-results ${this.last.length > 1 ? 'ten' : 'one'}">${this.last.map((r, i) => resultCard(r, i * 0.05)).join('')}</div>
+      <div class="gc-again"><kbd>Space</kbd> もう一度 ${this.last.length > 1 ? '10 かい' : '1 かい'} 引く　<kbd>Esc</kbd> もどる</div>`;
   },
 
   // かけらの こうかんじょ
@@ -500,14 +501,17 @@ Screens.gacha = {
   },
 
   // カプセル 1 こぶん: ころがり出る → (SSR だけ 当たりの 演出) → ひらく → 下に ならぶ
-  // SSR の 出かた (4 とおり):
-  //   N・R・SR の 色で 出てきて、1 だんずつ 色が 上がって 金色に なる (それぞれ 1/4)
+  // SSR の 出かた:
   //   はじめから 金色の カプセルが 出る「かくてい」 (1/4)
+  //   N・R・SR の 色で 出てきて、1 だんずつ 色が 上がって 金色に なる (3/8)
+  //   N・R・SR の 色で 出てきて、ためてから いっきに 金色に なる (3/8。むかしからの 出かた)
   async capsule(stage, r, i, ten) {
     const rar = r.it.rarity;
     const ssr = rar === 'SSR' && !this.skip;
     const LADDER = ['N', 'R', 'SR'];
-    const direct = ssr && Math.random() < 0.25;
+    const roll = Math.random();
+    const direct = ssr && roll < 0.25;
+    const ladder = ssr && roll >= 0.25 && roll < 0.625;
     const first = ssr && !direct ? LADDER[Math.floor(Math.random() * 3)] : rar;
     const slot = stage.querySelector('.gs-cap-slot');
     const base = stage.className.replace(/ (dark|ssr|omen)/g, '');
@@ -537,12 +541,12 @@ Screens.gacha = {
       await this.wait(1200);
       await this.ssrReveal(stage, cap, base, set);
     } else if (ssr) {
-      // 1 だんずつ 色が 上がる (N → R → SR → SSR)
       if (first === 'SR') { set('center glow'); SFX.charge(); await this.wait(600); } // SR の ふり
       set('center hold');
       SFX.tone(120, 1.2, { type: 'sawtooth', vol: 0.04, slide: 400 });
-      await this.wait(900);
-      for (let k = LADDER.indexOf(first) + 1; k < LADDER.length && !this.skip; k++) {
+      await this.wait(ladder ? 900 : 1300);
+      // 1 だんずつ 色が 上がる (N → R → SR → SSR)。いっきに の ときは ここを とばす
+      for (let k = LADDER.indexOf(first) + 1; ladder && k < LADDER.length && !this.skip; k++) {
         const col = RARITY[LADDER[k]].color;
         cap.style.setProperty('--cap', col);
         const c = FX.center(cap);
@@ -634,6 +638,11 @@ Screens.gacha = {
     if (this.busy) {
       if ((e.key === ' ' || e.key === 'Enter') && !this.skip) { this.skip = true; if (this._skipNow) this._skipNow(); }
       return;
+    }
+    // 回した あと: Space で おなじ 回数を もう一度、Esc で けっかを とじて ガチャ機に もどる
+    if (this.last && this.tab === 'result') {
+      if (e.key === ' ') { e.preventDefault(); this.pull(this.last.length); return; }
+      if (e.key === 'Escape') { this.last = null; SFX.select(); this.render(); return; }
     }
     if (e.key === '1') this.pull(1);
     if (e.key === '2') this.pull(10);

@@ -533,6 +533,9 @@ kbd {
 .node-icon { position: absolute; left: -42px; top: -96px; width: 84px; height: 80px; animation: floaty 2s ease-in-out infinite; pointer-events: none; }
 .node-icon svg { width: 100%; height: 100%; overflow: visible; }
 .node.boss .node-icon { left: -60px; top: -128px; width: 120px; height: 110px; animation: none; }
+.node-castle { position: absolute; inset: -18% -10% 22%; opacity: .95; }
+.node-boss { position: absolute; left: 12%; right: 12%; bottom: -4%; height: 76%; animation: floaty 2s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0,0,0,.45)); }
+.node-castle svg, .node-boss svg { width: 100%; height: 100%; overflow: visible; }
 .node.cleared .node-icon { filter: grayscale(.6) brightness(.9); }
 .node-q { width: 100%; height: 100%; display: grid; place-items: center; font-family: var(--pixel); font-size: 44px; color: #fff; text-shadow: 0 3px 0 #495057; }
 .node-star { position: absolute; left: 14px; top: -40px; font-size: 26px; color: var(--gold); text-shadow: 0 2px 0 #b86a00; }
@@ -1337,21 +1340,43 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 #scr-title.typed .btn.big { opacity: 1; }
 
 /* ---------- とくべつな キャラ (SSR = 金 / とくべつ = にじ) ---------- */
-@property --rank-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 .char-card.rank-ssr, .char-card.rank-special, .home-char.rank-ssr, .home-char.rank-special { position: relative; }
 .char-card.rank-ssr:not(.current), .char-card.rank-special:not(.current), .home-char.rank-ssr, .home-char.rank-special { border-color: transparent; }
-/* まわる 光の ふち */
-.rank-ssr::before, .rank-special::before {
-  content: ''; position: absolute; inset: -2px; border-radius: inherit; padding: 3px; pointer-events: none;
+/* 金属のような ふち: 太さは そろえて、光が ゆっくり ながれる */
+:is(.char-card, .home-char):is(.rank-ssr, .rank-special)::before {
+  content: ''; position: absolute; inset: -4px; border-radius: inherit; padding: 5px; pointer-events: none; z-index: 1;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: rank-spin 4s linear infinite;
+  background-size: 300% 300%; animation: rank-flow 5s linear infinite;
 }
-.rank-ssr::before { background: conic-gradient(from var(--rank-ang), #ffd43b, #fff3bf, #f59f00, #ffe066, #fff9db, #ffd43b); }
-.rank-special::before { background: conic-gradient(from var(--rank-ang), #ff6b6b, #ffd43b, #69db7c, #4dabf7, #b197fc, #f783ac, #ff6b6b); }
-@keyframes rank-spin { to { --rank-ang: 360deg; } }
-.char-card.rank-ssr { box-shadow: 0 0 22px rgba(255, 212, 59, .25); }
-.char-card.rank-special { box-shadow: 0 0 22px rgba(177, 151, 252, .25); }
-.char-card.locked.rank-ssr::before, .char-card.locked.rank-special::before { opacity: .5; }
+:is(.char-card, .home-char).rank-ssr::before { background-image: linear-gradient(135deg, #8a5a00, #ffd43b 18%, #fff9db 25%, #f59f00 34%, #8a5a00 50%, #ffd43b 68%, #fff9db 75%, #f59f00 84%, #8a5a00); }
+:is(.char-card, .home-char).rank-special::before { background-image: linear-gradient(135deg, #ff6b6b, #ffd43b 12%, #69db7c 25%, #4dabf7 37%, #b197fc 50%, #ff6b6b 62%, #ffd43b 75%, #69db7c 87%, #4dabf7); }
+@keyframes rank-flow { to { background-position: 300% 300%; } }
+/* うちがわの 細い ライン と 外への 光 */
+.char-card.rank-ssr, .home-char.rank-ssr { box-shadow: inset 0 0 0 4px rgba(20, 14, 0, .6), inset 0 0 0 5px rgba(255, 212, 59, .5), 0 0 34px rgba(255, 212, 59, .4), 0 0 70px rgba(245, 159, 0, .15); }
+.char-card.rank-special, .home-char.rank-special { box-shadow: inset 0 0 0 4px rgba(10, 10, 30, .6), inset 0 0 0 5px rgba(177, 151, 252, .5), 0 0 34px rgba(177, 151, 252, .4), 0 0 70px rgba(116, 192, 252, .15); }
+/* 左上から 金 (にじ) の 光が さす。キャラの 色の うすい いろづけは のこす */
+.home-char.rank-ssr { background-image: linear-gradient(160deg, rgba(255, 212, 59, .18), transparent 45%); }
+.home-char.rank-special { background-image: linear-gradient(160deg, rgba(177, 151, 252, .18), rgba(116, 192, 252, .06) 30%, transparent 50%); }
+.char-card.rank-ssr { background: linear-gradient(160deg, rgba(255, 212, 59, .18), transparent 45%), linear-gradient(180deg, color-mix(in srgb, var(--cc) 22%, transparent), rgba(255,255,255,.04)); }
+.char-card.rank-special { background: linear-gradient(160deg, rgba(177, 151, 252, .18), rgba(116, 192, 252, .06) 30%, transparent 50%), linear-gradient(180deg, color-mix(in srgb, var(--cc) 22%, transparent), rgba(255,255,255,.04)); }
+/* 四すみの ほしが きれない ように */
+.char-card.rank-ssr, .char-card.rank-special { overflow: visible; }
+/* 四すみの ほし */
+.rank-frame { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; overflow: visible; }
+.rank-frame b { position: absolute; font-size: 26px; line-height: 1; font-style: normal; animation: rank-twinkle 2.4s ease-in-out infinite; }
+.rank-frame .tl { left: -12px; top: -14px; } .rank-frame .tr { right: -12px; top: -14px; animation-delay: .6s; }
+.rank-frame .bl { left: -12px; bottom: -14px; animation-delay: 1.2s; } .rank-frame .br { right: -12px; bottom: -14px; animation-delay: 1.8s; }
+.rank-ssr .rank-frame b { color: #ffe066; text-shadow: 0 0 6px #ffd43b, 0 0 14px #f59f00, 0 1px 0 #8a5a00; }
+.rank-special .rank-frame b { text-shadow: 0 0 6px #fff, 0 0 14px #b197fc; }
+.rank-special .rank-frame .tl { color: #ff8787; } .rank-special .rank-frame .tr { color: #ffd43b; }
+.rank-special .rank-frame .bl { color: #69db7c; } .rank-special .rank-frame .br { color: #74c0fc; }
+@keyframes rank-twinkle { 0%, 100% { transform: scale(1) rotate(0); opacity: 1; } 50% { transform: scale(.65) rotate(45deg); opacity: .7; } }
+/* ななめに 通る 光 */
+.rank-glint { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; }
+.rank-glint::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: -60%; width: 40%; transform: skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .16), transparent); animation: rank-glint 4.5s ease-in-out infinite; }
+@keyframes rank-glint { 0%, 60% { left: -60%; } 100% { left: 140%; } }
+.char-card.locked .rank-frame { opacity: .5; }
 /* 足もとの 光の 輪 */
 .rank-ssr .sprite::before, .rank-special .sprite::before {
   content: ''; position: absolute; left: 8%; right: 8%; bottom: -2%; height: 18%; border-radius: 50%;
@@ -1425,9 +1450,10 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .gs-item .gc-card.gs-ssr-card { position: relative; box-shadow: 0 0 40px rgba(255,212,59,.6); }
 .gs-item .gc-card.gs-ssr-card::before {
   content: ''; position: absolute; inset: -3px; border-radius: inherit; padding: 4px; pointer-events: none;
-  background: conic-gradient(from var(--rank-ang), #ffd43b, #fff3bf, #f59f00, #ffe066, #fff9db, #ffd43b);
+  background-image: linear-gradient(135deg, #8a5a00, #ffd43b 18%, #fff9db 25%, #f59f00 34%, #8a5a00 50%, #ffd43b 68%, #fff9db 75%, #f59f00 84%, #8a5a00);
+  background-size: 300% 300%; animation: rank-flow 3s linear infinite;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: rank-spin 3s linear infinite;
 }
 /* ガチャの 上にも カットインが 出るように */
 .cutin-rank { z-index: 60; }
+.gc-again { text-align: center; margin: 12px 0 4px; color: var(--sub); font-size: 14px; }

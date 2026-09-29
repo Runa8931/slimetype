@@ -494,7 +494,8 @@ Screens.stages = {
       const locked = g > this.cleared;
       const cleared = g < this.cleared;
       let icon;
-      if (e.boss && (m.theme === 'grass' || m.theme === 'magma')) icon = castleSVG(m.theme === 'magma');
+      // そうげん・マグマの ボスは お城の まえに 立つ (お城だけだと ボスが 見えない)
+      if (e.boss && (m.theme === 'grass' || m.theme === 'magma')) icon = `<div class="node-castle">${castleSVG(m.theme === 'magma')}</div>` + (locked ? '' : `<div class="node-boss">${enemySVG(e.id)}</div>`);
       else icon = locked ? '<div class="node-q">?</div>' : enemySVG(e.id);
       return `<div class="node ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''}" id="node-${i}" data-g="${g}" data-i="${i}" style="left:${p.x}px;top:${p.y}px">
         <div class="node-pad"></div>

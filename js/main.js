@@ -74,6 +74,13 @@ function rankBase(id) {
   const b = CHARACTERS[id].base;
   return charRank(id) ? { hp: Math.round(b.hp * SPECIAL_STAT), atk: Math.round(b.atk * SPECIAL_STAT), def: Math.round(b.def * SPECIAL_STAT), spd: b.spd } : b;
 }
+// とくべつな キャラの カードの かざり (四すみの ほし・ななめに 通る 光)
+function rankFrame(id) {
+  const r = charRank(id);
+  if (!r) return '';
+  const g = r === 'ssr' ? '✦' : '★';
+  return `<i class="rank-frame"><b class="tl">${g}</b><b class="tr">${g}</b><b class="bl">${g}</b><b class="br">${g}</b><em class="rank-glint"></em></i>`;
+}
 function rankBadge(id) {
   const r = charRank(id);
   return r === 'ssr' ? '<span class="badge rank-ssr">✦ SSR</span>' : r === 'special' ? '<span class="badge rank-sp">★ とくべつ</span>' : '';
@@ -311,7 +318,7 @@ Screens.select = {
         </button>`;
       }
       return `<button class="char-card ${Save.data.active === id ? 'current' : ''} ${charRank(id) ? 'rank-' + charRank(id) : ''}" data-id="${id}" style="--cc:${d.colors.main};--cd:${d.colors.dark}">
-        <span class="mc-key">${i + 1}</span>
+        ${rankFrame(id)}<span class="mc-key">${i + 1}</span>
         <div class="sprite bounce d${i}">${slimeSVG(id, c.stage)}</div>
         <div class="cc-name">${c.name} <small>Lv.${c.L}</small></div>
         ${c.awaken ? `<div class="cc-stars">${starText(c.awaken)}</div>` : ''}
@@ -406,7 +413,7 @@ Screens.home = {
     const nextEvo = c.stage < EVO_LEVELS.length ? `Lv.${EVO_LEVELS[c.stage]} で${c.stage === EVO_LEVELS.length - 1 ? '最終' : ''}進化！` : 'さいごの すがた';
     $('#home-char').style.setProperty('--cc', d.colors.main);
     $('#home-char').className = 'panel home-char' + (charRank(c.id) ? ' rank-' + charRank(c.id) : '');
-    $('#home-char').innerHTML = `
+    $('#home-char').innerHTML = `${rankFrame(c.id)}
       <div class="hc-top">
         <div class="sprite big bounce">${slimeSVG(c.id, c.stage)}</div>
         <div class="hc-id">
