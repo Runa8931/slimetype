@@ -95,6 +95,11 @@ function traitLines(id, t) {
       L.push('攻撃を うけると ゆきだまが 1 こ へる');
       L.push(statusLine(t.statusCut));
       break;
+    case 'fuerin':
+      L.push(`正しく 1 回 打つと コンボが ${+t.comboGain.toFixed(2)} ふえる (ふつうは 1)。コンボ倍率の 上限 (1.5 倍) に はやく とどく`);
+      L.push('ミスすると コンボは 0 に もどる');
+      L.push(statusLine(t.statusCut));
+      break;
     case 'yuusharin':
       L.push(`会心率 ${pct(t.crit)} (ふつうは 6%)・うける ダメージ -${pct(t.cut)}`);
       L.push(`コンボ倍率の 上限 ${times(1 + t.comboMax / 200)} (${t.comboMax} コンボ)。ふつうは 1.5 倍`);
@@ -179,6 +184,10 @@ function skillLines(id, s, def) {
       L.push(`ゆきだまで ${pw}`);
       L.push(`ゆきだま 1 こ につき 威力 +${pct(s.snowBoost)} (ゆきだまは へらない)`);
       break;
+    case 'fuerin':
+      L.push(`ぶんしんの たいあたりで ${pw}`);
+      L.push(`いまの コンボ 1 につき 威力 +${pct(s.comboBoost)} (最大 +${pct(s.boostMax)}。コンボ ${Math.round(s.boostMax / s.comboBoost)} で 最大)`);
+      break;
     case 'yuusharin':
       L.push(`つるぎで ${pw}`);
       L.push(`HP を 最大HPの ${pct(s.heal)} 回復し、敵の 攻撃ゲージを 0 に もどす`);
@@ -218,6 +227,7 @@ function survivalLine(id, stage, t) {
   if (id === 'gorurin') x = `コイン ${times(sv.coin[stage])}`;
   if (id === 'yukidarun') x = `ふれた 敵が ${sv.chill[stage]} 秒 おそくなる`;
   if (id === 'yuusharin') x = `武器の ダメージ ${times(sv.dmg[stage])}・うける ダメージ ${pct(1 - sv.hurt[stage])} カット`;
+  if (id === 'fuerin') x = `武器を うつ 間かくが ${pct(1 - sv.cd[stage])} みじかい`;
   if (id === 'pitarin') x = `武器が ${pct(sv.crit[stage])} の 確率で 会心 (ダメージ 2 倍)`;
   return `${x}${w ? `。さいしょの 武器「${w.name}」` : ''}`;
 }

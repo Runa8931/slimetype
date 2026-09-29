@@ -16,7 +16,7 @@ function sim(cid, L, e, kpm, acc) {
   const has = a => e.abilities.includes(a);
   const p = { hp: st.hp * 3, max: st.hp * 3, skill: 0, shield: 0, boost: 1, barrier: 0, evade: 0, reflect: 0, poison: 0 };
   const en = { hp: Math.round(es.hp * D.ENEMY_HP_SCALE), g: 0, atk: 0, angry: false, dbl: false, phase: 0, heads: 1 }; en.max = en.hp;
-  let t = 0, combo = 0, keys = wordKeys(e.diff), typed = 0, wstart = 0, wmiss = false, chill = 0, shell = 0, nextShell = 4, nextRegen = 8;
+  let cacc = 0, t = 0, combo = 0, keys = wordKeys(e.diff), typed = 0, wstart = 0, wmiss = false, chill = 0, shell = 0, nextShell = 4, nextRegen = 8;
   let hidden = 0, nextHide = 6, wind = 0, nextWind = 5, words = 0, thunderAt = 0, thunderW = 0, nextThunder = 5;
   let burnUntil = 0, bindUntil = 0, nextRegenP = 3, eChill = 0, breakUntil = 0, streak = 0, tempo = 0, tempoMult = 1, ePoison = 0, weak = 0, snow = 0;
   const dt = 0.02, kps = kpm / 60; let keyT = 0;
@@ -69,12 +69,13 @@ function sim(cid, L, e, kpm, acc) {
       keyT -= 1;
       if (typed === 0) wstart = t;
       if (Math.random() > acc) {
-        wmiss = true; combo = cid === 'gotsun' ? Math.floor(combo * tr.comboKeep) : 0; en.g = Math.min(0.99, en.g + 0.04); p.skill = Math.max(0, p.skill - 3);
+        wmiss = true; combo = cid === 'gotsun' ? Math.floor(combo * tr.comboKeep) : 0; cacc = 0; en.g = Math.min(0.99, en.g + 0.04); p.skill = Math.max(0, p.skill - 3);
         if (has('shock') && !(cid === 'piriri' && tr.shockImmune)) p.hp -= Math.max(1, Math.round(p.max * 0.03));
         if (has('sweet')) en.hp = Math.min(en.max, en.hp + en.max * 0.015);
         continue;
       }
-      typed++; combo++;
+      typed++;
+      if (tr.comboGain) { cacc += tr.comboGain; const a = Math.floor(cacc); cacc -= a; combo += a; } else combo++; // ふえりん
       p.skill = Math.min(100, p.skill + (0.7 + c.base.spd / 200) * sk.charge);
       if (p.skill >= 100) {
         p.skill = 0;
@@ -95,6 +96,7 @@ function sim(cid, L, e, kpm, acc) {
         if (cid === 'gorurin') { const d = skDmg(); en.hp -= d; p.hp = Math.min(p.max, p.hp + d * sk.skillDrain); }
         if (cid === 'yukidarun') en.hp -= skDmg(1 + sk.snowBoost * snow);
         if (cid === 'yuusharin') { en.hp -= skDmg(); p.hp = Math.min(p.max, p.hp + p.max * sk.heal); en.g = 0; }
+        if (cid === 'fuerin') en.hp -= skDmg(1 + Math.min(sk.boostMax, combo * sk.comboBoost));
       }
       if (typed >= keys) {
         const secs = Math.max(0.2, t - wstart), kpsw = keys / secs;

@@ -69,6 +69,15 @@ function hasChar(id) {
 // せんざいかくせいの ★ の数 (0〜4)
 function awakenOf(id) { return Math.min(AWAKEN_MAX, (Save.data.gacha && Save.data.gacha.awaken[id]) || 0); }
 
+// 正しく 1 回 打ったときに ふえる コンボ (ふえりんは 1.5〜2 ずつ。はんぱは o.comboAcc に ためる)
+function comboStep(o, trait) {
+  if (!trait.comboGain) return 1;
+  o.comboAcc = (o.comboAcc || 0) + trait.comboGain;
+  const add = Math.floor(o.comboAcc);
+  o.comboAcc -= add;
+  return add;
+}
+
 // キャラの現在の状態をまとめて返す
 function charInfo(id) {
   const def = CHARACTERS[id];
@@ -205,8 +214,8 @@ const App = {
     this.current = name;
     this.shownAt = performance.now();
     if (Screens[name] && Screens[name].enter) Screens[name].enter(arg);
-    // タイトル・ホームは 草原の 背景 (キャラが 歩くのは タイトルだけ)
-    if (name === 'title' || name === 'home') Meadow.show(name === 'title'); else Meadow.hide();
+    // タイトルは 草原の 背景 (ホームは もとの 星空)
+    if (name === 'title') Meadow.show(true); else Meadow.hide();
   },
 
   boot() {

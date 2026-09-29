@@ -18,7 +18,7 @@ const DOORS = [
   { id: 'ch_moririn', kind: 'char', char: 'moririn', name: 'もりりん', what: 'くさの かいふく型 スライム', ...bossDoor(4) },
   { id: 'ch_kagemaru', kind: 'char', char: 'kagemaru', name: 'かげまる', what: 'かげの テクニック型 スライム', ...bossDoor(5) },
   // しょうごうで ひらく キャラ
-  ...['onpuru', 'pitarin'].map(id => {
+  ...['onpuru', 'pitarin', 'fuerin'].map(id => {
     const ach = () => ACHIEVEMENTS.find(x => x.id === CHARACTERS[id].title);
     return { id: 'ch_' + id, kind: 'char', char: id, name: CHARACTERS[id].names[0], what: `${CHARACTERS[id].type}の ${CHARACTERS[id].role} スライム`,
       get text() { const a = ach(); return `しょうごう「${a.name}」を とる (${a.desc})`; },

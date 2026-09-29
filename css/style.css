@@ -1271,7 +1271,7 @@ body.lite .sky { display: none; }
 .dex-world.w-hidden, .drawer-world.w-hidden { background: linear-gradient(90deg, rgba(255,212,59,.35), rgba(157,78,221,.35)); }
 .node.hidden-node .node-pad { box-shadow: 0 0 0 4px #ffd43b, 0 0 24px #ffd43b; }
 .node.hidden-node .node-label { background: linear-gradient(90deg, #b8860b, #7b2cbf); }
-.badge.type-dororin { background: #5f3dc4; } .badge.type-gorurin { background: #b8860b; } .badge.type-yukidarun { background: #1c7ed6; } .badge.type-yuusharin { background: #e03131; }
+.badge.type-dororin { background: #5f3dc4; } .badge.type-gorurin { background: #b8860b; } .badge.type-yukidarun { background: #1c7ed6; } .badge.type-yuusharin { background: #e03131; } .badge.type-fuerin { background: #2f9e44; }
 /* かくしステージ: はなれた 島。道が のびるまでは 敵は かげ */
 .hidden-island { fill: rgba(255,255,255,.08); stroke: #ffd43b; stroke-width: 3; stroke-dasharray: 10 8; opacity: .9; }
 .node.hidden-node.sealed .node-icon svg { filter: brightness(0) opacity(.55) !important; }

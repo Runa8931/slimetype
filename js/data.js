@@ -639,6 +639,34 @@ const CHARACTERS = {
         skill: { name: 'でんせつの つるぎ', desc: '威力 440。HP 16% 回復。ゲージを 0 に。ゲージ +20%', power: 440, heal: 0.16, charge: 1.2 } },
     ],
   },
+  fuerin: {
+    id: 'fuerin',
+    title: 'combo300',
+    names: ['ふえりん', 'ふえふえりん', 'ぶんしんふえりん', 'ミリオンふえりん', 'インフィニふえりん'],
+    type: 'ぶんれつ', role: 'コンボ型',
+    colors: { main: '#94d82d', light: '#f4fce3', dark: '#2b8a3e', accent: '#ff8787' },
+    stageColors: [
+      { main: '#94d82d', light: '#f4fce3', dark: '#2b8a3e', accent: '#ff8787' },
+      { main: '#69db7c', light: '#ebfbee', dark: '#1b6b30', accent: '#ffd43b' },
+      { main: '#38d9a9', light: '#e6fcf5', dark: '#087f5b', accent: '#ff8787' },
+      { main: '#3bc9db', light: '#e3fafc', dark: '#0b7285', accent: '#ffd43b' },
+      { main: '#b2f2bb', light: '#ffffff', dark: '#2f9e44', accent: '#f783ac' },
+    ],
+    base: { hp: 89, atk: 96, def: 78, spd: 80 },
+    desc: 'コンボマスターの まえに あらわれた、打つたびに ぶんれつして ふえる スライム。コンボが どんどん のびる。',
+    forms: [
+      { trait: { name: 'ぶんれつ', desc: '正しく 打つと コンボが 1.5 ふえる。ミスすると コンボは 0 に もどる', comboGain: 1.5, statusCut: 0 },
+        skill: { name: 'ぶんしんアタック', desc: '威力 170。コンボ 1 につき 威力 +0.3% (最大 +60%)', power: 170, comboBoost: 0.003, boostMax: 0.6, charge: 1 } },
+      { trait: { name: 'ぶんれつ+', desc: 'コンボが 1.6 ふえる', comboGain: 1.6, statusCut: 0 },
+        skill: { name: 'ぶんしんアタック+', desc: '威力 240。コンボ 1 につき +0.3% (最大 +75%)。ゲージ +5%', power: 240, comboBoost: 0.003, boostMax: 0.75, charge: 1.05 } },
+      { trait: { name: 'ぶんしんの じゅつ', desc: 'コンボが 1.7 ふえる。どく・やけどの時間が半分', comboGain: 1.7, statusCut: 0.5 },
+        skill: { name: 'ぶんしんラッシュ', desc: '威力 300。コンボ 1 につき +0.3% (最大 +90%)。ゲージ +10%', power: 300, comboBoost: 0.003, boostMax: 0.9, charge: 1.1 } },
+      { trait: { name: 'ミリオンぶんれつ', desc: 'コンボが 1.8 ふえる。どく・やけどの時間が半分', comboGain: 1.8, statusCut: 0.5 },
+        skill: { name: 'ミリオンラッシュ', desc: '威力 360。コンボ 1 につき +0.3% (最大 +105%)。ゲージ +15%', power: 360, comboBoost: 0.003, boostMax: 1.05, charge: 1.15 } },
+      { trait: { name: 'インフィニぶんれつ', desc: 'コンボが 2 ふえる。状態異常が きかない', comboGain: 2, statusCut: 1 },
+        skill: { name: 'インフィニティラッシュ', desc: '威力 420。コンボ 1 につき +0.3% (最大 +120%)。ゲージ +20%', power: 420, comboBoost: 0.003, boostMax: 1.2, charge: 1.2 } },
+    ],
+  },
 };
 
 // さいしょから つかえるキャラ (ガチャ限定・しょうごうや とびらで ひらく キャラを のぞく)
@@ -666,6 +694,7 @@ const AWAKEN_BONUS = {
   gorurin: { desc: 'ダメージ回復 +1%', apply: (t, n) => ({ ...t, drain: t.drain + 0.01 * n }) },
   yukidarun: { desc: 'ゆきだま 1 こ の カット +1%', apply: (t, n) => ({ ...t, snowCut: t.snowCut + 0.01 * n }) },
   yuusharin: { desc: '会心率 +1%', apply: (t, n) => ({ ...t, crit: t.crit + 0.01 * n }) },
+  fuerin: { desc: 'コンボの ふえかた +0.05', apply: (t, n) => ({ ...t, comboGain: t.comboGain + 0.05 * n }) },
 };
 
 // サバイバルでの とくせい (進化の 段階ごと)。説明文も ここから 作る
@@ -686,6 +715,7 @@ const SV_CHAR = {
   gorurin: { coin: [1.2, 1.25, 1.3, 1.35, 1.4] },    // サバイバルの コイン
   yukidarun: { chill: [0.8, 0.9, 1.0, 1.1, 1.2] },   // ふれた 敵が おそくなる 秒数
   yuusharin: { dmg: [1.06, 1.08, 1.1, 1.12, 1.14], hurt: [0.94, 0.92, 0.9, 0.88, 0.86] }, // 武器の ダメージ / うける ダメージ
+  fuerin: { cd: [0.92, 0.9, 0.88, 0.86, 0.84] },     // 武器を うつ 間かく
 };
 
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく

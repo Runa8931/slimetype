@@ -87,7 +87,7 @@ Screens.practice = {
     this.weak = s.diff === 'weak' ? practiceWeakKeys() : null;
     this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, [s.diff]);
     this.state = 'ready';
-    this.correct = 0; this.miss = 0; this.combo = 0; this.maxCombo = 0; this.words = 0; this.bestKps = 0;
+    this.correct = 0; this.miss = 0; this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.words = 0; this.bestKps = 0;
     this.wordMiss = false;
     this.missMap = {};
     this.timeLeft = this.duration;
@@ -177,18 +177,19 @@ Screens.practice = {
     const expected = this.target.nextKey();
     const r = this.target.input(key);
     if (r === 'miss') {
-      this.miss++; this.combo = 0; this.wordMiss = true;
+      this.miss++; this.combo = 0; this.comboAcc = 0; this.wordMiss = true;
       this.missMap[expected] = (this.missMap[expected] || 0) + 1;
       recordMiss(expected);
       SFX.miss();
       pressKey($('#p-kb'), key, true);
       replayAnim($('#p-tp'), 'miss-shake', 300);
     } else {
-      this.correct++; this.combo++;
+      const prev = this.combo;
+      this.correct++; this.combo += comboStep(this, this.char.trait); // ふえりんは 1 回で 2 ふえる ことも ある
       this.maxCombo = Math.max(this.maxCombo, this.combo);
       SFX.key();
       pressKey($('#p-kb'), key, false);
-      if (this.combo > 0 && this.combo % 50 === 0) this.comboFx();
+      if (Math.floor(this.combo / 50) > Math.floor(prev / 50)) this.comboFx(Math.floor(this.combo / 50) * 50);
       if (r === 'done') wordFx($('#p-tp'));
       if (r === 'done') { this.wordDone(); return; }
     }
@@ -224,9 +225,9 @@ Screens.practice = {
     this.updateHud();
   },
 
-  comboFx() {
+  comboFx(n = this.combo) {
     const p = FX.center($('#p-combo'));
-    floatText(p.x, p.y + 30, `${this.combo} COMBO!`, 'combo-pop');
+    floatText(p.x, p.y + 30, `${n} COMBO!`, 'combo-pop');
     FX.burst(p.x, p.y, { colors: ['#ffd23f', '#ff5d8f', '#fff'], count: 24, shape: 'star', size: 6 });
   },
 

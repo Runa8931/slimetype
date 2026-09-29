@@ -36,7 +36,7 @@ Screens.battle = {
     this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0, poison: 0, nextPoison: 0, weakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
-    this.combo = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0; this.bestKps = 0; this.tempo = 0; this.tempoMult = 1; this.snow = 0;
+    this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0; this.bestKps = 0; this.tempo = 0; this.tempoMult = 1; this.snow = 0;
     this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
     // 新しい敵の特殊能力で使う状態
     this.shellUntil = 0; this.nextShell = 4000; this.nextRegen = 8000;
@@ -429,6 +429,7 @@ Screens.battle = {
       recordMiss(expected);
       // ごつん: ミスしてもコンボが一部残る (進化すると多く残る)
       this.combo = this.ch.id === 'gotsun' ? Math.floor(this.combo * this.ch.trait.comboKeep) : 0;
+      this.comboAcc = 0;
       this.e.gauge = Math.min(0.99, this.e.gauge + 0.04);
       this.p.skill = Math.max(0, this.p.skill - 3);
       SFX.miss();
@@ -448,7 +449,7 @@ Screens.battle = {
       }
     } else {
       this.correct++;
-      this.combo++;
+      this.combo += comboStep(this, this.ch.trait);
       this.maxCombo = Math.max(this.maxCombo, this.combo);
       const before = this.p.skill;
       this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200) * this.ch.skill.charge);
@@ -564,6 +565,7 @@ Screens.battle = {
       gorurin: { color: '#ffd43b', size: 10, arc: -60, frames: 18 },
       yukidarun: { color: '#ffffff', size: 12, arc: -90, frames: 22 },
       yuusharin: { color: '#4dabf7', size: 10, arc: -20, frames: 14 },
+      fuerin: { color: '#94d82d', size: 9, arc: -60, frames: 14 },
       pitarin: { color: '#ffe066', size: 8, arc: -10, frames: 12 },
     };
     // きせかえの エフェクト: 攻撃の 弾が その形の 尾を ひいて 飛び、当たると はじける
@@ -725,7 +727,7 @@ Screens.battle = {
     }
 
     // ほむら・もりりん・かげまる・りゅうまる・きらり: 攻撃 + それぞれの効果
-    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun', 'onpuru', 'pitarin', 'dororin', 'gorurin', 'yukidarun', 'yuusharin'].includes(ch.id)) {
+    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun', 'onpuru', 'pitarin', 'dororin', 'gorurin', 'yukidarun', 'yuusharin', 'fuerin'].includes(ch.id)) {
       this.after(() => {
         if (this.state !== 'run') return;
         const ec = FX.center($('#b-esprite'));
@@ -734,12 +736,13 @@ Screens.battle = {
         if (ch.id === 'ryumaru') dmg *= 1 + sk.lowBoost * (1 - clamp(this.p.hp / this.p.max, 0, 1));
         if (ch.id === 'kirari') dmg *= 1 + this.streakBonus();
         if (ch.id === 'yukidarun') dmg *= 1 + sk.snowBoost * this.snow; // ゆきだまが 多いほど 強い
+        if (ch.id === 'fuerin') dmg *= 1 + Math.min(sk.boostMax, this.combo * sk.comboBoost); // コンボが 多いほど 強い
         dmg = Math.round(dmg);
         const fxCol = { homura: ['#ff6b35', '#ffe066', '#fff'], moririn: ['#51cf66', '#d3f9d8', '#fff'], kagemaru: ['#7048e8', '#1a1a2e', '#e5dbff'],
           ryumaru: ['#ff922b', '#ffd43b', '#fff'], kirari: ['#f783ac', '#fff3bf', '#99e9f2'],
           koorin: ['#a5d8ff', '#e7f5ff', '#fff'], fuwari: ['#96f2d7', '#e6fcf5', '#fff'], metarun: ['#adb5bd', '#ffd43b', '#fff'],
           onpuru: ['#ff8cc6', '#ffe066', '#fff'], pitarin: ['#91a7ff', '#ffe066', '#fff'],
-          dororin: ['#9775fa', '#8ce99a', '#fff'], gorurin: ['#ffd43b', '#fff9db', '#fff'], yukidarun: ['#ffffff', '#a5d8ff', '#ff922b'], yuusharin: ['#4dabf7', '#ffd43b', '#fff'] }[ch.id];
+          dororin: ['#9775fa', '#8ce99a', '#fff'], gorurin: ['#ffd43b', '#fff9db', '#fff'], yukidarun: ['#ffffff', '#a5d8ff', '#ff922b'], yuusharin: ['#4dabf7', '#ffd43b', '#fff'], fuerin: ['#94d82d', '#ff8787', '#fff'] }[ch.id];
         for (let i = 0; i < 16; i++) {
           this.after(() => this.proj({ x: pc.x + 20, y: pc.y + (Math.random() - 0.5) * 40 }, { x: ec.x + (Math.random() - 0.5) * 60, y: ec.y + (Math.random() - 0.5) * 60 },
             { color: fxCol[i % 3], size: 5 + Math.random() * 7, frames: 16, arc: (Math.random() - 0.5) * 100, trail: false }), i * 20);
@@ -763,6 +766,7 @@ Screens.battle = {
           if (ch.id === 'gorurin') { this.healP(dmg * sk.skillDrain); this.log(`${sk.name}！ ${dmg} ダメージ、元気を すいとった！`, 'good'); }
           if (ch.id === 'yukidarun') this.log(`${sk.name}！ ゆきだま ${this.snow} こ で ${dmg} ダメージ！`, 'good');
           if (ch.id === 'yuusharin') { this.healP(this.p.max * sk.heal); this.e.gauge = 0; this.log(`${sk.name}！ ${dmg} ダメージ、HP 回復・敵の 攻撃を とめた！`, 'good'); }
+          if (ch.id === 'fuerin') this.log(`${sk.name}！ ${this.combo} コンボの ぶんしんで ${dmg} ダメージ！`, 'good');
           if (ch.id === 'onpuru') { this.tempo = sk.tempo; this.tempoMult = sk.tempoMult; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの ${sk.tempo} お題が ${sk.tempoMult} 倍！`, 'good'); }
           if (ch.id === 'pitarin') { this.p.reflect = sk.reflect; this.log(`${sk.name}！ ${dmg} ダメージ、敵の 攻撃を ${sk.reflect} 回 はね返す！`, 'good'); }
           if (ch.id === 'metarun') { this.e.breakUntil = this.elapsed + sk.brk * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.brk} 秒 ブレイク！`, 'good'); }

@@ -113,7 +113,7 @@ const SV_WEAPONS = {
   sword: { name: 'ゆうしゃのけん', icon: '🗡️', color: '#4dabf7', desc: 'むいている 方向を おおきく なぎはらう' },
   drill: { name: 'ドリル', icon: '🔩', color: '#adb5bd', desc: '近くの敵へ ドリルを うちだす。どこまでも つらぬく' },
 };
-const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill', onpuru: 'sonic', pitarin: 'arrow', dororin: 'poolw', gorurin: 'coin', yukidarun: 'snowball', yuusharin: 'sword' };
+const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill', onpuru: 'sonic', pitarin: 'arrow', dororin: 'poolw', gorurin: 'coin', yukidarun: 'snowball', yuusharin: 'sword', fuerin: 'ice' };
 
 // その 難易度が ぼうけんのとびらで ひらいているか (かんたんは さいしょから)
 function svDiffOpen(k) { return k === 'easy' || doorOpen('sv_' + k); }
@@ -190,7 +190,7 @@ Screens.survival = {
     if (this.ch.id === 'homura') this.dmgMult *= SV_CHAR.homura.dmg[this.ch.stage];
     if (this.ch.id === 'yuusharin') this.dmgMult *= SV_CHAR.yuusharin.dmg[this.ch.stage];
     // きらり: 武器を うつ間かくが みじかい
-    this.cdMult = this.ch.id === 'kirari' ? SV_CHAR.kirari.cd[this.ch.stage] : 1;
+    this.cdMult = SV_CHAR[this.ch.id] && SV_CHAR[this.ch.id].cd ? SV_CHAR[this.ch.id].cd[this.ch.stage] : 1; // きらり・ふえりん
     // こおりん: 敵が おそい / ふわり: ジェムを 遠くから すいよせる
     this.eslow = this.ch.id === 'koorin' ? SV_CHAR.koorin.eslow[this.ch.stage] : 1;
     this.magnetK = this.ch.id === 'fuwari' ? SV_CHAR.fuwari.magnet[this.ch.stage] : 1;

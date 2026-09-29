@@ -80,6 +80,11 @@ function slimeSVG(id, stage = 0, look) {
       'M60,28 C92,28 108,54 108,80 C108,100 94,105 80,105 L40,105 C26,105 12,100 12,80 C12,54 28,28 60,28 Z',
       'M60,28 C92,28 108,54 108,80 C108,100 94,105 80,105 L40,105 C26,105 12,100 12,80 C12,54 28,28 60,28 Z',
     ],
+    fuerin: [
+      'M60,34 C88,34 104,54 104,78 C104,96 94,104 80,104 L40,104 C26,104 16,96 16,78 C16,54 32,34 60,34 Z',
+      'M60,28 C92,28 108,52 108,78 C108,98 96,105 80,105 L40,105 C24,105 12,98 12,78 C12,52 28,28 60,28 Z',
+      'M60,28 C92,28 108,52 108,78 C108,98 96,105 80,105 L40,105 C24,105 12,98 12,78 C12,52 28,28 60,28 Z',
+    ],
     koorin: [
       'M60,32 C90,32 106,56 106,80 C106,98 94,104 82,104 L38,104 C26,104 14,98 14,80 C14,56 30,32 60,32 Z',
       'M60,28 C92,28 110,54 110,80 C110,100 96,105 82,105 L38,105 C24,105 10,100 10,80 C10,54 28,28 60,28 Z',
@@ -236,6 +241,17 @@ function slimeSVG(id, stage = 0, look) {
       <g transform="translate(102,92) rotate(-30)"><rect x="-2" y="-20" width="4" height="22" fill="#ced4da" stroke="#495057" stroke-width="1"/><rect x="-6" y="0" width="12" height="3" fill="#ffd43b"/><rect x="-1.5" y="3" width="3" height="6" fill="#8d5524"/></g>`;
   }
 
+  if (id === 'fuerin') {
+    // ぶんれつした ちびふえりん。進化すると 1 → 2 → 3 → 4 ひき
+    const buds = [[10, 96, 1], [110, 96, -1], [8, 58, 1], [112, 56, -1]].slice(0, [1, 2, 3, 3, 4][stage]);
+    behind += buds.map(([x, y, f], i) => `<g transform="translate(${x},${y}) scale(${i < 2 ? 1 : 0.8})" class="${i < 2 ? '' : 'spark-soft'}">
+      <path d="M0,-12 C8,-12 12,-6 12,1 C12,7 8,9 4,9 L-4,9 C-8,9 -12,7 -12,1 C-12,-6 -8,-12 0,-12 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="2"/>
+      <circle cx="${-3 * f}" cy="0" r="1.8" fill="#1d1d2b"/><circle cx="${4 * f}" cy="0" r="1.8" fill="#1d1d2b"/><ellipse cx="-5" cy="-6" rx="3" ry="1.8" fill="#fff" opacity=".7"/></g>`).join('');
+    // 頭の上で ぷくっと ふくらむ つぼみ
+    front += `<path d="M54,${stage ? 30 : 36} C54,${stage ? 20 : 26} 66,${stage ? 20 : 26} 66,${stage ? 30 : 36}" fill="${c.main}" stroke="${c.dark}" stroke-width="2.5"/>`;
+    if (stage >= 3) behind += `<g class="orbit"><circle cx="8" cy="30" r="4" fill="${c.accent}"/><circle cx="114" cy="26" r="3.5" fill="${c.accent}"/><circle cx="60" cy="0" r="3" fill="${c.accent}"/></g>`;
+  }
+
   // ---- 1 段階目の進化: 見た目がはっきり変わる飾り ----
   if (stage >= 1) {
     if (id === 'purun') {
@@ -266,7 +282,7 @@ function slimeSVG(id, stage = 0, look) {
 
   // ---- 最終進化: 王冠 + オーラ ----
   if (stage >= 2) {
-    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10, onpuru: 8, pitarin: 6, dororin: 6, gorurin: 0, yukidarun: -4, yuusharin: 6 }[id] ?? 6;
+    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10, onpuru: 8, pitarin: 6, dororin: 6, gorurin: 0, yukidarun: -4, yuusharin: 6, fuerin: 8 }[id] ?? 6;
     // ぼうしを かぶっているときは 王冠を はずす
     if (!look.hat) front += `<g transform="translate(60,${crownY})">
       <path d="M-20,18 L-22,0 L-11,9 L0,-6 L11,9 L22,0 L20,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
@@ -349,7 +365,7 @@ function slimeSVG(id, stage = 0, look) {
 const RAINBOW = ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa', '#f783ac'];
 
 // 頭の てっぺんの 高さ [最初の すがた, 進化後]。ぼうしの 位置に つかう
-const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32], onpuru: [34, 30], pitarin: [30, 26], dororin: [32, 28], gorurin: [18, 14], yukidarun: [16, 12], yuusharin: [32, 28] };
+const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32], onpuru: [34, 30], pitarin: [30, 26], dororin: [32, 28], gorurin: [18, 14], yukidarun: [16, 12], yuusharin: [32, 28], fuerin: [34, 28] };
 
 // ぼうし・アクセサリーの絵 (下のはしが y=0。eyes は 目の 高さに つける)
 const HAT_SVG = {
@@ -403,6 +419,11 @@ const FACES = {
   yukidarun: () => `<g class="eyes"><circle cx="46" cy="58" r="4.5" fill="#212529"/><circle cx="74" cy="58" r="4.5" fill="#212529"/></g>
     <path d="M58,62 L78,66 L58,68 Z" fill="#ff922b" stroke="#d9480f" stroke-width="1.2" stroke-linejoin="round"/>
     ${[[48, 72], [54, 75], [60, 76], [66, 75], [72, 72]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#212529"/>`).join('')}`,
+  // ふえりん: にっこり 細めた 目 (^ ^) + ω の 口 + ほっぺ
+  fuerin: c => `<g class="eyes"><path d="M38,74 Q46,64 54,74" fill="none" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/>
+      <path d="M66,74 Q74,64 82,74" fill="none" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/></g>
+    <ellipse cx="34" cy="84" rx="6" ry="3.5" fill="${c.accent}" opacity=".55"/><ellipse cx="86" cy="84" rx="6" ry="3.5" fill="${c.accent}" opacity=".55"/>
+    <path d="M52,84 Q56,90 60,85 Q64,90 68,84" fill="none" stroke="#1d1d2b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
   // ゆうしゃりん: きりっと した まゆ + じしんの ある 口
   yuusharin: () => `<g class="eyes"><path d="M36,62 L54,66" stroke="#1d1d2b" stroke-width="3.5" stroke-linecap="round"/><path d="M84,62 L66,66" stroke="#1d1d2b" stroke-width="3.5" stroke-linecap="round"/>
       <ellipse cx="46" cy="74" rx="5.5" ry="6.5" fill="#1d1d2b"/><ellipse cx="74" cy="74" rx="5.5" ry="6.5" fill="#1d1d2b"/><circle cx="48" cy="72" r="2" fill="#fff"/><circle cx="76" cy="72" r="2" fill="#fff"/></g>

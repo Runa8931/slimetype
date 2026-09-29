@@ -113,6 +113,7 @@ const AWAKEN_COLORS = {
   gorurin: { name: 'ブラックゴールド', colors: { main: '#343a40', light: '#868e96', dark: '#000000', accent: '#ffd43b' } },
   yukidarun: { name: 'ゆきどけ', colors: { main: '#ffc9de', light: '#ffffff', dark: '#e64980', accent: '#69db7c' } },
   yuusharin: { name: 'まおうのよろい', colors: { main: '#3b1f6b', light: '#b197fc', dark: '#10002b', accent: '#ff006e' } },
+  fuerin: { name: 'いちごゼリー', colors: { main: '#ff8787', light: '#fff5f5', dark: '#c92a2a', accent: '#94d82d' } },
   pitarin: { name: 'ブラッドムーン', colors: { main: '#c92a2a', light: '#ffc9c9', dark: '#3a0808', accent: '#ffe066' } },
 };
 for (const [id, a] of Object.entries(AWAKEN_COLORS)) {
