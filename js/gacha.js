@@ -474,6 +474,7 @@ Screens.gacha = {
       <div class="gs-machine">${GACHA_MACHINE_SVG}</div>
       <div class="gs-cap-slot"></div>
       <div class="gs-item"></div>
+      <div class="gs-stamp"></div>
       <div class="gs-tray ${ten ? 'ten' : ''}"></div>
       <div class="gs-skip"><kbd>Space</kbd> で とばす</div>`;
     stage.style.setProperty('--spd', ten ? 0.7 : 1);
@@ -499,16 +500,28 @@ Screens.gacha = {
   },
 
   // カプセル 1 こぶん: ころがり出る → (SSR だけ 当たりの 演出) → ひらく → 下に ならぶ
+  // SSR の 出かた (4 とおり):
+  //   N・R・SR の 色で 出てきて、1 だんずつ 色が 上がって 金色に なる (それぞれ 1/4)
+  //   はじめから 金色の カプセルが 出る「かくてい」 (1/4)
   async capsule(stage, r, i, ten) {
     const rar = r.it.rarity;
     const ssr = rar === 'SSR' && !this.skip;
-    // SSR は さいしょ ちがう色で 出てきて、とちゅうで 金色に かわる
-    const first = rar === 'SSR' ? (Math.random() < 0.5 ? 'SR' : 'R') : rar;
+    const LADDER = ['N', 'R', 'SR'];
+    const direct = ssr && Math.random() < 0.25;
+    const first = ssr && !direct ? LADDER[Math.floor(Math.random() * 3)] : rar;
     const slot = stage.querySelector('.gs-cap-slot');
+    const base = stage.className.replace(/ (dark|ssr|omen)/g, '');
+
+    // かくてい: カプセルが 出る まえに ガチャ機が 金色に ひかる
+    if (direct) {
+      stage.className = base + ' omen';
+      SFX.rankCut(); SFX.tone(220, 0.9, { type: 'sine', vol: 0.05, slide: 880 });
+      await this.wait(1000);
+    }
     slot.innerHTML = `<div class="gs-cap" style="--cap:${RARITY[first].color}"><div class="gs-top"></div><div class="gs-bottom"></div><div class="gs-shine"></div></div>`;
     const cap = slot.firstChild;
-    const set = c => { cap.className = 'gs-cap ' + c; };
-    const base = stage.className.replace(/ (dark|ssr)/g, '');
+    const gold = direct ? ' gold' : '';
+    const set = c => { cap.className = 'gs-cap ' + c + gold; };
 
     if (!this.skip) SFX.tone(500, 0.12, { type: 'triangle', vol: 0.05, slide: 200 });
     set('drop');
@@ -516,23 +529,32 @@ Screens.gacha = {
     set('center');
     await this.wait(ten ? 420 : 650);
 
-    if (ssr) {
+    if (direct) {
+      // かくてい: 金色の まま ぶるぶる → 「かくてい！」
+      set('center hold');
+      this.stamp(stage, 'かくてい！', 'small');
+      SFX.tone(160, 1.1, { type: 'sawtooth', vol: 0.035, slide: 520 });
+      await this.wait(1200);
+      await this.ssrReveal(stage, cap, base, set);
+    } else if (ssr) {
+      // 1 だんずつ 色が 上がる (N → R → SR → SSR)
+      if (first === 'SR') { set('center glow'); SFX.charge(); await this.wait(600); } // SR の ふり
       set('center hold');
       SFX.tone(120, 1.2, { type: 'sawtooth', vol: 0.04, slide: 400 });
-      await this.wait(1300);
+      await this.wait(900);
+      for (let k = LADDER.indexOf(first) + 1; k < LADDER.length && !this.skip; k++) {
+        const col = RARITY[LADDER[k]].color;
+        cap.style.setProperty('--cap', col);
+        const c = FX.center(cap);
+        FX.burst(c.x, c.y, { colors: [col, '#fff'], count: 30, shape: 'star', size: 6, speed: 7 });
+        FX.ring(c.x, c.y, col, 150, 24, 6);
+        SFX.tone(400 + k * 250, 0.25, { type: 'triangle', vol: 0.05, slide: 900 + k * 300 });
+        await this.wait(700);
+      }
       stage.className = base + ' dark';
       set('center hold hard');
       await this.wait(600);
-      cap.style.setProperty('--cap', RARITY.SSR.color);
-      stage.className = base + ' ssr';
-      set('center ssr');
-      replayAnim(document.body, 'flash-white', 400);
-      SFX.thunder();
-      setTimeout(() => SFX.win(), 250);
-      const c = FX.center(cap);
-      FX.burst(c.x, c.y, { colors: [...RAINBOW, '#fff'], count: 90, shape: 'star', size: 8, speed: 11 });
-      FX.ring(c.x, c.y, '#ffd43b', 260, 40, 10);
-      await this.wait(1500);
+      await this.ssrReveal(stage, cap, base, set);
     } else if (rar === 'SR' && !this.skip) {
       set('center glow');
       SFX.charge();
@@ -548,12 +570,53 @@ Screens.gacha = {
     }
     const item = stage.querySelector('.gs-item');
     item.innerHTML = resultCard(r, 0);
-    await this.wait(ssr ? 1600 : ten ? 650 : 900);
+    if (ssr) item.firstElementChild.classList.add('gs-ssr-card');
+    if (ssr && r.it.kind === 'char') {
+      // SSR キャラ: ひっさつと おなじ はでな カットインで おひろめ
+      const d = CHARACTERS[r.it.char];
+      await this.wait(500);
+      cutin(d.names[0], r.kind === 'new' ? 'SSR キャラが なかまに なった！' : 'SSR キャラが かさなった！', d.colors.main, slimeSVG(r.it.char, 0), 'ssr');
+      SFX.entrance();
+    }
+    await this.wait(ssr ? 1800 : ten ? 650 : 900);
     // 下の トレイに 小さく ならべる
     item.innerHTML = '';
     slot.innerHTML = '';
     stage.querySelector('.gs-tray').insertAdjacentHTML('beforeend', resultCard(r, 0));
     if (ssr) stage.className = base;
+  },
+
+  // SSR が きまった ときの おおあたり 演出
+  async ssrReveal(stage, cap, base, set) {
+    cap.style.setProperty('--cap', RARITY.SSR.color);
+    stage.className = base + ' ssr';
+    set('center ssr');
+    replayAnim(document.body, 'flash-white', 400);
+    SFX.thunder();
+    setTimeout(() => SFX.win(), 250);
+    this.stamp(stage, 'SSR');
+    const c = FX.center(cap);
+    FX.burst(c.x, c.y, { colors: [...RAINBOW, '#fff'], count: 90, shape: 'star', size: 8, speed: 11 });
+    FX.ring(c.x, c.y, '#ffd43b', 260, 40, 10);
+    // すこし おくれて 光の 輪と 星が もう 2 回
+    for (const [ms, rr] of [[350, 200], [700, 320]]) {
+      setTimeout(() => {
+        if (!stage.classList.contains('ssr')) return;
+        FX.ring(c.x, c.y, rr > 250 ? '#fff' : '#ffe066', rr, 36, 8);
+        FX.burst(c.x, c.y, { colors: ['#ffd43b', '#fff9db', '#fff'], count: 40, shape: 'star', size: 7, speed: 9 });
+      }, ms);
+    }
+    await this.wait(1700);
+  },
+
+  // 大きな 文字 (SSR / かくてい！) を どんと 出す
+  stamp(stage, text, cls = '') {
+    const el = stage.querySelector('.gs-stamp');
+    if (!el || this.skip) return;
+    el.className = 'gs-stamp';
+    el.textContent = text;
+    void el.offsetWidth;
+    el.className = 'gs-stamp show ' + cls;
   },
 
   // 新しい なかま・★4・しょうごうを 知らせる

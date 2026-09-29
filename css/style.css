@@ -1390,3 +1390,44 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .cutin-label { font-family: var(--pixel); font-size: 18px; letter-spacing: .35em; color: #ffd43b; text-shadow: 0 0 10px rgba(255, 212, 59, .8), 0 2px 0 rgba(0,0,0,.5); }
 .cutin-special .cutin-label { color: #fff; text-shadow: 0 0 10px #b197fc, 0 2px 0 rgba(0,0,0,.5); }
 .cutin-rank .cutin-title { font-size: 62px; }
+
+/* ---------- ガチャの SSR 演出 ---------- */
+/* かくてい: カプセルが 出る まえに ガチャ機が 金色に ひかって ゆれる */
+.gc-stage.omen .gs-machine { opacity: 1; filter: drop-shadow(0 0 30px #ffd43b) brightness(1.4); animation: gs-rattle .1s linear infinite; }
+.gc-stage.omen .gs-rays { opacity: .5; animation: gs-spin 3s linear infinite; }
+.gc-stage.omen { background: radial-gradient(circle at 50% 30%, rgb(60,40,0), rgb(8,8,24)); }
+.gs-cap.gold { filter: drop-shadow(0 0 30px #ffd43b) drop-shadow(0 0 60px rgba(255,212,59,.6)); }
+.gs-cap.gold .gs-top { background: linear-gradient(120deg, #fff9db, #ffd43b 40%, #f59f00); }
+/* SSR が きまった: 下から 光の 柱が のぼる */
+.gc-stage.ssr::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+  background: repeating-linear-gradient(90deg, transparent 0 8vw, rgba(255,230,120,.22) 8vw 9.5vw, transparent 9.5vw 16vw);
+  -webkit-mask: linear-gradient(to top, #000, transparent 85%); mask: linear-gradient(to top, #000, transparent 85%);
+  animation: gs-pillar 1.4s ease-out;
+}
+@keyframes gs-pillar { from { transform: translateY(100%); opacity: 0; } 40% { opacity: 1; } }
+/* 大きな 文字: SSR / かくてい！ */
+.gs-stamp {
+  position: absolute; left: 50%; top: max(64px, calc(var(--cy) - 26vh)); z-index: 3; opacity: 0; pointer-events: none; white-space: nowrap;
+  font-family: var(--pixel); font-size: min(104px, 13vh); letter-spacing: .08em; transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, #fff9db, #ffd43b 45%, #f08c00); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 6px 0 #7a4b00) drop-shadow(0 0 30px rgba(255,212,59,.9));
+}
+.gs-stamp.small { font-size: min(60px, 8vh); }
+.gs-stamp.show { animation: gs-stamp 1.9s cubic-bezier(.2,1.4,.4,1) forwards; }
+@keyframes gs-stamp {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(3) rotate(-10deg); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-4deg); }
+  85% { opacity: 1; transform: translate(-50%, -50%) scale(1.06) rotate(-4deg); }
+  100% { opacity: 0; transform: translate(-50%, -62%) scale(1.1) rotate(-4deg); }
+}
+/* SSR の カード: 金の 光の ふちが まわる */
+.gs-item .gc-card.gs-ssr-card { position: relative; box-shadow: 0 0 40px rgba(255,212,59,.6); }
+.gs-item .gc-card.gs-ssr-card::before {
+  content: ''; position: absolute; inset: -3px; border-radius: inherit; padding: 4px; pointer-events: none;
+  background: conic-gradient(from var(--rank-ang), #ffd43b, #fff3bf, #f59f00, #ffe066, #fff9db, #ffd43b);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: rank-spin 3s linear infinite;
+}
+/* ガチャの 上にも カットインが 出るように */
+.cutin-rank { z-index: 60; }
