@@ -282,7 +282,7 @@ function slimeSVG(id, stage = 0, look) {
 
   // ---- 最終進化: 王冠 + オーラ ----
   if (stage >= 2) {
-    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10, onpuru: 8, pitarin: 6, dororin: 6, gorurin: 0, yukidarun: -4, yuusharin: 6, fuerin: 8, torio: 12, yurarin: -2 }[id] ?? 6;
+    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10, onpuru: 8, pitarin: 6, dororin: 6, gorurin: 0, yukidarun: -4, yuusharin: 6, fuerin: 8, torio: 12, yurarin: -2, saikoro: 16, imomushi: 30, chochin: -4 }[id] ?? 6;
     // ぼうしを かぶっているときは 王冠を はずす
     if (!look.hat) front += `<g transform="translate(60,${crownY})">
       <path d="M-20,18 L-22,0 L-11,9 L0,-6 L11,9 L22,0 L20,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
@@ -297,7 +297,7 @@ function slimeSVG(id, stage = 0, look) {
   }
 
   // ---- 4 段階目 (Lv60〜): つばさ / 5 段階目 (Lv80〜): 光の輪 ----
-  if (stage >= 3) {
+  if (stage >= 3 && id !== 'imomushi') { // いもりんは チョウの はねが あるので つけない
     // 体の 横 (まんなか あたり) から 外へ ひろがる 羽根の つばさ。上に とがらせると 耳に 見えるので 横向きに する
     const wing = (sx) => `<g transform="translate(60,74) scale(${sx * 0.85},0.85) rotate(-8)"><g class="slime-wing">
       <path d="M34,-6 C48,-24 72,-30 94,-22 C88,-18 88,-14 94,-10 C86,-8 86,-3 90,2 C82,2 80,7 83,12 C74,11 70,15 71,20 C60,14 46,12 34,10 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round"/>
@@ -418,12 +418,88 @@ const CUSTOM_BODY = {
       <path d="M55,58 Q57.5,61 60,58 Q62.5,61 65,58" fill="none" stroke="#1d1d2b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
   },
+  // サイコロりん: 立体の サイコロ。手前の 面に 顔、上と 横の 面に サイコロの 目
+  saikoro(c, u, stage) {
+    const pip = (x, y, r = 3.6) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.accent}"/>`;
+    return `<g class="dice">
+      <path d="M22,50 L44,36 L102,36 L80,50 Z" fill="${c.light}" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M80,50 L102,36 L102,90 L80,104 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M80,50 L102,36 L102,90 L80,104 Z" fill="#000" opacity=".14"/>
+      <rect x="22" y="50" width="58" height="54" rx="9" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3"/>
+      <path d="M30,56 C40,54 56,54 66,56" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+      ${[[50, 43], [62, 40], [74, 37]].map(([x, y]) => `<ellipse cx="${x}" cy="${y + 0.5}" rx="4.4" ry="2.4" fill="${c.accent}"/>`).join('')}
+      ${pip(88, 58, 3)}${pip(94, 72, 3)}${pip(88, 86, 3)}
+      <g class="eyes"><ellipse cx="41" cy="74" rx="5" ry="6.5" fill="#1d1d2b"/><ellipse cx="61" cy="74" rx="5" ry="6.5" fill="#1d1d2b"/>
+        <circle cx="42.5" cy="71.5" r="2" fill="#fff"/><circle cx="62.5" cy="71.5" r="2" fill="#fff"/></g>
+      <path d="M45,86 Q51,93 57,86" fill="none" stroke="#1d1d2b" stroke-width="2.8" stroke-linecap="round"/>
+      <ellipse cx="32" cy="84" rx="4" ry="2.4" fill="${c.accent}" opacity=".45"/><ellipse cx="70" cy="84" rx="4" ry="2.4" fill="${c.accent}" opacity=".45"/>
+      ${stage >= 1 ? `<path d="M14,40 L16,45 L21,47 L16,49 L14,54 L12,49 L7,47 L12,45 Z" fill="${c.accent}" class="spark"/>` : ''}
+    </g>`;
+  },
+  // いもりん: 3 段階目までは 玉が つながった イモムシ、4 段階目から チョウチョ
+  imomushi(c, u, stage) {
+    if (stage >= 3) {
+      const wing = sx => `<g transform="translate(60,64) scale(${sx},1)"><g class="bfly-wing">
+        <path d="M4,-4 C14,-40 52,-50 58,-24 C62,-8 40,2 8,2 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M4,4 C30,4 50,14 46,32 C42,46 18,40 6,14 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="34" cy="-22" r="9" fill="${c.accent}" opacity=".85"/><circle cx="34" cy="-22" r="4" fill="${c.light}"/>
+        <circle cx="30" cy="22" r="6" fill="${c.accent}" opacity=".85"/>
+        <path d="M10,-6 C22,-24 38,-32 50,-28" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".5"/></g></g>`;
+      return `${wing(1)}${wing(-1)}
+        <ellipse cx="60" cy="80" rx="11" ry="26" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3"/>
+        <path d="M52,76 L68,76 M52,86 L68,86 M53,96 L67,96" stroke="${c.dark}" stroke-width="2" opacity=".5"/>
+        <circle cx="60" cy="50" r="17" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3"/>
+        <path d="M54,36 C50,24 42,20 38,22 M66,36 C70,24 78,20 82,22" fill="none" stroke="${c.dark}" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="38" cy="22" r="3.5" fill="${c.accent}"/><circle cx="82" cy="22" r="3.5" fill="${c.accent}"/>
+        <g class="eyes"><ellipse cx="54" cy="50" rx="3.5" ry="4.5" fill="#1d1d2b"/><ellipse cx="66" cy="50" rx="3.5" ry="4.5" fill="#1d1d2b"/>
+          <circle cx="55" cy="48.5" r="1.4" fill="#fff"/><circle cx="67" cy="48.5" r="1.4" fill="#fff"/></g>
+        <path d="M56,57 Q60,61 64,57" fill="none" stroke="#1d1d2b" stroke-width="2.2" stroke-linecap="round"/>
+        ${stage >= 4 ? `<g class="spark">${[[10, 90], [112, 94], [18, 30], [104, 26]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.4" fill="${c.accent}"/>`).join('')}</g>` : ''}`;
+    }
+    // うしろから 玉を ならべる (いちばん 左が あたま)
+    const segs = stage >= 2 ? [[110, 94, 11], [94, 92, 13], [78, 90, 14], [60, 90, 15]] : [[104, 94, 12], [86, 92, 14], [66, 90, 15]];
+    return `<g class="imo">
+      ${segs.map(([x, y, r], i) => `<g class="imo-seg" style="animation-delay:${-i * 0.15}s">
+        <path d="M${x - 5},${y + r - 2} L${x - 6},${y + r + 5} M${x + 5},${y + r - 2} L${x + 6},${y + r + 5}" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="${x}" cy="${y}" r="${r}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="2.6"/>
+        <circle cx="${x}" cy="${y - r * 0.35}" r="${r * 0.28}" fill="${c.accent}" opacity=".9"/></g>`).join('')}
+      <g class="imo-head">
+        <path d="M30,62 C26,48 20,42 14,42 M44,60 C46,46 52,40 58,40" fill="none" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="14" cy="42" r="4" fill="${c.accent}" stroke="${c.dark}" stroke-width="1.5"/><circle cx="58" cy="40" r="4" fill="${c.accent}" stroke="${c.dark}" stroke-width="1.5"/>
+        <path d="M28,${104} L26,${108} M44,${104} L46,${108}" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="36" cy="84" r="23" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3"/>
+        <ellipse cx="28" cy="72" rx="6" ry="3.5" fill="#fff" opacity=".7" transform="rotate(-30 28 72)"/>
+        <g class="eyes"><ellipse cx="28" cy="84" rx="4.5" ry="6" fill="#1d1d2b"/><ellipse cx="44" cy="84" rx="4.5" ry="6" fill="#1d1d2b"/>
+          <circle cx="29.5" cy="81.5" r="1.8" fill="#fff"/><circle cx="45.5" cy="81.5" r="1.8" fill="#fff"/></g>
+        <ellipse cx="20" cy="93" rx="4" ry="2.4" fill="#ff8787" opacity=".55"/><ellipse cx="52" cy="93" rx="4" ry="2.4" fill="#ff8787" opacity=".55"/>
+        <path d="M31,95 Q36,100 41,95" fill="none" stroke="#1d1d2b" stroke-width="2.4" stroke-linecap="round"/>
+      </g></g>`;
+  },
+  // ちょうちんりん: 一つ目の おばけちょうちん。ふらふら ゆれて、した を ぺろっと 出す
+  chochin(c, u, stage) {
+    const wisps = stage >= 1 ? `<g class="orbit">${[[4, 54], [116, 60], [100, 12]].map(([x, y]) => `<path transform="translate(${x},${y})" d="M0,-9 C5,-3 6,3 0,7 C-6,3 -5,-3 0,-9 Z" fill="${c.accent}" opacity=".85"/>`).join('')}</g>` : '';
+    return `${wisps}<g class="lantern">
+      <path d="M60,4 L60,16" stroke="${c.dark}" stroke-width="3"/><path d="M52,6 C52,-2 68,-2 68,6" fill="none" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+      <rect x="38" y="14" width="44" height="10" rx="3" fill="#343a40" stroke="#1d1d2b" stroke-width="2"/>
+      <path d="M40,24 C14,32 14,90 40,98 L80,98 C106,90 106,32 80,24 Z" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="60" rx="30" ry="28" fill="${c.accent}" opacity=".28" class="spark-soft"/>
+      <path d="M22,42 C40,38 80,38 98,42 M18,60 C40,57 80,57 102,60 M22,78 C40,82 80,82 98,78" fill="none" stroke="${c.dark}" stroke-width="2" opacity=".45"/>
+      <path d="M28,36 C24,48 24,70 28,84" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+      <rect x="38" y="96" width="44" height="10" rx="3" fill="#343a40" stroke="#1d1d2b" stroke-width="2"/>
+      <path d="M52,106 L50,116 M60,106 L60,118 M68,106 L70,116" stroke="${c.accent}" stroke-width="2.5" stroke-linecap="round"/>
+      <g class="eyes"><ellipse cx="60" cy="52" rx="13" ry="12" fill="#fff" stroke="#1d1d2b" stroke-width="2.5"/>
+        <circle cx="57" cy="54" r="6.5" fill="#1d1d2b"/><circle cx="54.5" cy="51.5" r="2.4" fill="#fff"/></g>
+      <path d="M44,72 Q60,84 76,72" fill="#1d1d2b" stroke="#1d1d2b" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M58,76 C58,88 70,92 70,82 L68,75 Z" fill="#ff6b6b" stroke="#c92a2a" stroke-width="1.8" stroke-linejoin="round"/>
+      <ellipse cx="36" cy="66" rx="5" ry="3" fill="#ff8787" opacity=".55"/><ellipse cx="84" cy="66" rx="5" ry="3" fill="#ff8787" opacity=".55"/>
+    </g>`;
+  },
 };
 
 const RAINBOW = ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa', '#f783ac'];
 
 // 頭の てっぺんの 高さ [最初の すがた, 進化後]。ぼうしの 位置に つかう
-const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32], onpuru: [34, 30], pitarin: [30, 26], dororin: [32, 28], gorurin: [18, 14], yukidarun: [16, 12], yuusharin: [32, 28], fuerin: [34, 28], torio: [34, 30], yurarin: [16, 16] };
+const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32], onpuru: [34, 30], pitarin: [30, 26], dororin: [32, 28], gorurin: [18, 14], yukidarun: [16, 12], yuusharin: [32, 28], fuerin: [34, 28], torio: [34, 30], yurarin: [16, 16], saikoro: [36, 36], imomushi: [60, 60], chochin: [14, 14] };
 
 // ぼうし・アクセサリーの絵 (下のはしが y=0。eyes は 目の 高さに つける)
 const HAT_SVG = {

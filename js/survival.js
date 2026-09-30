@@ -113,7 +113,7 @@ const SV_WEAPONS = {
   sword: { name: 'ゆうしゃのけん', icon: '🗡️', color: '#4dabf7', desc: 'むいている 方向を おおきく なぎはらう' },
   drill: { name: 'ドリル', icon: '🔩', color: '#adb5bd', desc: '近くの敵へ ドリルを うちだす。どこまでも つらぬく' },
 };
-const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill', onpuru: 'sonic', pitarin: 'arrow', dororin: 'poolw', gorurin: 'coin', yukidarun: 'snowball', yuusharin: 'sword', fuerin: 'ice', torio: 'star', yurarin: 'tornado' };
+const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill', onpuru: 'sonic', pitarin: 'arrow', dororin: 'poolw', gorurin: 'coin', yukidarun: 'snowball', yuusharin: 'sword', fuerin: 'ice', torio: 'star', yurarin: 'tornado', saikoro: 'boomerang', imomushi: 'poolw', chochin: 'fire' };
 
 // その 難易度が ぼうけんのとびらで ひらいているか (かんたんは さいしょから)
 function svDiffOpen(k) { return k === 'easy' || doorOpen('sv_' + k); }
@@ -177,8 +177,9 @@ Screens.survival = {
   reset() {
     const st = this.ch.stats;
     const base = this.ch.def.base;
-    // メタルン: 最大HP アップ
-    const max = Math.round((st.hp * 2.5 + 40) * (this.ch.id === 'metarun' ? SV_CHAR.metarun.hp[this.ch.stage] : 1));
+    // メタルン・いもりん: 最大HP アップ
+    const svc = SV_CHAR[this.ch.id] || {};
+    const max = Math.round((st.hp * 2.5 + 40) * (svc.hp ? svc.hp[this.ch.stage] : 1));
     let speed = 175 * (0.85 + base.spd / 300);
     // とくせいは 進化すると強くなる
     if (this.ch.id === 'piriri') speed *= SV_CHAR.piriri.speed[this.ch.stage];
@@ -190,6 +191,7 @@ Screens.survival = {
     if (this.ch.id === 'homura') this.dmgMult *= SV_CHAR.homura.dmg[this.ch.stage];
     if (this.ch.id === 'yuusharin') this.dmgMult *= SV_CHAR.yuusharin.dmg[this.ch.stage];
     if (this.ch.id === 'torio') this.dmgMult *= SV_CHAR.torio.dmg[this.ch.stage];
+    if (this.ch.id === 'chochin') this.dmgMult *= SV_CHAR.chochin.dmg[this.ch.stage];
     // きらり: 武器を うつ間かくが みじかい
     this.cdMult = SV_CHAR[this.ch.id] && SV_CHAR[this.ch.id].cd ? SV_CHAR[this.ch.id].cd[this.ch.stage] : 1; // きらり・ふえりん
     // こおりん: 敵が おそい / ふわり: ジェムを 遠くから すいよせる
@@ -767,7 +769,8 @@ Screens.survival = {
     // りゅうまる: HP が へると こうげきアップ
     const rage = this.ch.id === 'ryumaru' && this.p.hp / this.p.max < this.ch.trait.rageAt ? this.ch.trait.rageMult : 1;
     // ぴたりん: 武器が ときどき 会心 (2 倍)
-    const pcrit = this.ch.id === 'pitarin' && Math.random() < SV_CHAR.pitarin.crit[this.ch.stage] ? 2 : 1;
+    const svCrit = (SV_CHAR[this.ch.id] || {}).crit; // ぴたりん・サイコロりん
+    const pcrit = svCrit && Math.random() < svCrit[this.ch.stage] ? 2 : 1;
     const dmg = Math.max(1, Math.round(base * this.dmgMult * rage * pcrit * (0.9 + Math.random() * 0.2)));
     e.hp -= dmg;
     e.flash = 0.1;

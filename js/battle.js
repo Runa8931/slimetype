@@ -36,7 +36,7 @@ Screens.battle = {
     this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0, poison: 0, nextPoison: 0, weakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
-    this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.trioStreak = 0; this.forgiven = 0; this.forgiveUntil = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0; this.bestKps = 0; this.tempo = 0; this.tempoMult = 1; this.snow = 0;
+    this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.trioStreak = 0; this.forgiven = 0; this.forgiveUntil = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0; this.bestKps = 0; this.tempo = 0; this.tempoMult = 1; this.snow = 0; this.seg = 0; this.luck = 0;
     this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
     // 新しい敵の特殊能力で使う状態
     this.shellUntil = 0; this.nextShell = 4000; this.nextRegen = 8000;
@@ -188,6 +188,8 @@ Screens.battle = {
       this.p.reflect > 0 ? `<i class="st reflect">はね返し×${this.p.reflect}</i>` : '',
       this.tempo > 0 ? `<i class="st boost">テンポ×${this.tempo}</i>` : '',
       this.snow > 0 ? `<i class="st frozen">ゆきだま×${this.snow}</i>` : '',
+      this.seg > 0 ? `<i class="st boost">からだ×${this.seg}</i>` : '',
+      this.luck > 0 ? `<i class="st boost">ぞろめ×${this.luck}</i>` : '',
       this.p.boost > 1 ? '<i class="st boost">こうげきUP</i>' : '',
       this.raging() ? '<i class="st rage">いかり</i>' : '',
       this.streakBonus() > 0 ? `<i class="st boost">リズム+${Math.round(this.streakBonus() * 100)}%</i>` : '',
@@ -541,6 +543,19 @@ Screens.battle = {
     // メタルン: ながい お題ほど 強い
     if (this.ch.id === 'metarun' && keys > this.ch.trait.longFrom) dmg *= 1 + Math.min(this.ch.trait.longMax, (keys - this.ch.trait.longFrom) * this.ch.trait.longStep);
 
+    // いもりん: のびた 体 1 つ につき 強い (打ち切るたび のびる)
+    if (this.ch.id === 'imomushi') { dmg *= 1 + this.seg * this.ch.trait.segStep; this.seg = Math.min(this.ch.trait.segMax, this.seg + 1); }
+    // ちょうちんりん: 敵の 攻撃ゲージが たまっているほど 強い
+    let flare = 0;
+    if (this.ch.id === 'chochin') { flare = clamp(this.e.gauge, 0, 1) * this.ch.trait.gaugeBoost; dmg *= 1 + flare; }
+    // サイコロりん: サイコロを ふる (ぞろめチャンスの あいだは 4 いじょう)
+    let die = 0;
+    if (this.ch.id === 'saikoro') {
+      die = this.luck > 0 ? 4 + Math.floor(Math.random() * 3) : 1 + Math.floor(Math.random() * 6);
+      if (this.luck > 0) this.luck--;
+      dmg *= this.ch.trait.dice[die - 1];
+    }
+
     // トリオりん: ノーミスで 3 つ つづけると 3 つめが トリオボーナス
     let trioHit = false;
     if (this.ch.id === 'torio') {
@@ -588,6 +603,15 @@ Screens.battle = {
     // ふつうと ちがう 攻撃の 音: りゅうまるの いかり / きらりの リズム (3 回 いじょう)
     const sound = this.raging() ? 'rage' : this.ch.id === 'kirari' && this.streak >= 3 ? 'sparkle:' + this.streak : tempoHit ? 'beat' : trioHit ? 'sparkle:6' : null;
     this.playerAttackFx(dmg, { crit, boosted, armorMsg, perfect, sound });
+    if (die) {
+      const pc = FX.center($('#b-psprite'));
+      floatText(pc.x + 50, pc.y - 60, '🎲' + die, die === 6 ? 'crit-label' : die <= 2 ? 'dmg poison' : 'combo-pop');
+      if (die === 6) this.log(`🎲 6 の 目！ ${dmg} ダメージ`, 'good');
+    }
+    if (flare >= 0.3) {
+      const pc = FX.center($('#b-psprite'));
+      floatText(pc.x, pc.y - 80, `ぎりぎり +${Math.round(flare * 100)}%`, 'crit-label');
+    }
     if (trioHit) {
       const pc = FX.center($('#b-psprite'));
       floatText(pc.x, pc.y - 80, 'トリオボーナス！', 'crit-label');
@@ -627,6 +651,9 @@ Screens.battle = {
       yuusharin: { color: '#4dabf7', size: 10, arc: -20, frames: 14 },
       fuerin: { color: '#94d82d', size: 9, arc: -60, frames: 14 },
       torio: { color: '#ffd43b', size: 9, arc: -70, frames: 14 },
+      saikoro: { color: '#e03131', size: 10, arc: -90, frames: 16 },
+      imomushi: { color: '#94d82d', size: 9, arc: -30, frames: 14 },
+      chochin: { color: '#ffd43b', size: 11, arc: -40, frames: 16 },
       yurarin: { color: '#a5d8ff', size: 10, arc: 50, frames: 16 },
       pitarin: { color: '#ffe066', size: 8, arc: -10, frames: 12 },
     };
@@ -790,7 +817,7 @@ Screens.battle = {
     }
 
     // ほむら・もりりん・かげまる・りゅうまる・きらり: 攻撃 + それぞれの効果
-    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun', 'onpuru', 'pitarin', 'dororin', 'gorurin', 'yukidarun', 'yuusharin', 'fuerin', 'torio', 'yurarin'].includes(ch.id)) {
+    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun', 'onpuru', 'pitarin', 'dororin', 'gorurin', 'yukidarun', 'yuusharin', 'fuerin', 'torio', 'yurarin', 'saikoro', 'imomushi', 'chochin'].includes(ch.id)) {
       this.after(() => {
         if (this.state !== 'run') return;
         const ec = FX.center($('#b-esprite'));
@@ -801,12 +828,13 @@ Screens.battle = {
         if (ch.id === 'yukidarun') dmg *= 1 + sk.snowBoost * this.snow; // ゆきだまが 多いほど 強い
         if (ch.id === 'fuerin') dmg *= 1 + Math.min(sk.boostMax, this.combo * sk.comboBoost); // コンボが 多いほど 強い
         if (ch.id === 'torio') dmg *= (2 + 1.5) / 3; // 3 かいに わけて、3 かいめは かならず 会心
+        if (ch.id === 'imomushi') dmg *= 1 + this.seg * sk.segBoost; // のびた 体が 多いほど 強い
         dmg = Math.round(dmg);
         const fxCol = { homura: ['#ff6b35', '#ffe066', '#fff'], moririn: ['#51cf66', '#d3f9d8', '#fff'], kagemaru: ['#7048e8', '#1a1a2e', '#e5dbff'],
           ryumaru: ['#ff922b', '#ffd43b', '#fff'], kirari: ['#f783ac', '#fff3bf', '#99e9f2'],
           koorin: ['#a5d8ff', '#e7f5ff', '#fff'], fuwari: ['#96f2d7', '#e6fcf5', '#fff'], metarun: ['#adb5bd', '#ffd43b', '#fff'],
           onpuru: ['#ff8cc6', '#ffe066', '#fff'], pitarin: ['#91a7ff', '#ffe066', '#fff'],
-          dororin: ['#9775fa', '#8ce99a', '#fff'], gorurin: ['#ffd43b', '#fff9db', '#fff'], yukidarun: ['#ffffff', '#a5d8ff', '#ff922b'], yuusharin: ['#4dabf7', '#ffd43b', '#fff'], fuerin: ['#94d82d', '#ff8787', '#fff'], torio: ['#ff6b6b', '#ffd43b', '#4dabf7'], yurarin: ['#a5d8ff', '#f783ac', '#fff'] }[ch.id];
+          dororin: ['#9775fa', '#8ce99a', '#fff'], gorurin: ['#ffd43b', '#fff9db', '#fff'], yukidarun: ['#ffffff', '#a5d8ff', '#ff922b'], yuusharin: ['#4dabf7', '#ffd43b', '#fff'], fuerin: ['#94d82d', '#ff8787', '#fff'], torio: ['#ff6b6b', '#ffd43b', '#4dabf7'], yurarin: ['#a5d8ff', '#f783ac', '#fff'], saikoro: ['#fff', '#e03131', '#ffd43b'], imomushi: ['#94d82d', '#ffd43b', '#fff'], chochin: ['#ffd43b', '#74c0fc', '#ff6b6b'] }[ch.id];
         for (let i = 0; i < 16; i++) {
           this.after(() => this.proj({ x: pc.x + 20, y: pc.y + (Math.random() - 0.5) * 40 }, { x: ec.x + (Math.random() - 0.5) * 60, y: ec.y + (Math.random() - 0.5) * 60 },
             { color: fxCol[i % 3], size: 5 + Math.random() * 7, frames: 16, arc: (Math.random() - 0.5) * 100, trail: false }), i * 20);
@@ -830,6 +858,9 @@ Screens.battle = {
           if (ch.id === 'gorurin') { this.healP(dmg * sk.skillDrain); this.log(`${sk.name}！ ${dmg} ダメージ、元気を すいとった！`, 'good'); }
           if (ch.id === 'yukidarun') this.log(`${sk.name}！ ゆきだま ${this.snow} こ で ${dmg} ダメージ！`, 'good');
           if (ch.id === 'yuusharin') { this.healP(this.p.max * sk.heal); this.e.gauge = 0; this.log(`${sk.name}！ ${dmg} ダメージ、HP 回復・敵の 攻撃を とめた！`, 'good'); }
+          if (ch.id === 'saikoro') { this.luck = sk.luck; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの ${sk.luck} かいは 4 いじょうの 目！`, 'good'); }
+          if (ch.id === 'imomushi') this.log(`${sk.name}！ 体 ${this.seg} つぶんで ${dmg} ダメージ！`, 'good');
+          if (ch.id === 'chochin') { this.p.barrier = Math.max(this.p.barrier, sk.guard); $('#b-player').classList.add('bubbled'); this.log(`${sk.name}！ ${dmg} ダメージ、ひとだまが ${sk.guard} かい まもる！`, 'good'); }
           if (ch.id === 'torio') this.log(`${sk.name}！ 3 びきの 3 れんげきで ${dmg} ダメージ！`, 'good');
           if (ch.id === 'yurarin') { this.forgiveUntil = this.elapsed + sk.forgiveSecs * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、${sk.forgiveSecs} 秒間 ミスが なかったことに なる！`, 'good'); }
           if (ch.id === 'fuerin') this.log(`${sk.name}！ ${this.combo} コンボの ぶんしんで ${dmg} ダメージ！`, 'good');
@@ -1005,6 +1036,7 @@ Screens.battle = {
     }
     this.damagePlayer(dmg, big ? 'big' : 'normal');
     if (this.ch.id === 'yukidarun' && this.snow > 0) this.snow--; // うけると ゆきだまが 1 こ へる
+    if (this.ch.id === 'imomushi' && this.seg > 0) this.seg--; // いもりん: うけると 体が 1 つ ちぢむ
     // こおりん: ときどき 敵を こおらせて 攻撃ゲージを もどす
     if (this.ch.id === 'koorin' && this.state === 'run' && Math.random() < this.ch.trait.counter) {
       this.e.gauge = Math.max(0, this.e.gauge - this.ch.trait.pushback);

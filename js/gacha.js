@@ -18,7 +18,7 @@ const RARITY = {
 };
 
 // ガチャの確率: まず キャラ枠か アイテム枠かを きめ、アイテムは レア度で きめる
-const GACHA_RATES = { newChar: 0.08, starterChar: 0.14 }; // ガチャ限定キャラは 8 たいで 8% (1 たい 1%)
+const GACHA_RATES = { newChar: 0.11, starterChar: 0.14 }; // ガチャ限定キャラは 11 たいで 11% (1 たい 1%)
 const ITEM_RATES = [['SSR', 0.03], ['SR', 0.12], ['R', 0.33], ['N', 0.52]];
 // かくせいが おわったキャラが かぶったときの かけら / こうかんに ひつような かけら
 const CHAR_SHARD = { gacha: 30, starter: 12 };
@@ -113,6 +113,9 @@ const AWAKEN_COLORS = {
   gorurin: { name: 'ブラックゴールド', colors: { main: '#343a40', light: '#868e96', dark: '#000000', accent: '#ffd43b' } },
   yukidarun: { name: 'ゆきどけ', colors: { main: '#ffc9de', light: '#ffffff', dark: '#e64980', accent: '#69db7c' } },
   yuusharin: { name: 'まおうのよろい', colors: { main: '#3b1f6b', light: '#b197fc', dark: '#10002b', accent: '#ff006e' } },
+  saikoro: { name: 'くろダイス', colors: { main: '#343a40', light: '#495057', dark: '#000000', accent: '#ffd43b' } },
+  imomushi: { name: 'ルリタテハ', colors: { main: '#1c7ed6', light: '#a5d8ff', dark: '#0b3d6b', accent: '#ffd43b' } },
+  chochin: { name: 'しろちょうちん', colors: { main: '#f8f9fa', light: '#ffffff', dark: '#495057', accent: '#ff6b6b' } },
   torio: { name: 'しんごう', colors: { main: '#51cf66', light: '#ebfbee', dark: '#1b5e20', accent: '#ffd43b', tri: [['#51cf66', '#1b5e20'], ['#ffd43b', '#b8860b'], ['#ff6b6b', '#a61e1e']] } },
   yurarin: { name: 'しんかいの ひかり', colors: { main: '#1e1b4b', light: '#4c6ef5', dark: '#0b0a24', accent: '#63e6be' } },
   fuerin: { name: 'いちごゼリー', colors: { main: '#ff8787', light: '#fff5f5', dark: '#c92a2a', accent: '#94d82d' } },

@@ -726,6 +726,93 @@ const CHARACTERS = {
         skill: { name: 'ギャラクシータッチ', desc: '威力 420。6 秒間。ゲージ +20%', power: 420, forgiveSecs: 6, charge: 1.2 } },
     ],
   },
+  // サイコロりん: 立体の サイコロ。お題ごとに サイコロを ふって ダメージが かわる (dice = 1〜6 の 目の 倍率)
+  saikoro: {
+    id: 'saikoro',
+    gacha: true,
+    names: ['サイコロりん', 'サイコロりんりん', 'ラッキーダイス', 'ゴールデンダイス', 'ミラクルダイス'],
+    type: 'うんだめし', role: 'ギャンブル型',
+    colors: { main: '#f8f9fa', light: '#ffffff', dark: '#495057', accent: '#e03131' },
+    stageColors: [
+      { main: '#f8f9fa', light: '#ffffff', dark: '#495057', accent: '#e03131' },
+      { main: '#e7f5ff', light: '#ffffff', dark: '#1864ab', accent: '#1c7ed6' },
+      { main: '#fff0f6', light: '#ffffff', dark: '#a61e4d', accent: '#e64980' },
+      { main: '#fff3bf', light: '#fffbe6', dark: '#b8860b', accent: '#e67700' },
+      { main: '#f3f0ff', light: '#ffffff', dark: '#5f3dc4', accent: '#f59f00' },
+    ],
+    base: { hp: 83, atk: 91, def: 71, spd: 74 },
+    desc: 'ころころ ころがる サイコロの スライム。つよいか よわいかは サイコロ しだい。',
+    forms: [
+      { trait: { name: 'サイコロ', desc: 'お題を 打ち切るたび サイコロを ふる。1: ×0.6 2: ×0.8 3: ×1 4: ×1.2 5: ×1.4 6: ×2', dice: [0.6, 0.8, 1, 1.2, 1.4, 2], statusCut: 0 },
+        skill: { name: 'ぞろめチャンス', desc: '威力 170。つぎの 3 かいは 4 いじょうの 目しか 出ない', power: 170, luck: 3, charge: 1 } },
+      { trait: { name: 'サイコロ+', desc: '1: ×0.65 … 5: ×1.45 6: ×2.1', dice: [0.65, 0.8, 1, 1.2, 1.45, 2.1], statusCut: 0 },
+        skill: { name: 'ぞろめチャンス+', desc: '威力 240。つぎの 3 かい。ゲージ +5%', power: 240, luck: 3, charge: 1.05 } },
+      { trait: { name: 'ラッキーダイス', desc: '1: ×0.7 … 5: ×1.5 6: ×2.2。どく・やけどの時間が半分', dice: [0.7, 0.85, 1, 1.25, 1.5, 2.2], statusCut: 0.5 },
+        skill: { name: 'ラッキーロール', desc: '威力 300。つぎの 4 かい。ゲージ +10%', power: 300, luck: 4, charge: 1.1 } },
+      { trait: { name: 'ゴールデンダイス', desc: '1: ×0.7 … 5: ×1.5 6: ×2.35。どく・やけどの時間が半分', dice: [0.7, 0.9, 1.05, 1.25, 1.5, 2.35], statusCut: 0.5 },
+        skill: { name: 'ゴールデンロール', desc: '威力 360。つぎの 4 かい。ゲージ +15%', power: 360, luck: 4, charge: 1.15 } },
+      { trait: { name: 'ミラクルダイス', desc: '1: ×0.75 … 5: ×1.6 6: ×2.5。状態異常が きかない', dice: [0.75, 0.9, 1.1, 1.3, 1.6, 2.5], statusCut: 1 },
+        skill: { name: 'ミラクルロール', desc: '威力 420。つぎの 5 かい。ゲージ +20%', power: 420, luck: 5, charge: 1.2 } },
+    ],
+  },
+  // いもりん: 玉が つながった イモムシ。4 段階目から チョウチョに なる。お題ごとに 体が のびて 強く なる
+  imomushi: {
+    id: 'imomushi',
+    gacha: true,
+    names: ['いもりん', 'いもいもりん', 'ながいもりん', 'ちょうりん', 'ひかりちょうりん'],
+    type: 'むし', role: 'ためこみ型',
+    colors: { main: '#94d82d', light: '#f4fce3', dark: '#2b8a3e', accent: '#ffd43b' },
+    stageColors: [
+      { main: '#94d82d', light: '#f4fce3', dark: '#2b8a3e', accent: '#ffd43b' },
+      { main: '#69db7c', light: '#ebfbee', dark: '#1b5e20', accent: '#ff922b' },
+      { main: '#38d9a9', light: '#e6fcf5', dark: '#087f5b', accent: '#f783ac' },
+      { main: '#b197fc', light: '#f3f0ff', dark: '#5f3dc4', accent: '#74c0fc' },
+      { main: '#ffd43b', light: '#fff9db', dark: '#b8860b', accent: '#ff8cc6' },
+    ],
+    base: { hp: 94, atk: 92, def: 81, spd: 70 },
+    desc: 'もりの はっぱを もぐもぐ たべて おおきく なる イモムシ。いつか きれいな チョウに なる ゆめを みている。',
+    forms: [
+      { trait: { name: 'のびのび', desc: 'お題を 打ち切るたび 体が 1 つ のびる (最大 4)。1 つ につき 攻撃 +6%。攻撃を うけると 1 つ ちぢむ', segMax: 4, segStep: 0.06, statusCut: 0 },
+        skill: { name: 'ぐるぐるアタック', desc: '威力 170。のびた 体 1 つ につき 威力 +12%', power: 170, segBoost: 0.12, charge: 1 } },
+      { trait: { name: 'のびのび+', desc: '1 つ につき +6.5%', segMax: 4, segStep: 0.065, statusCut: 0 },
+        skill: { name: 'ぐるぐるアタック+', desc: '威力 240。1 つ につき +12%。ゲージ +5%', power: 240, segBoost: 0.12, charge: 1.05 } },
+      { trait: { name: 'ながながボディ', desc: '最大 5。1 つ につき +7%。どく・やけどの時間が半分', segMax: 5, segStep: 0.07, statusCut: 0.5 },
+        skill: { name: 'ながながアタック', desc: '威力 300。1 つ につき +13%。ゲージ +10%', power: 300, segBoost: 0.13, charge: 1.1 } },
+      { trait: { name: 'はばたき', desc: '最大 5。1 つ につき +7.5%。どく・やけどの時間が半分', segMax: 5, segStep: 0.075, statusCut: 0.5 },
+        skill: { name: 'りんぷんストーム', desc: '威力 360。1 つ につき +13%。ゲージ +15%', power: 360, segBoost: 0.13, charge: 1.15 } },
+      { trait: { name: 'ひかりの はね', desc: '最大 6。1 つ につき +8%。状態異常が きかない', segMax: 6, segStep: 0.08, statusCut: 1 },
+        skill: { name: 'ひかりの りんぷん', desc: '威力 420。1 つ につき +14%。ゲージ +20%', power: 420, segBoost: 0.14, charge: 1.2 } },
+    ],
+  },
+  // ちょうちんりん: 一つ目の おばけちょうちん。敵の 攻撃ゲージが たまっているほど 強い (ぎりぎり型)
+  chochin: {
+    id: 'chochin',
+    gacha: true,
+    names: ['ちょうちんりん', 'ちょうちんりんりん', 'ひのたまりん', 'おにびりん', 'きつねびりん'],
+    type: 'ともしび', role: 'ぎりぎり型',
+    colors: { main: '#ff6b6b', light: '#fff5f5', dark: '#862e2e', accent: '#ffd43b' },
+    stageColors: [
+      { main: '#ff6b6b', light: '#fff5f5', dark: '#862e2e', accent: '#ffd43b' },
+      { main: '#ff922b', light: '#fff4e6', dark: '#a63c06', accent: '#fff3bf' },
+      { main: '#f783ac', light: '#fff0f6', dark: '#a61e4d', accent: '#74c0fc' },
+      { main: '#845ef7', light: '#f3f0ff', dark: '#3b1c8c', accent: '#63e6be' },
+      { main: '#fab005', light: '#fff9db', dark: '#8a5a00', accent: '#ff6bff' },
+    ],
+    base: { hp: 78, atk: 84, def: 65, spd: 72 },
+    desc: 'おまつりの よるに うまれた おばけちょうちん。あぶない ときほど ほのおが もえあがる。',
+    forms: [
+      { trait: { name: 'ぎりぎりの ともしび', desc: '敵の 攻撃ゲージが たまっているほど 攻撃が 強い (まんたん まえで 最大 +50%)', gaugeBoost: 0.5, statusCut: 0 },
+        skill: { name: 'ひとだまの まい', desc: '威力 170。ひとだまが つぎの 攻撃を 1 かい ふせぐ', power: 170, guard: 1, charge: 1 } },
+      { trait: { name: 'ぎりぎりの ともしび+', desc: '最大 +55%', gaugeBoost: 0.55, statusCut: 0 },
+        skill: { name: 'ひとだまの まい+', desc: '威力 240。1 かい ふせぐ。ゲージ +5%', power: 240, guard: 1, charge: 1.05 } },
+      { trait: { name: 'もえあがる ほのお', desc: '最大 +60%。どく・やけどの時間が半分', gaugeBoost: 0.6, statusCut: 0.5 },
+        skill: { name: 'ひのたまの まい', desc: '威力 300。2 かい ふせぐ。ゲージ +10%', power: 300, guard: 2, charge: 1.1 } },
+      { trait: { name: 'おにびの ほのお', desc: '最大 +65%。状態異常が きかない', gaugeBoost: 0.65, statusCut: 1 },
+        skill: { name: 'おにびの まい', desc: '威力 360。2 かい ふせぐ。ゲージ +15%', power: 360, guard: 2, charge: 1.15 } },
+      { trait: { name: 'きつねびの ほのお', desc: '最大 +75%。状態異常が きかない', gaugeBoost: 0.75, statusCut: 1 },
+        skill: { name: 'きつねびの まい', desc: '威力 420。3 かい ふせぐ。ゲージ +20%', power: 420, guard: 3, charge: 1.2 } },
+    ],
+  },
 };
 
 // とくべつな キャラ: ガチャ限定 = SSR / しょうごう・かくしステージ・ミッションで ひらく = とくべつ
@@ -761,6 +848,9 @@ const AWAKEN_BONUS = {
   fuerin: { desc: 'コンボの ふえかた +0.05', apply: (t, n) => ({ ...t, comboGain: t.comboGain + 0.05 * n }) },
   torio: { desc: 'トリオボーナス +3%', apply: (t, n) => ({ ...t, trio: t.trio + 0.03 * n }) },
   yurarin: { desc: 'ミスを ふせいだ ときの 回復 +0.3%', apply: (t, n) => ({ ...t, forgiveHeal: t.forgiveHeal + 0.003 * n }) },
+  saikoro: { desc: '6 の 目の 倍率 +0.05', apply: (t, n) => ({ ...t, dice: t.dice.map((v, i) => (i === 5 ? v + 0.05 * n : v)) }) },
+  imomushi: { desc: '体 1 つ の 攻撃 +0.5%', apply: (t, n) => ({ ...t, segStep: t.segStep + 0.005 * n }) },
+  chochin: { desc: 'ぎりぎりの 攻撃 +3%', apply: (t, n) => ({ ...t, gaugeBoost: t.gaugeBoost + 0.03 * n }) },
 };
 
 // サバイバルでの とくせい (進化の 段階ごと)。説明文も ここから 作る
@@ -784,6 +874,9 @@ const SV_CHAR = {
   fuerin: { cd: [0.92, 0.9, 0.88, 0.86, 0.84] },     // 武器を うつ 間かく
   torio: { dmg: [1.08, 1.1, 1.12, 1.14, 1.16] },     // 武器の ダメージ
   yurarin: { hurt: [0.86, 0.84, 0.82, 0.8, 0.78] },  // うける ダメージの 倍率
+  saikoro: { crit: [0.15, 0.17, 0.19, 0.21, 0.24] }, // 武器が 会心 (ダメージ 2 倍) に なる 確率
+  imomushi: { hp: [1.15, 1.2, 1.25, 1.3, 1.35] },    // 最大HP
+  chochin: { dmg: [1.08, 1.1, 1.12, 1.14, 1.17] },   // 武器の ダメージ
 };
 
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく

@@ -1475,3 +1475,13 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .slime .jelly-tent { transform-box: fill-box; transform-origin: 50% 0%; animation: jelly-sway 1.8s ease-in-out infinite alternate; }
 @keyframes jelly-sway { from { transform: rotate(5deg); } to { transform: rotate(-5deg); } }
 .badge.type-torio { background: linear-gradient(90deg, #ff6b6b, #ffd43b, #4dabf7); } .badge.type-yurarin { background: #5f3dc4; }
+/* サイコロりん: ころん と かたむく / いもりん: 体が じゅんに もこもこ・チョウの はねが はばたく / ちょうちんりん: ふらふら ゆれる */
+.slime .dice { transform-box: fill-box; transform-origin: 50% 100%; animation: dice-rock 2.4s ease-in-out infinite; }
+@keyframes dice-rock { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-5deg); } 40% { transform: rotate(3deg); } }
+.slime .imo-seg { animation: imo-wave 1s ease-in-out infinite; }
+@keyframes imo-wave { 50% { transform: translateY(-4px); } }
+.slime .bfly-wing { transform-box: fill-box; transform-origin: 0% 50%; animation: bfly 0.9s ease-in-out infinite alternate; }
+@keyframes bfly { to { transform: scaleX(.55); } }
+.slime .lantern { transform-origin: 60px 0; animation: lantern-sway 2.4s ease-in-out infinite alternate; }
+@keyframes lantern-sway { from { transform: rotate(6deg); } to { transform: rotate(-6deg); } }
+.badge.type-saikoro { background: #c92a2a; } .badge.type-imomushi { background: #5c940d; } .badge.type-chochin { background: #d9480f; }

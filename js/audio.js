@@ -95,6 +95,9 @@ const SFX = {
       case 'dororin': N(0.6, { vol: 0.05, filter: 500, type: 'bandpass', sweep: 200, q: 3 }); [300, 250, 200].forEach((f, i) => T(f, 0.15, { type: 'sine', vol: 0.03, slide: f * 1.6, delay: i * 0.1 })); break;
       case 'gorurin': [1319, 1568, 1319, 2093].forEach((f, i) => T(f, 0.12, { type: 'square', vol: 0.02, delay: i * 0.06 })); N(0.2, { vol: 0.03, filter: 6000, type: 'highpass', delay: 0.2 }); break;
       case 'yukidarun': T(900, 0.4, { type: 'sine', vol: 0.03, slide: 1400 }); N(0.4, { vol: 0.03, filter: 5000, type: 'highpass' }); break;
+      case 'saikoro': [0, 0.07, 0.14, 0.21, 0.28].forEach(d => N(0.05, { vol: 0.05, filter: 3000, type: 'bandpass', q: 3, delay: d })); T(1319, 0.2, { type: 'triangle', vol: 0.04, delay: 0.36 }); T(1760, 0.3, { type: 'triangle', vol: 0.04, delay: 0.46 }); break;
+      case 'imomushi': [300, 360, 420, 500, 600].forEach((f, i) => T(f, 0.08, { type: 'sine', vol: 0.035, delay: i * 0.06 })); N(0.4, { vol: 0.03, filter: 5000, type: 'highpass', delay: 0.3 }); break;
+      case 'chochin': T(200, 0.7, { type: 'sine', vol: 0.04, slide: 600 }); N(0.6, { vol: 0.04, filter: 800, type: 'bandpass', sweep: 2400, q: 2 }); break;
       case 'torio': [523, 659, 784].forEach((f, i) => { T(f, 0.12, { type: 'square', vol: 0.03, delay: i * 0.12 }); N(0.06, { vol: 0.04, filter: 2500, delay: i * 0.12 }); }); T(1047, 0.3, { type: 'triangle', vol: 0.035, delay: 0.38 }); break;
       case 'yurarin': T(400, 0.8, { type: 'sine', vol: 0.035, slide: 900 }); T(600, 0.8, { type: 'sine', vol: 0.025, slide: 300, delay: 0.1 }); N(0.6, { vol: 0.025, filter: 1800, type: 'bandpass', sweep: 600, q: 4 }); break;
       case 'fuerin': [0, 0.06, 0.12, 0.18, 0.24].forEach((d, i) => T(600 + i * 180, 0.08, { type: 'sine', vol: 0.035, slide: 900 + i * 200, delay: d })); N(0.3, { vol: 0.03, filter: 900, type: 'bandpass', sweep: 2400, q: 2 }); break;
@@ -128,6 +131,9 @@ const SFX = {
       case 'skill-dororin': N(0.4, { vol: 0.06, filter: 500, type: 'bandpass', sweep: 180, q: 2 }); T(120, 0.3, { type: 'sine', vol: 0.05, slide: 70 }); break;
       case 'skill-gorurin': [2093, 2637, 3136].forEach((f, i) => T(f, 0.1, { type: 'square', vol: 0.02, delay: i * 0.03 })); N(0.2, { vol: 0.06, filter: 3000 }); break;
       case 'skill-yukidarun': N(0.35, { vol: 0.08, filter: 1200 }); T(90, 0.3, { type: 'sine', vol: 0.06, slide: 50 }); break;
+      case 'skill-saikoro': N(0.2, { vol: 0.07, filter: 1500 }); T(180, 0.2, { type: 'square', vol: 0.03, slide: 90 }); break;
+      case 'skill-imomushi': N(0.3, { vol: 0.05, filter: 3500, type: 'bandpass', sweep: 800, q: 2 }); break;
+      case 'skill-chochin': N(0.3, { vol: 0.06, filter: 900, type: 'bandpass', sweep: 3000, q: 1.5 }); T(140, 0.25, { type: 'sawtooth', vol: 0.025, slide: 70 }); break;
       case 'skill-torio': [0, 0.08, 0.16].forEach((d, i) => { N(0.1, { vol: 0.06, filter: 1500 + i * 500, delay: d }); T(300 + i * 120, 0.08, { type: 'square', vol: 0.03, delay: d }); }); break;
       case 'skill-yurarin': T(900, 0.25, { type: 'sine', vol: 0.04, slide: 300 }); N(0.3, { vol: 0.05, filter: 4000, type: 'bandpass', q: 3 }); break;
       case 'skill-fuerin': [0, 0.05, 0.1].forEach(d => { N(0.12, { vol: 0.05, filter: 1200, delay: d }); T(300, 0.1, { type: 'sine', vol: 0.04, slide: 160, delay: d }); }); break;

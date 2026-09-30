@@ -95,6 +95,21 @@ function traitLines(id, t) {
       L.push('攻撃を うけると ゆきだまが 1 こ へる');
       L.push(statusLine(t.statusCut));
       break;
+    case 'saikoro':
+      L.push(`お題を 打ち切るたび サイコロを ふる。出た 目で 攻撃が ${t.dice.map((v, i) => `${i + 1}: ×${+v.toFixed(2)}`).join('・')}`);
+      L.push(`へいきん ×${+(t.dice.reduce((a, b) => a + b, 0) / 6).toFixed(2)}`);
+      L.push(statusLine(t.statusCut));
+      break;
+    case 'imomushi':
+      L.push(`お題を 打ち切るたび 体が 1 つ のびる (最大 ${t.segMax})。1 つ につき 攻撃 +${pct(t.segStep)} (最大 +${pct(t.segStep * t.segMax)})`);
+      L.push('攻撃を うけると 体が 1 つ ちぢむ');
+      L.push(statusLine(t.statusCut));
+      break;
+    case 'chochin':
+      L.push(`敵の 攻撃ゲージが たまっているほど 攻撃が 強い (ゲージ まんたん まえで +${pct(t.gaugeBoost)})`);
+      L.push('はやく 打ち切ると ボーナスが すくない。ぎりぎりまで ためて 打つと 強い');
+      L.push(statusLine(t.statusCut));
+      break;
     case 'torio':
       L.push('お題を 打ち切ると 3 びきが じゅんに 攻撃。会心 (6%・1.5 倍) は 1 ぴきずつ きまる');
       L.push(`ノーミスで お題を 3 つ つづけて 打ち切ると、3 つめの 攻撃 +${pct(t.trio)} (トリオボーナス)`);
@@ -194,6 +209,18 @@ function skillLines(id, s, def) {
       L.push(`ゆきだまで ${pw}`);
       L.push(`ゆきだま 1 こ につき 威力 +${pct(s.snowBoost)} (ゆきだまは へらない)`);
       break;
+    case 'saikoro':
+      L.push(`ころがる たいあたりで ${pw}`);
+      L.push(`つぎの ${s.luck} かいは サイコロで 4・5・6 の 目しか 出ない`);
+      break;
+    case 'imomushi':
+      L.push(`体を ぐるぐる まわして ${pw}`);
+      L.push(`のびた 体 1 つ につき 威力 +${pct(s.segBoost)}`);
+      break;
+    case 'chochin':
+      L.push(`ひとだまで ${pw}`);
+      L.push(`ひとだまが つぎの 敵の 攻撃を ${s.guard} かい ふせぐ`);
+      break;
     case 'torio':
       L.push(`3 びきの 3 れんげきで ${pw}`);
       L.push('3 かいめは かならず 会心 (1.5 倍)。あわせて 約 1.17 倍');
@@ -245,6 +272,9 @@ function survivalLine(id, stage, t) {
   if (id === 'gorurin') x = `コイン ${times(sv.coin[stage])}`;
   if (id === 'yukidarun') x = `ふれた 敵が ${sv.chill[stage]} 秒 おそくなる`;
   if (id === 'yuusharin') x = `武器の ダメージ ${times(sv.dmg[stage])}・うける ダメージ ${pct(1 - sv.hurt[stage])} カット`;
+  if (id === 'saikoro') x = `武器が ${pct(sv.crit[stage])} の 確率で 会心 (ダメージ 2 倍)`;
+  if (id === 'imomushi') x = `最大HP ${times(sv.hp[stage])}`;
+  if (id === 'chochin') x = `武器の ダメージ ${times(sv.dmg[stage])}`;
   if (id === 'torio') x = `武器の ダメージ ${times(sv.dmg[stage])}`;
   if (id === 'yurarin') x = `うける ダメージ ${pct(1 - sv.hurt[stage])} カット`;
   if (id === 'fuerin') x = `武器を うつ 間かくが ${pct(1 - sv.cd[stage])} みじかい`;

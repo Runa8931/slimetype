@@ -17,7 +17,7 @@ function sim(cid, L, e, kpm, acc) {
   const has = a => e.abilities.includes(a);
   const p = { hp: st.hp * 3, max: st.hp * 3, skill: 0, shield: 0, boost: 1, barrier: 0, evade: 0, reflect: 0, poison: 0 };
   const en = { hp: Math.round(es.hp * D.ENEMY_HP_SCALE), g: 0, atk: 0, angry: false, dbl: false, phase: 0, heads: 1 }; en.max = en.hp;
-  let tstreak = 0, forgiven = 0, forgiveUntil = 0, cacc = 0, t = 0, combo = 0, keys = wordKeys(e.diff), typed = 0, wstart = 0, wmiss = false, chill = 0, shell = 0, nextShell = 4, nextRegen = 8;
+  let seg = 0, luck = 0, tstreak = 0, forgiven = 0, forgiveUntil = 0, cacc = 0, t = 0, combo = 0, keys = wordKeys(e.diff), typed = 0, wstart = 0, wmiss = false, chill = 0, shell = 0, nextShell = 4, nextRegen = 8;
   let hidden = 0, nextHide = 6, wind = 0, nextWind = 5, words = 0, thunderAt = 0, thunderW = 0, nextThunder = 5;
   let burnUntil = 0, bindUntil = 0, nextRegenP = 3, eChill = 0, breakUntil = 0, streak = 0, tempo = 0, tempoMult = 1, ePoison = 0, weak = 0, snow = 0;
   const dt = 0.02, kps = kpm / 60; let keyT = 0;
@@ -56,6 +56,7 @@ function sim(cid, L, e, kpm, acc) {
         if (p.shield > 0) { p.shield--; en.hp -= h + D.calcDamage(L, sk.power, st.atk, es.def); if (sk.heal) p.hp = Math.min(p.max, p.hp + p.max * sk.heal); continue; }
         p.hp -= h;
         if (cid === 'yukidarun' && snow > 0) snow--;
+        if (cid === 'imomushi' && seg > 0) seg--;
         if (cid === 'koorin' && Math.random() < tr.counter) en.g = Math.max(0, en.g - tr.pushback);
         if (has('poison') && statusCut < 1 && !(tr.burnImmune && e.statusName === 'やけど')) p.poison = t + 5 * (1 - statusCut);
         if ((has('freeze') || has('blizzard')) && statusCut < 1 && !tr.freezeImmune) chill = t + (has('freeze') ? 4 : 3);
@@ -100,6 +101,9 @@ function sim(cid, L, e, kpm, acc) {
         if (cid === 'yukidarun') en.hp -= skDmg(1 + sk.snowBoost * snow);
         if (cid === 'yuusharin') { en.hp -= skDmg(); p.hp = Math.min(p.max, p.hp + p.max * sk.heal); en.g = 0; }
         if (cid === 'torio') en.hp -= skDmg((2 + 1.5) / 3);
+        if (cid === 'saikoro') { en.hp -= skDmg(); luck = sk.luck; }
+        if (cid === 'imomushi') en.hp -= skDmg(1 + seg * sk.segBoost);
+        if (cid === 'chochin') { en.hp -= skDmg(); p.barrier = Math.max(p.barrier, sk.guard); }
         if (cid === 'yurarin') { en.hp -= skDmg(); forgiveUntil = t + sk.forgiveSecs; }
         if (cid === 'fuerin') en.hp -= skDmg(1 + Math.min(sk.boostMax, combo * sk.comboBoost));
       }
@@ -117,6 +121,9 @@ function sim(cid, L, e, kpm, acc) {
         let cr = tr.crit || 0.06, cm = 1.5;
         if (cid === 'piriri') { cr = 0.1 + Math.min(tr.critMax - 0.1, Math.max(0, (kpsw - 2) * 0.2)); cm = tr.critMult; }
         if (cid === 'pitarin' && !wmiss) { cr = 1; cm = tr.perfectCrit; }
+        if (cid === 'imomushi') { dmg *= 1 + seg * tr.segStep; seg = Math.min(tr.segMax, seg + 1); }
+        if (cid === 'chochin') dmg *= 1 + Math.min(1, en.g) * tr.gaugeBoost;
+        if (cid === 'saikoro') { const d = luck > 0 ? 3 + Math.floor(Math.random() * 3) : Math.floor(Math.random() * 6); if (luck > 0) luck--; dmg *= tr.dice[d]; }
         if (cid === 'torio') {
           tstreak = wmiss ? 0 : tstreak + 1;
           if (tstreak % 3 === 0) dmg *= 1 + tr.trio;
