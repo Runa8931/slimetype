@@ -1457,3 +1457,6 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 /* ガチャの 上にも カットインが 出るように */
 .cutin-rank { z-index: 60; }
 .gc-again { text-align: center; margin: 12px 0 4px; color: var(--sub); font-size: 14px; }
+/* 最終進化の つばさ: 付け根を 中心に ゆっくり はばたく */
+.slime .slime-wing { transform-box: fill-box; transform-origin: 0% 60%; animation: slime-wing 1.8s ease-in-out infinite alternate; }
+@keyframes slime-wing { from { transform: rotate(6deg); } to { transform: rotate(-10deg); } }

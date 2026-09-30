@@ -298,9 +298,11 @@ function slimeSVG(id, stage = 0, look) {
 
   // ---- 4 段階目 (Lv60〜): つばさ / 5 段階目 (Lv80〜): 光の輪 ----
   if (stage >= 3) {
-    const wing = (sx) => `<g transform="translate(60,62) scale(${sx},1)">
-      <path d="M22,-4 C44,-34 76,-38 84,-20 C70,-20 64,-12 74,-4 C60,-6 54,2 62,10 C48,8 38,10 26,14 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round" opacity=".95"/>
-      <path d="M34,0 C50,-20 66,-24 76,-18 M36,6 C50,-4 60,-6 68,-4" fill="none" stroke="${c.dark}" stroke-width="1.5" opacity=".6"/></g>`;
+    // 体の 横 (まんなか あたり) から 外へ ひろがる 羽根の つばさ。上に とがらせると 耳に 見えるので 横向きに する
+    const wing = (sx) => `<g transform="translate(60,74) scale(${sx * 0.85},0.85) rotate(-8)"><g class="slime-wing">
+      <path d="M34,-6 C48,-24 72,-30 94,-22 C88,-18 88,-14 94,-10 C86,-8 86,-3 90,2 C82,2 80,7 83,12 C74,11 70,15 71,20 C60,14 46,12 34,10 Z" fill="${c.accent}" stroke="${c.dark}" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M38,-2 C52,-14 70,-18 86,-15 C80,-10 80,-6 84,-3 C74,-2 70,2 72,7 C62,6 50,6 38,6 Z" fill="#fff" opacity=".35"/>
+      <path d="M42,0 C58,-10 74,-14 88,-12 M42,4 C56,-2 70,-3 84,0 M42,8 C54,6 64,8 76,12" fill="none" stroke="${c.dark}" stroke-width="1.4" stroke-linecap="round" opacity=".55"/></g></g>`;
     behind = wing(1) + wing(-1) + behind;
   }
   if (stage >= 4) {
@@ -742,6 +744,29 @@ const ENEMY_SVG = {
 // へんい種は もとの 敵の 絵に 色の フィルターを かけて つかい回す (新しい 絵を 作らないので 軽い)
 function enemySVG(id) {
   const v = typeof ENEMY_VARIANT !== 'undefined' && ENEMY_VARIANT[id];
-  if (!v) return ENEMY_SVG[id]();
-  return ENEMY_SVG[v.base]().replace('<svg ', `<svg style="filter:${v.filter}" `);
+  if (!v) return polishEnemy(ENEMY_SVG[id]());
+  return polishEnemy(ENEMY_SVG[v.base]()).replace('<svg ', `<svg style="filter:${v.filter}" `);
+}
+
+// 敵の 絵の しあげ (ぜんぶの 敵に かける): 体の まわりに こい ふちどり、右下に かげ、左上に ハイライト。
+// 足もとの 影 (さいしょの 黒い だえん) には かけない
+function polishEnemy(svg) {
+  const vb = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  const k = vb ? (+vb[1] + +vb[2]) / 300 : 1; // 絵の 大きさに あわせる
+  const open = svg.indexOf('>') + 1, close = svg.lastIndexOf('</svg>');
+  if (open <= 0 || close < 0) return svg;
+  let inner = svg.slice(open, close), ground = '';
+  inner = inner.replace(/^\s*(<ellipse[^>]*fill="#000"[^>]*\/>)/, (_, e) => { ground = e; return ''; });
+  const u = 'q' + (++_svgUid), f = n => +(n * k).toFixed(2);
+  return `${svg.slice(0, open)}<defs><filter id="${u}" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <feMorphology in="SourceAlpha" operator="dilate" radius="${f(1.8)}" result="dil"/>
+      <feFlood flood-color="#140c28" flood-opacity=".9"/><feComposite in2="dil" operator="in" result="outline"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="${f(3)}" result="bump"/>
+      <feDiffuseLighting in="bump" surfaceScale="${f(4)}" diffuseConstant="1" lighting-color="#fff" result="diff"><feDistantLight azimuth="235" elevation="52"/></feDiffuseLighting>
+      <feComposite in="diff" in2="SourceGraphic" operator="arithmetic" k1="1.22" k2="0" k3="0" k4="0" result="lit"/>
+      <feComposite in="lit" in2="SourceAlpha" operator="in" result="body"/>
+      <feSpecularLighting in="bump" surfaceScale="${f(4)}" specularConstant=".35" specularExponent="40" lighting-color="#fff" result="spec"><feDistantLight azimuth="235" elevation="58"/></feSpecularLighting>
+      <feComposite in="spec" in2="SourceAlpha" operator="in" result="gloss"/>
+      <feMerge><feMergeNode in="outline"/><feMergeNode in="body"/><feMergeNode in="gloss"/></feMerge>
+    </filter></defs>${ground}<g filter="url(#${u})">${inner}</g></svg>`;
 }

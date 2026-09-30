@@ -40,7 +40,7 @@ const BATTLE_LV_CAP = 124;
 const BATTLE_DIFFS = {
   beg: { name: '初心者', k: 0.5, reward: 1, kpm: 100, color: '#69db7c', note: '1 分 100 打鍵くらい 向け' },
   mid: { name: '中級者', k: 0.9, reward: 1.3, kpm: 200, color: '#ffd43b', note: '1 分 200 打鍵くらい 向け' },
-  adv: { name: '上級者', k: 1.65, ramp: 0.8, reward: 2, kpm: 350, color: '#ff6b6b', note: '1 分 350 打鍵くらい 向け。すすむほど きびしく、さいごは ぎりぎり' },
+  adv: { name: '上級者', k: 1.65, ramp: 0.8, reward: 2, kpm: 350, color: '#ff6b6b', note: '1 分 350 打鍵くらい 向け' },
 };
 // その ステージ・難易度での 敵の 強さの 倍率
 function diffK(bd, idx) {
