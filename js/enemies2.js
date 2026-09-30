@@ -233,17 +233,47 @@ Object.assign(ENEMY_SVG, {
       <path d="M40,100 Q46,104 52,100" fill="none" stroke="#2b8a3e" stroke-width="2.5"/>
     </g></svg>`,
 
+  // カッパ: あたまの おさら (水が ゆれる)・ぎざぎざの かみ・くちばし・せなかの こうら・きゅうりを かかえる
   kappa: () => `<svg viewBox="0 0 140 160" class="enemy-svg">${shadow(70, 152, 40)}
     <g class="squish">
-      <ellipse cx="80" cy="112" rx="36" ry="38" fill="#8d6e3a" stroke="#4a3510" stroke-width="3"/>
-      <path d="M64,84 L100,84 M60,100 L104,100 M62,116 L102,116" stroke="#4a3510" stroke-width="2.5"/>
-      <ellipse cx="62" cy="116" rx="28" ry="32" fill="#69db7c" stroke="#2b8a3e" stroke-width="3"/>
-      <path d="M40,140 L32,152 L50,152 Z M76,140 L72,152 L90,152 Z" fill="#69db7c" stroke="#2b8a3e" stroke-width="2"/>
-      <circle cx="62" cy="58" r="34" fill="#8ce99a" stroke="#2b8a3e" stroke-width="3"/>
-      <path d="M30,44 C32,20 92,20 94,44 C80,34 44,34 30,44 Z" fill="#212529"/>
-      <ellipse cx="62" cy="28" rx="18" ry="6" fill="#a5d8ff" stroke="#1c7ed6" stroke-width="2"/>
-      ${eyes(50, 72, 58, 6)}
-      <path d="M26,70 L40,64 L40,76 Z" fill="#ffd43b" stroke="#e67700" stroke-width="2"/>
+      <ellipse cx="86" cy="108" rx="38" ry="42" fill="#8d6e3a" stroke="#4a3510" stroke-width="3"/>
+      <ellipse cx="88" cy="108" rx="30" ry="34" fill="#a9824a"/>
+      <path d="M88,80 L100,90 L100,106 L88,114 L76,106 L76,90 Z M100,106 L112,112 M76,106 L66,112 M88,114 L88,132 M100,90 L110,82 M76,90 L68,84" fill="none" stroke="#4a3510" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M70,76 C80,70 96,70 104,76" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".25"/>
+      <path d="M50,140 L50,148 M76,140 L76,148" stroke="#2b8a3e" stroke-width="12" stroke-linecap="round"/>
+      <path d="M50,140 L50,148 M76,140 L76,148" stroke="#69db7c" stroke-width="8" stroke-linecap="round"/>
+      <path d="M38,152 L44,146 L48,152 L52,146 L56,152 Z M64,152 L70,146 L74,152 L78,146 L84,152 Z" fill="#69db7c" stroke="#2b8a3e" stroke-width="2" stroke-linejoin="round"/>
+      <ellipse cx="62" cy="114" rx="30" ry="32" fill="#69db7c" stroke="#2b8a3e" stroke-width="3"/>
+      <path d="M46,100 C46,92 78,92 78,100 L78,128 C78,138 46,138 46,128 Z" fill="#ffec99" stroke="#e0a800" stroke-width="2"/>
+      <path d="M47,108 L77,108 M47,117 L77,117 M47,126 L77,126" stroke="#e0a800" stroke-width="1.6" opacity=".8"/>
+      <g transform="rotate(-10 60 118)">
+        <rect x="30" y="111" width="62" height="15" rx="7.5" fill="#2f9e44" stroke="#1b5e20" stroke-width="2.5"/>
+        <path d="M38,115 L84,115" stroke="#8ce99a" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+        <circle cx="44" cy="121" r="1.4" fill="#1b5e20"/><circle cx="56" cy="120" r="1.4" fill="#1b5e20"/><circle cx="68" cy="122" r="1.4" fill="#1b5e20"/><circle cx="80" cy="120" r="1.4" fill="#1b5e20"/>
+        <circle cx="93" cy="118" r="3" fill="#ffd43b" stroke="#e67700" stroke-width="1.2"/>
+        <path d="M30,118 C24,114 22,108 26,104 C30,108 32,112 30,118 Z" fill="#8ce99a" stroke="#1b5e20" stroke-width="1.5"/>
+      </g>
+      <path d="M40,104 C36,110 36,116 40,120" fill="none" stroke="#2b8a3e" stroke-width="11" stroke-linecap="round"/>
+      <path d="M40,104 C36,110 36,116 40,120" fill="none" stroke="#69db7c" stroke-width="7" stroke-linecap="round"/>
+      <path d="M84,102 C90,106 90,112 86,116" fill="none" stroke="#2b8a3e" stroke-width="11" stroke-linecap="round"/>
+      <path d="M84,102 C90,106 90,112 86,116" fill="none" stroke="#69db7c" stroke-width="7" stroke-linecap="round"/>
+      <path d="M36,118 C36,113 46,113 46,118 L45,125 L42,121 L40,126 L37,121 Z" fill="#69db7c" stroke="#2b8a3e" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M80,114 C80,109 90,109 90,114 L89,121 L86,117 L84,122 L81,117 Z" fill="#69db7c" stroke="#2b8a3e" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="62" cy="60" r="34" fill="#8ce99a" stroke="#2b8a3e" stroke-width="3"/>
+      <path d="M32,72 C38,88 88,90 94,70 C90,94 36,94 32,72 Z" fill="#000" opacity=".1"/>
+      <path d="M26,50 L20,38 L32,42 L30,28 L42,36 L46,22 L56,32 L62,18 L68,32 L78,22 L82,36 L94,28 L92,42 L104,38 L98,50 C84,40 40,40 26,50 Z" fill="#1b4332" stroke="#0b2b1e" stroke-width="2" stroke-linejoin="round"/>
+      <ellipse cx="62" cy="32" rx="21" ry="7.5" fill="#dbe4ff" stroke="#1c7ed6" stroke-width="2.5"/>
+      <ellipse cx="62" cy="32" rx="16" ry="4.8" fill="#74c0fc"/>
+      <path d="M52,30 C56,28 62,28 66,29" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+      <circle cx="84" cy="22" r="2.6" fill="#74c0fc" class="spark"/><circle cx="40" cy="20" r="2" fill="#74c0fc" class="spark"/>
+      <path d="M40,50 L54,56 M84,50 L72,56" stroke="#1b4332" stroke-width="3.5" stroke-linecap="round"/>
+      <ellipse cx="48" cy="62" rx="9" ry="10" fill="#fff" stroke="#2b8a3e" stroke-width="2"/><ellipse cx="74" cy="62" rx="9" ry="10" fill="#fff" stroke="#2b8a3e" stroke-width="2"/>
+      <circle cx="45" cy="64" r="5" fill="#1d1d2b"/><circle cx="71" cy="64" r="5" fill="#1d1d2b"/>
+      <circle cx="43" cy="62" r="1.8" fill="#fff"/><circle cx="69" cy="62" r="1.8" fill="#fff"/>
+      <ellipse cx="38" cy="78" rx="5" ry="3" fill="#ff8787" opacity=".5"/><ellipse cx="84" cy="76" rx="5" ry="3" fill="#ff8787" opacity=".5"/>
+      <path d="M42,70 C32,68 20,70 10,76 C22,77 32,78 42,78 Z" fill="#ffd43b" stroke="#e67700" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M14,77 C24,80 34,82 42,80 C36,86 24,84 14,77 Z" fill="#fab005" stroke="#e67700" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M22,71 C28,70 34,70 38,71" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
     </g></svg>`,
 
   raijin: () => `<svg viewBox="0 0 220 190" class="enemy-svg">${shadow(110, 182, 70)}
