@@ -574,7 +574,8 @@ Screens.gacha = {
     const roll = Math.random();
     const direct = ssr && roll < 0.25;
     const ladder = ssr && roll >= 0.25 && roll < 0.625;
-    const first = ssr && !direct ? LADDER[Math.floor(Math.random() * 3)] : rar;
+    // 1 だんずつ 上がる ときは N か R から (SR からだと 上がる だんが なく いっきに 見える)
+    const first = !ssr || direct ? rar : LADDER[Math.floor(Math.random() * (ladder ? 2 : 3))];
     const slot = stage.querySelector('.gs-cap-slot');
     const base = stage.className.replace(/ (dark|ssr|omen)/g, '');
 

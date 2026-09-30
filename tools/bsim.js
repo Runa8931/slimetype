@@ -16,7 +16,7 @@ function sim(cid, L, e, kpm, acc) {
   const es = D.calcStats({ ...e.base, spd: 50 }, e.lv);
   const has = a => e.abilities.includes(a);
   const p = { hp: st.hp * 3, max: st.hp * 3, skill: 0, shield: 0, boost: 1, barrier: 0, evade: 0, reflect: 0, poison: 0 };
-  const en = { hp: Math.round(es.hp * D.ENEMY_HP_SCALE), g: 0, atk: 0, angry: false, dbl: false, phase: 0, heads: 1 }; en.max = en.hp;
+  const en = { hp: Math.round(es.hp * D.ENEMY_HP_SCALE * (e.hpMult || 1)), g: 0, atk: 0, angry: false, dbl: false, phase: 0, heads: 1 }; en.max = en.hp;
   let seg = 0, luck = 0, tstreak = 0, forgiven = 0, forgiveUntil = 0, cacc = 0, t = 0, combo = 0, keys = wordKeys(e.diff), typed = 0, wstart = 0, wmiss = false, chill = 0, shell = 0, nextShell = 4, nextRegen = 8;
   let hidden = 0, nextHide = 6, wind = 0, nextWind = 5, words = 0, thunderAt = 0, thunderW = 0, nextThunder = 5;
   let burnUntil = 0, bindUntil = 0, nextRegenP = 3, eChill = 0, breakUntil = 0, streak = 0, tempo = 0, tempoMult = 1, ePoison = 0, weak = 0, snow = 0;

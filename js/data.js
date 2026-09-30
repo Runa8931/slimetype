@@ -1069,11 +1069,25 @@ const HIDDEN_DEFS = [
   { host: 7, from: 5, e: E('h_icequeen', 'こおりの じょおう', 'boss', 4800, ['blizzard', 'freeze', 'charge'], 'えいきゅうとうど: ふぶきで 漢字と かなを かくし、こごえさせ、ためこうげきも してくる',
       'ゆきやまの いただきで ねむっていた こおりの じょおう。', { sprite: 'yukionna', filter: 'hue-rotate(185deg) saturate(2.2) brightness(1.25)', lv: 82, bg: 'snow' }),
     reveal: { text: 'ゆきやまの ボス イエティを 上級者で たおす', check: () => stageBest(worldStages(7).slice(-1)[0]) >= 3, progress: () => 'まだ' } },
+  // ---- ここから: はじめて たおすと コインと かけらが もらえる (reward) ----
+  // こうてつマイマイ: HP が とても 多い かわりに 攻撃は ゆっくり・よわい。300 コンボを ねらえる ながい たたかい
+  { host: 3, from: 3, e: E('h_ironsnail', 'こうてつマイマイ', 'tank', 7000, ['armor'], 'こうてつの から: コンボ 30 未満だと ダメージ半減。HP が とても 多い (攻撃は よわい)',
+      'うみの そこで なんびゃくねんも ねむっていた はがねの カタツムリ。どれだけ たたいても びくともしない。', { sprite: 'snail', filter: 'grayscale(1) brightness(1.15) contrast(1.25)', lv: 40, bg: 'sea', hpMult: 2.8, power: 30 }),
+    reward: { coins: 600, shards: 20 },
+    reveal: { text: 'しょうごう「コンボつかい」(最大コンボ 100) を とる', check: () => !!(Save.data.ach || {}).combo100, progress: () => 'まだ' } },
+  { host: 4, from: 3, e: E('h_candywitch', 'わたあめゴースト', 'boss', 4600, ['sweet', 'ink'], 'あまい ゆうわく: ミスすると 回復し、HP 半分から すみで ガイドを かくし 2 回 こうげき',
+      'おかしのくにの おまつりで うまれた ふわふわの おばけ。あまい かおりで ミスを さそう。', { sprite: 'yukionna', filter: 'hue-rotate(115deg) saturate(2.6) brightness(1.05)', lv: 48, bg: 'candy', power: 45 }),
+    reward: { coins: 800, shards: 25 },
+    reveal: { text: 'おかしのくにの ステージを 3 つ 上級者で クリアする', check: () => worldStages(4).filter(g => stageBest(g) >= 3).length >= 3, progress: () => `${worldStages(4).filter(g => stageBest(g) >= 3).length}/3` } },
+  { host: 8, from: 3, e: E('h_thundercloud', 'らいうんの ぬし', 'boss', 4400, ['thunder', 'wind'], 'らいうん: 落雷の 予告 (つぎの お題を 打ち切れないと 大ダメージ) と、風で 文字を ゆらす',
+      'てんくうの いちばん 上で うなる きんいろの かみなりぐも。', { sprite: 'cloud', filter: 'sepia(1) saturate(4) hue-rotate(5deg) brightness(1.1)', lv: 95, bg: 'sky', power: 75 }),
+    reward: { coins: 1500, shards: 40 },
+    reveal: { text: 'サバイバル「むずかしい」を クリアする', check: () => svCleared('hard'), progress: () => 'まだ' } },
 ];
 for (const h of HIDDEN_DEFS) {
   const e = h.e;
   h.idx = ENEMIES.length;
-  ENEMIES.push({ ...e, hidden: true, host: h.host, world: -1, boss: e.type === 'boss', lv: e.lv, base: { ...ENEMY_TYPES[e.type] }, power: 40,
+  ENEMIES.push({ ...e, hidden: true, host: h.host, world: -1, boss: e.type === 'boss', lv: e.lv, base: { ...ENEMY_TYPES[e.type] }, power: e.power || 40,
     exp: 0, diff: 'hard', bg: e.bg, abilities: [].concat(e.ability || []) });
 }
 // かくしステージの 道が ひらいているか / たおしたか

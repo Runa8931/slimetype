@@ -32,7 +32,7 @@ Screens.battle = {
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
     this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, evade: 0, reflect: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
-    const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.k, 0.7)); // 難易度で HP が かわる
+    const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.k, 0.7) * (this.ed.hpMult || 1)); // 難易度で HP が かわる (こうてつマイマイは とても 多い)
     this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0, poison: 0, nextPoison: 0, weakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
@@ -1133,14 +1133,18 @@ Screens.battle = {
     if (firstClear) Save.data.cleared = Math.min(MAIN_STAGES, this.idx + 1);
     // ノーミスで 勝った ステージ (かくしステージの 道の 条件) / かくしステージを たおした
     if (won && this.miss === 0) (Save.data.nomiss = Save.data.nomiss || {})[this.idx] = 1;
+    // かくしステージを はじめて たおすと ごほうび (コインと かけら)
+    const hdef = this.ed.hidden ? hiddenOf(this.idx) : null;
+    const hiddenReward = won && hdef && hdef.reward && !hiddenCleared(hdef) ? hdef.reward : null;
     if (won && this.ed.hidden) (Save.data.hiddenClear = Save.data.hiddenClear || {})[this.ed.id] = Date.now();
+    if (hiddenReward) { gachaData().shards += hiddenReward.shards; setTimeout(() => toast(`🎁 かくしステージの ごほうび: 🪙 ${hiddenReward.coins}・💎 ${hiddenReward.shards}`, 3200), 1200); }
     if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); } // ずかん: たおした
     Save.data.totals.keys += this.correct;
     const expRes = grantExp(this.ch.id, typing + bonus);
     // コイン: 勝つと もらえる (格下では へる)。はじめて たおすと ボーナス
     const coinGap = Math.min(1.2, gap);
     const winCoins = Math.round((won ? (30 + this.idx * 2) * coinGap : this.correct / 15 * Math.min(1, gap)) * rw * (1 + (this.ch.trait.coinBonus || 0))); // ゴルりんは コインが ふえる
-    const firstCoins = firstClear ? (this.ed.boss ? 200 : 50) : 0;
+    const firstCoins = firstClear ? (this.ed.boss ? 200 : 50) : hiddenReward ? hiddenReward.coins : 0;
     const coins = grantCoins(winCoins + firstCoins);
     const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
     App.show('result', {
@@ -1149,7 +1153,7 @@ Screens.battle = {
       correct: this.correct, miss: this.miss, acc,
       kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs), kps: this.correct / secs, bestKps: this.bestKps,
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
-      bdiff: this.dk, coins, coinNote: `${won ? `勝利 ${winCoins}` : `打鍵 ${winCoins}`}${rw > 1 ? ` (${this.bd.name} ×${rw})` : ''}${firstCoins ? ` + はじめて たおした ${firstCoins}` : ''}${gap < 1 ? '・格下なので へった' : ''}`,
+      bdiff: this.dk, coins, coinNote: `${won ? `勝利 ${winCoins}` : `打鍵 ${winCoins}`}${rw > 1 ? ` (${this.bd.name} ×${rw})` : ''}${firstCoins ? ` + ${hiddenReward ? 'かくしステージの ごほうび' : 'はじめて たおした'} ${firstCoins}` : ''}${gap < 1 ? '・格下なので へった' : ''}`,
       expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (Lv.${this.ed.lv} から つぎの ステージの レベルまでの 6 わり)` : '勝利ボーナスなし',
         `レベル差の補正 ×${gap.toFixed(2)} (敵 Lv.${this.ed.lv} / 自分 Lv.${this.ch.L}${gap < 1 ? '・格下なので へった' : gap > 1 ? '・格上なので ふえた' : ''})`],
     });
