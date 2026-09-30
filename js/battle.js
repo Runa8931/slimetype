@@ -36,7 +36,7 @@ Screens.battle = {
     this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0, poison: 0, nextPoison: 0, weakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
     $('#b-estatus').innerHTML = '';
-    this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0; this.bestKps = 0; this.tempo = 0; this.tempoMult = 1; this.snow = 0;
+    this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.trioStreak = 0; this.forgiven = 0; this.forgiveUntil = 0; this.correct = 0; this.miss = 0; this.words = 0; this.streak = 0; this.bestKps = 0; this.tempo = 0; this.tempoMult = 1; this.snow = 0;
     this.wordMiss = false; this.wordStart = 0; this.fogUntil = 0; this.nextFog = 0;
     // 新しい敵の特殊能力で使う状態
     this.shellUntil = 0; this.nextShell = 4000; this.nextRegen = 8000;
@@ -368,6 +368,7 @@ Screens.battle = {
     this.target = new TypingTarget(this.word.k);
     this.wordMiss = false;
     this.wordStart = 0;
+    this.forgiven = 0; // ゆらりん: お題ごとに ミスを ふせげる
     replayAnim($('#b-tp'), 'word-in', 300);
     this.render();
   },
@@ -441,7 +442,9 @@ Screens.battle = {
     if (!this.wordStart) this.wordStart = this.elapsed;
     const expected = this.target.nextKey();
     const r = this.target.input(key);
-    if (r === 'miss') {
+    if (r === 'miss' && this.forgive(expected)) {
+      // ゆらりん: この ミスは なかったことに (コンボ・敵の ゲージ・ひっさつ ゲージは そのまま)
+    } else if (r === 'miss') {
       this.miss++;
       this.wordMiss = true;
       this.missMap[expected] = (this.missMap[expected] || 0) + 1;
@@ -482,6 +485,24 @@ Screens.battle = {
     if (r !== 'done') this.render();
   },
 
+  // ゆらりん: お題ごとに さいしょの ミス (ひっさつの あとは しばらく ぜんぶ) を なかったことに する
+  forgive(expected) {
+    const tr = this.ch.trait;
+    if (!tr.forgive) return false;
+    const always = this.forgiveUntil > this.elapsed;
+    if (!always && this.forgiven >= tr.forgive) return false;
+    if (!always) this.forgiven++;
+    this.miss++; // きろくには のこす
+    this.missMap[expected] = (this.missMap[expected] || 0) + 1;
+    recordMiss(expected);
+    const pc = FX.center($('#b-psprite'));
+    floatText(pc.x, pc.y - 70, 'セーフ！', 'guard');
+    this.healP(this.p.max * tr.forgiveHeal);
+    SFX.tone(700, 0.12, { type: 'sine', vol: 0.04, slide: 1100 });
+    replayAnim($('#b-tp'), 'word-in', 200);
+    return true;
+  },
+
   // ---------------- プレイヤーの攻撃 ----------------
   wordDone() {
     this.words++;
@@ -520,6 +541,13 @@ Screens.battle = {
     // メタルン: ながい お題ほど 強い
     if (this.ch.id === 'metarun' && keys > this.ch.trait.longFrom) dmg *= 1 + Math.min(this.ch.trait.longMax, (keys - this.ch.trait.longFrom) * this.ch.trait.longStep);
 
+    // トリオりん: ノーミスで 3 つ つづけると 3 つめが トリオボーナス
+    let trioHit = false;
+    if (this.ch.id === 'torio') {
+      this.trioStreak = perfect ? this.trioStreak + 1 : 0;
+      if (this.trioStreak > 0 && this.trioStreak % 3 === 0) { dmg *= 1 + this.ch.trait.trio; trioHit = true; }
+    }
+
     // 会心: ぴりりは速く打つほど出やすい (進化すると上限と倍率が上がる)
     let critRate = this.ch.trait.crit || 0.06, critMult = 1.5; // ゆうしゃりんは 会心率が 高い
     if (this.ch.id === 'piriri') {
@@ -528,8 +556,16 @@ Screens.battle = {
     }
     // ぴたりん: ノーミスの お題は かならず 会心
     if (this.ch.id === 'pitarin' && perfect) { critRate = 1; critMult = this.ch.trait.perfectCrit; }
-    const crit = Math.random() < critRate;
-    if (crit) dmg *= critMult;
+    let crit;
+    if (this.ch.id === 'torio') {
+      // 3 びきが じゅんに 攻撃: 会心は 1 ぴきずつ きまる
+      const k = [0, 1, 2].filter(() => Math.random() < critRate).length;
+      dmg *= (3 - k + k * critMult) / 3;
+      crit = k > 0;
+    } else {
+      crit = Math.random() < critRate;
+      if (crit) dmg *= critMult;
+    }
 
     // ゴーレムのよろい
     let armorMsg = '';
@@ -550,8 +586,13 @@ Screens.battle = {
     }
 
     // ふつうと ちがう 攻撃の 音: りゅうまるの いかり / きらりの リズム (3 回 いじょう)
-    const sound = this.raging() ? 'rage' : this.ch.id === 'kirari' && this.streak >= 3 ? 'sparkle:' + this.streak : tempoHit ? 'beat' : null;
+    const sound = this.raging() ? 'rage' : this.ch.id === 'kirari' && this.streak >= 3 ? 'sparkle:' + this.streak : tempoHit ? 'beat' : trioHit ? 'sparkle:6' : null;
     this.playerAttackFx(dmg, { crit, boosted, armorMsg, perfect, sound });
+    if (trioHit) {
+      const pc = FX.center($('#b-psprite'));
+      floatText(pc.x, pc.y - 80, 'トリオボーナス！', 'crit-label');
+      this.log(`3 びきの れんけい！ トリオボーナスで ${dmg} ダメージ`, 'good');
+    }
     // ふわり: ときどき もう 1 回 おいうち
     if (this.ch.id === 'fuwari' && Math.random() < this.ch.trait.double) {
       this.after(() => { if (this.state === 'run') { this.playerAttackFx(Math.max(1, Math.round(dmg * 0.5)), { crit: false, boosted: false, armorMsg: '', perfect: false, sound: 'swish' }); this.log('おいかぜで おいうち！', 'good'); } }, 180);
@@ -585,6 +626,8 @@ Screens.battle = {
       yukidarun: { color: '#ffffff', size: 12, arc: -90, frames: 22 },
       yuusharin: { color: '#4dabf7', size: 10, arc: -20, frames: 14 },
       fuerin: { color: '#94d82d', size: 9, arc: -60, frames: 14 },
+      torio: { color: '#ffd43b', size: 9, arc: -70, frames: 14 },
+      yurarin: { color: '#a5d8ff', size: 10, arc: 50, frames: 16 },
       pitarin: { color: '#ffe066', size: 8, arc: -10, frames: 12 },
     };
     // きせかえの エフェクト: 攻撃の 弾が その形の 尾を ひいて 飛び、当たると はじける
@@ -747,7 +790,7 @@ Screens.battle = {
     }
 
     // ほむら・もりりん・かげまる・りゅうまる・きらり: 攻撃 + それぞれの効果
-    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun', 'onpuru', 'pitarin', 'dororin', 'gorurin', 'yukidarun', 'yuusharin', 'fuerin'].includes(ch.id)) {
+    if (['homura', 'moririn', 'kagemaru', 'ryumaru', 'kirari', 'koorin', 'fuwari', 'metarun', 'onpuru', 'pitarin', 'dororin', 'gorurin', 'yukidarun', 'yuusharin', 'fuerin', 'torio', 'yurarin'].includes(ch.id)) {
       this.after(() => {
         if (this.state !== 'run') return;
         const ec = FX.center($('#b-esprite'));
@@ -757,12 +800,13 @@ Screens.battle = {
         if (ch.id === 'kirari') dmg *= 1 + this.streakBonus();
         if (ch.id === 'yukidarun') dmg *= 1 + sk.snowBoost * this.snow; // ゆきだまが 多いほど 強い
         if (ch.id === 'fuerin') dmg *= 1 + Math.min(sk.boostMax, this.combo * sk.comboBoost); // コンボが 多いほど 強い
+        if (ch.id === 'torio') dmg *= (2 + 1.5) / 3; // 3 かいに わけて、3 かいめは かならず 会心
         dmg = Math.round(dmg);
         const fxCol = { homura: ['#ff6b35', '#ffe066', '#fff'], moririn: ['#51cf66', '#d3f9d8', '#fff'], kagemaru: ['#7048e8', '#1a1a2e', '#e5dbff'],
           ryumaru: ['#ff922b', '#ffd43b', '#fff'], kirari: ['#f783ac', '#fff3bf', '#99e9f2'],
           koorin: ['#a5d8ff', '#e7f5ff', '#fff'], fuwari: ['#96f2d7', '#e6fcf5', '#fff'], metarun: ['#adb5bd', '#ffd43b', '#fff'],
           onpuru: ['#ff8cc6', '#ffe066', '#fff'], pitarin: ['#91a7ff', '#ffe066', '#fff'],
-          dororin: ['#9775fa', '#8ce99a', '#fff'], gorurin: ['#ffd43b', '#fff9db', '#fff'], yukidarun: ['#ffffff', '#a5d8ff', '#ff922b'], yuusharin: ['#4dabf7', '#ffd43b', '#fff'], fuerin: ['#94d82d', '#ff8787', '#fff'] }[ch.id];
+          dororin: ['#9775fa', '#8ce99a', '#fff'], gorurin: ['#ffd43b', '#fff9db', '#fff'], yukidarun: ['#ffffff', '#a5d8ff', '#ff922b'], yuusharin: ['#4dabf7', '#ffd43b', '#fff'], fuerin: ['#94d82d', '#ff8787', '#fff'], torio: ['#ff6b6b', '#ffd43b', '#4dabf7'], yurarin: ['#a5d8ff', '#f783ac', '#fff'] }[ch.id];
         for (let i = 0; i < 16; i++) {
           this.after(() => this.proj({ x: pc.x + 20, y: pc.y + (Math.random() - 0.5) * 40 }, { x: ec.x + (Math.random() - 0.5) * 60, y: ec.y + (Math.random() - 0.5) * 60 },
             { color: fxCol[i % 3], size: 5 + Math.random() * 7, frames: 16, arc: (Math.random() - 0.5) * 100, trail: false }), i * 20);
@@ -786,6 +830,8 @@ Screens.battle = {
           if (ch.id === 'gorurin') { this.healP(dmg * sk.skillDrain); this.log(`${sk.name}！ ${dmg} ダメージ、元気を すいとった！`, 'good'); }
           if (ch.id === 'yukidarun') this.log(`${sk.name}！ ゆきだま ${this.snow} こ で ${dmg} ダメージ！`, 'good');
           if (ch.id === 'yuusharin') { this.healP(this.p.max * sk.heal); this.e.gauge = 0; this.log(`${sk.name}！ ${dmg} ダメージ、HP 回復・敵の 攻撃を とめた！`, 'good'); }
+          if (ch.id === 'torio') this.log(`${sk.name}！ 3 びきの 3 れんげきで ${dmg} ダメージ！`, 'good');
+          if (ch.id === 'yurarin') { this.forgiveUntil = this.elapsed + sk.forgiveSecs * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、${sk.forgiveSecs} 秒間 ミスが なかったことに なる！`, 'good'); }
           if (ch.id === 'fuerin') this.log(`${sk.name}！ ${this.combo} コンボの ぶんしんで ${dmg} ダメージ！`, 'good');
           if (ch.id === 'onpuru') { this.tempo = sk.tempo; this.tempoMult = sk.tempoMult; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの ${sk.tempo} お題が ${sk.tempoMult} 倍！`, 'good'); }
           if (ch.id === 'pitarin') { this.p.reflect = sk.reflect; this.log(`${sk.name}！ ${dmg} ダメージ、敵の 攻撃を ${sk.reflect} 回 はね返す！`, 'good'); }

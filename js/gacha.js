@@ -18,7 +18,7 @@ const RARITY = {
 };
 
 // ガチャの確率: まず キャラ枠か アイテム枠かを きめ、アイテムは レア度で きめる
-const GACHA_RATES = { newChar: 0.06, starterChar: 0.14 }; // ガチャ限定キャラは 6 たいで 6% (1 たい 1%)
+const GACHA_RATES = { newChar: 0.08, starterChar: 0.14 }; // ガチャ限定キャラは 8 たいで 8% (1 たい 1%)
 const ITEM_RATES = [['SSR', 0.03], ['SR', 0.12], ['R', 0.33], ['N', 0.52]];
 // かくせいが おわったキャラが かぶったときの かけら / こうかんに ひつような かけら
 const CHAR_SHARD = { gacha: 30, starter: 12 };
@@ -113,6 +113,8 @@ const AWAKEN_COLORS = {
   gorurin: { name: 'ブラックゴールド', colors: { main: '#343a40', light: '#868e96', dark: '#000000', accent: '#ffd43b' } },
   yukidarun: { name: 'ゆきどけ', colors: { main: '#ffc9de', light: '#ffffff', dark: '#e64980', accent: '#69db7c' } },
   yuusharin: { name: 'まおうのよろい', colors: { main: '#3b1f6b', light: '#b197fc', dark: '#10002b', accent: '#ff006e' } },
+  torio: { name: 'しんごう', colors: { main: '#51cf66', light: '#ebfbee', dark: '#1b5e20', accent: '#ffd43b', tri: [['#51cf66', '#1b5e20'], ['#ffd43b', '#b8860b'], ['#ff6b6b', '#a61e1e']] } },
+  yurarin: { name: 'しんかいの ひかり', colors: { main: '#1e1b4b', light: '#4c6ef5', dark: '#0b0a24', accent: '#63e6be' } },
   fuerin: { name: 'いちごゼリー', colors: { main: '#ff8787', light: '#fff5f5', dark: '#c92a2a', accent: '#94d82d' } },
   pitarin: { name: 'ブラッドムーン', colors: { main: '#c92a2a', light: '#ffc9c9', dark: '#3a0808', accent: '#ffe066' } },
 };
@@ -221,6 +223,21 @@ function pullGacha(times) {
   return res;
 }
 
+// ---------------- まいにち タイピングガチャ ----------------
+// 1 日 1 回。30 秒 タイピングして、打ち切った お題 1 つ につき 3 回 ただで 回せる
+const DAILY_SECS = 30, DAILY_PER_WORD = 3;
+function todayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+function dailyDone() { return gachaData().daily === todayKey(); }
+function pullFree(times) {
+  const g = gachaData();
+  const list = [];
+  for (let i = 0; i < times; i++) list.push(rollOne());
+  g.pulls += times;
+  const res = list.map(receive);
+  Save.save();
+  return res;
+}
+
 // 1 回 引いたときに その ものが 出る 確率
 // ガチャに 出る「いつもの キャラ」: しょうごうで ひらく キャラは、ひらいたあと だけ (かくせい用)
 function starterPool() { return CHAR_ITEMS.filter(c => { const d = CHARACTERS[c.char]; return !d.gacha && (!(d.title || d.special) || hasChar(c.char)); }); }
@@ -313,17 +330,56 @@ function wordFx(root) {
 
 // ---------------- ガチャの 画面 ----------------
 Screens.gacha = {
-  enter() {
+  // arg.daily: まいにち タイピングガチャから もどってきた ときの ただで 回せる 回数
+  enter(arg) {
     this.tab = 'result';
     this.last = null;
+    this.lastDaily = false;
     this.busy = false;
     this.confirm = null;
     $('#gc-one').onclick = () => this.pull(1);
     $('#gc-ten').onclick = () => this.pull(10);
+    $('#gc-daily').onclick = () => this.startDaily();
     $('#gc-rates-btn').onclick = () => this.setTab('list');
     document.querySelectorAll('#gc-tabs button').forEach(b => { b.onclick = () => this.setTab(b.dataset.v); });
     $('#btn-gacha-back').onclick = () => App.show('home');
     this.render();
+    if (arg && arg.daily != null) {
+      if (arg.daily > 0) setTimeout(() => this.pullDaily(arg.daily), 300);
+      else toast('お題を 打ち切れなかったので ガチャは なし… また あした！', 2800);
+    }
+  },
+
+  // まいにち タイピングガチャを はじめる (はじめた 時点で きょうの 1 回を つかう)
+  startDaily() {
+    if (this.busy) return;
+    if (dailyDone()) { SFX.miss(); toast('きょうの まいにち タイピングガチャは おわり。また あした！', 2400); return; }
+    gachaData().daily = todayKey();
+    Save.save();
+    SFX.select();
+    App.show('practice', { daily: true });
+  },
+
+  async pullDaily(times) {
+    if (this.busy) return;
+    const res = pullFree(times);
+    this.busy = true;
+    this.tab = 'result';
+    this.last = null;
+    this.render();
+    toast(`⌨️ まいにち タイピングガチャ: ${times} 回 まわす！`, 2200);
+    // 10 回ずつ 見せる。とばしたら のこりも とばす
+    this.skip = false;
+    for (let i = 0; i < res.length; i += 10) await this.show(res.slice(i, i + 10), true);
+    this.last = res;
+    this.lastDaily = true;
+    this.render();
+    $('#gc-last').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const best = bestRarity(res);
+    if (best === 'SSR') setTimeout(() => FX.confetti(), 200);
+    else SFX.levelup();
+    this.afterGet(res);
+    this.busy = false;
   },
 
   setTab(t) { this.tab = t; this.confirm = null; SFX.select(); this.render(); },
@@ -335,6 +391,9 @@ Screens.gacha = {
     $('#gc-coins').textContent = coins;
     $('#gc-shards').textContent = g.shards;
     $('#gc-collect').textContent = `${cc.have}/${cc.total}`;
+    const dd = dailyDone();
+    $('#gc-daily').classList.toggle('done', dd);
+    $('#gc-daily-sub').textContent = dd ? 'きょうは おわり。また あした！' : `${DAILY_SECS} 秒 タイピング → 打ち切った お題 1 つ で ${DAILY_PER_WORD} 回 ただで 回せる`;
     $('#gc-one').disabled = coins < GACHA_COST;
     $('#gc-ten').disabled = coins < GACHA_COST10;
     document.querySelectorAll('#gc-tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === this.tab));
@@ -357,7 +416,7 @@ Screens.gacha = {
         <p class="gc-help">コインは れんしゅう・バトル・サバイバル・しょうごう で もらえるよ</p></div>`;
     }
     return `<div class="gc-results ${this.last.length > 1 ? 'ten' : 'one'}">${this.last.map((r, i) => resultCard(r, i * 0.05)).join('')}</div>
-      <div class="gc-again"><kbd>Space</kbd> もう一度 ${this.last.length > 1 ? '10 かい' : '1 かい'} 引く　<kbd>Esc</kbd> もどる</div>`;
+      <div class="gc-again">${this.lastDaily ? `まいにち タイピングガチャで ${this.last.length} 回 まわした！　` : `<kbd>Space</kbd> もう一度 ${this.last.length > 1 ? '10 かい' : '1 かい'} 引く　`}<kbd>Esc</kbd> もどる</div>`;
   },
 
   // かけらの こうかんじょ
@@ -466,9 +525,9 @@ Screens.gacha = {
     });
   },
 
-  async show(res) {
+  async show(res, keepSkip = false) {
     const stage = $('#gc-stage');
-    this.skip = false;
+    if (!keepSkip) this.skip = false;
     const ten = res.length > 1;
     stage.innerHTML = `
       <div class="gs-rays"></div>
@@ -641,9 +700,10 @@ Screens.gacha = {
     }
     // 回した あと: Space で おなじ 回数を もう一度、Esc で けっかを とじて ガチャ機に もどる
     if (this.last && this.tab === 'result') {
-      if (e.key === ' ') { e.preventDefault(); this.pull(this.last.length); return; }
+      if (e.key === ' ' && !this.lastDaily) { e.preventDefault(); this.pull(this.last.length); return; }
       if (e.key === 'Escape') { this.last = null; SFX.select(); this.render(); return; }
     }
+    if (e.key === '6') this.startDaily();
     if (e.key === '1') this.pull(1);
     if (e.key === '2') this.pull(10);
     if (e.key === '3') this.setTab('result');

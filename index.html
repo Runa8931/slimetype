@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260930e">
+  <link rel="stylesheet" href="css/style.css?v=20260930f">
 </head>
 <body>
   <div class="meadow" id="meadow"></div>
@@ -73,7 +73,7 @@
           <button class="menu-card gacha" id="go-gacha">
             <span class="mc-key">7</span>
             <span class="mc-title">🎰 ガチャ <small id="gacha-count"></small></span>
-            <span class="mc-desc">🪙 <b id="home-coins">0</b>　💎 <b id="home-shards">0</b></span>
+            <span class="mc-desc">🪙 <b id="home-coins">0</b>　💎 <b id="home-shards">0</b> <b class="gacha-daily" id="gacha-daily"></b></span>
           </button>
           <button class="menu-card wardrobe" id="go-wardrobe">
             <span class="mc-key">8</span>
@@ -267,6 +267,7 @@
         <button class="btn gc-btn" id="gc-one"><span class="mc-key">1</span>1 かい 引く<small>🪙 100</small></button>
         <button class="btn big gc-btn" id="gc-ten"><span class="mc-key">2</span>10 かい 引く<small>🪙 1000・SR以上 1つ かくてい</small></button>
       </div>
+      <button class="btn gc-daily" id="gc-daily"><span class="mc-key">6</span>⌨️ まいにち タイピングガチャ <small>1 日 1 回</small><small id="gc-daily-sub"></small></button>
       <button class="icon-btn gc-rates-btn" id="gc-rates-btn">📊 はいしゅつ かくりつを 見る <kbd>5</kbd></button>
       <div class="gc-last" id="gc-last"></div>
     </div>
@@ -298,26 +299,26 @@
     <div class="result-wrap" id="result-wrap"></div>
   </section>
 
-  <script src="js/romaji.js?v=20260930e"></script>
-  <script src="js/data.js?v=20260930e"></script>
-  <script src="js/describe.js?v=20260930e"></script>
-  <script src="js/words.js?v=20260930e"></script>
-  <script src="js/words2.js?v=20260930e"></script>
-  <script src="js/sprites.js?v=20260930e"></script>
-  <script src="js/enemies2.js?v=20260930e"></script>
-  <script src="js/effects.js?v=20260930e"></script>
-  <script src="js/audio.js?v=20260930e"></script>
-  <script src="js/main.js?v=20260930e"></script>
-  <script src="js/meadow.js?v=20260930e"></script>
-  <script src="js/playtime.js?v=20260930e"></script>
-  <script src="js/practice.js?v=20260930e"></script>
-  <script src="js/map.js?v=20260930e"></script>
-  <script src="js/battle.js?v=20260930e"></script>
-  <script src="js/survival.js?v=20260930e"></script>
-  <script src="js/collection.js?v=20260930e"></script>
-  <script src="js/gacha.js?v=20260930e"></script>
-  <script src="js/doors.js?v=20260930e"></script>
-  <script src="js/result.js?v=20260930e"></script>
+  <script src="js/romaji.js?v=20260930f"></script>
+  <script src="js/data.js?v=20260930f"></script>
+  <script src="js/describe.js?v=20260930f"></script>
+  <script src="js/words.js?v=20260930f"></script>
+  <script src="js/words2.js?v=20260930f"></script>
+  <script src="js/sprites.js?v=20260930f"></script>
+  <script src="js/enemies2.js?v=20260930f"></script>
+  <script src="js/effects.js?v=20260930f"></script>
+  <script src="js/audio.js?v=20260930f"></script>
+  <script src="js/main.js?v=20260930f"></script>
+  <script src="js/meadow.js?v=20260930f"></script>
+  <script src="js/playtime.js?v=20260930f"></script>
+  <script src="js/practice.js?v=20260930f"></script>
+  <script src="js/map.js?v=20260930f"></script>
+  <script src="js/battle.js?v=20260930f"></script>
+  <script src="js/survival.js?v=20260930f"></script>
+  <script src="js/collection.js?v=20260930f"></script>
+  <script src="js/gacha.js?v=20260930f"></script>
+  <script src="js/doors.js?v=20260930f"></script>
+  <script src="js/result.js?v=20260930f"></script>
   <script>App.boot();</script>
 </body>
 </html>

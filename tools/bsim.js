@@ -17,7 +17,7 @@ function sim(cid, L, e, kpm, acc) {
   const has = a => e.abilities.includes(a);
   const p = { hp: st.hp * 3, max: st.hp * 3, skill: 0, shield: 0, boost: 1, barrier: 0, evade: 0, reflect: 0, poison: 0 };
   const en = { hp: Math.round(es.hp * D.ENEMY_HP_SCALE), g: 0, atk: 0, angry: false, dbl: false, phase: 0, heads: 1 }; en.max = en.hp;
-  let cacc = 0, t = 0, combo = 0, keys = wordKeys(e.diff), typed = 0, wstart = 0, wmiss = false, chill = 0, shell = 0, nextShell = 4, nextRegen = 8;
+  let tstreak = 0, forgiven = 0, forgiveUntil = 0, cacc = 0, t = 0, combo = 0, keys = wordKeys(e.diff), typed = 0, wstart = 0, wmiss = false, chill = 0, shell = 0, nextShell = 4, nextRegen = 8;
   let hidden = 0, nextHide = 6, wind = 0, nextWind = 5, words = 0, thunderAt = 0, thunderW = 0, nextThunder = 5;
   let burnUntil = 0, bindUntil = 0, nextRegenP = 3, eChill = 0, breakUntil = 0, streak = 0, tempo = 0, tempoMult = 1, ePoison = 0, weak = 0, snow = 0;
   const dt = 0.02, kps = kpm / 60; let keyT = 0;
@@ -70,6 +70,8 @@ function sim(cid, L, e, kpm, acc) {
       keyT -= 1;
       if (typed === 0) wstart = t;
       if (Math.random() > acc) {
+        // ゆらりん: お題ごとに さいしょの ミスは なかったことに
+        if (tr.forgive && (forgiveUntil > t || forgiven < tr.forgive)) { if (!(forgiveUntil > t)) forgiven++; p.hp = Math.min(p.max, p.hp + p.max * tr.forgiveHeal); continue; }
         wmiss = true; combo = cid === 'gotsun' ? Math.floor(combo * tr.comboKeep) : 0; cacc = 0; en.g = Math.min(0.99, en.g + 0.04); p.skill = Math.max(0, p.skill - 3);
         if (has('shock') && !(cid === 'piriri' && tr.shockImmune)) p.hp -= Math.max(1, Math.round(p.max * 0.03));
         if (has('sweet')) en.hp = Math.min(en.max, en.hp + en.max * 0.015);
@@ -97,6 +99,8 @@ function sim(cid, L, e, kpm, acc) {
         if (cid === 'gorurin') { const d = skDmg(); en.hp -= d; p.hp = Math.min(p.max, p.hp + d * sk.skillDrain); }
         if (cid === 'yukidarun') en.hp -= skDmg(1 + sk.snowBoost * snow);
         if (cid === 'yuusharin') { en.hp -= skDmg(); p.hp = Math.min(p.max, p.hp + p.max * sk.heal); en.g = 0; }
+        if (cid === 'torio') en.hp -= skDmg((2 + 1.5) / 3);
+        if (cid === 'yurarin') { en.hp -= skDmg(); forgiveUntil = t + sk.forgiveSecs; }
         if (cid === 'fuerin') en.hp -= skDmg(1 + Math.min(sk.boostMax, combo * sk.comboBoost));
       }
       if (typed >= keys) {
@@ -113,7 +117,11 @@ function sim(cid, L, e, kpm, acc) {
         let cr = tr.crit || 0.06, cm = 1.5;
         if (cid === 'piriri') { cr = 0.1 + Math.min(tr.critMax - 0.1, Math.max(0, (kpsw - 2) * 0.2)); cm = tr.critMult; }
         if (cid === 'pitarin' && !wmiss) { cr = 1; cm = tr.perfectCrit; }
-        if (Math.random() < cr) dmg *= cm;
+        if (cid === 'torio') {
+          tstreak = wmiss ? 0 : tstreak + 1;
+          if (tstreak % 3 === 0) dmg *= 1 + tr.trio;
+          const k = [0, 1, 2].filter(() => Math.random() < cr).length; dmg *= (3 - k + k * cm) / 3;
+        } else if (Math.random() < cr) dmg *= cm;
         if (has('armor') && combo < 30) dmg *= tr.pierce ? 0.75 : 0.5;
         if (shell > t) dmg *= tr.pierce ? 0.6 : 0.3;
         if (breakUntil > t) dmg *= 1.3;
@@ -121,7 +129,7 @@ function sim(cid, L, e, kpm, acc) {
         en.hp -= dmg * 0.95;
         if (cid === 'gorurin') p.hp = Math.min(p.max, p.hp + dmg * 0.95 * tr.drain);
         if (cid === 'purun' && !wmiss) p.hp = Math.min(p.max, p.hp + p.max * tr.heal);
-        typed = 0; wmiss = false; words++; keys = wordKeys(e.diff);
+        typed = 0; wmiss = false; forgiven = 0; words++; keys = wordKeys(e.diff);
       }
     }
     if (has('demon')) { if (en.phase === 0 && en.hp <= en.max * 2 / 3) en.phase = 1; if (en.phase === 1 && en.hp <= en.max / 3) { en.phase = 2; en.angry = true; } }

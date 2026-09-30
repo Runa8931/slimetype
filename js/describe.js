@@ -95,6 +95,16 @@ function traitLines(id, t) {
       L.push('攻撃を うけると ゆきだまが 1 こ へる');
       L.push(statusLine(t.statusCut));
       break;
+    case 'torio':
+      L.push('お題を 打ち切ると 3 びきが じゅんに 攻撃。会心 (6%・1.5 倍) は 1 ぴきずつ きまる');
+      L.push(`ノーミスで お題を 3 つ つづけて 打ち切ると、3 つめの 攻撃 +${pct(t.trio)} (トリオボーナス)`);
+      L.push(statusLine(t.statusCut));
+      break;
+    case 'yurarin':
+      L.push(`お題ごとに さいしょの ミス ${t.forgive} かいを なかったことに する (コンボも きれず、敵の ゲージも ふえない)`);
+      L.push(`ミスを なかったことに したとき HP ${pct(t.forgiveHeal)} 回復`);
+      L.push(statusLine(t.statusCut));
+      break;
     case 'fuerin':
       L.push(`正しく 1 回 打つと コンボが ${+t.comboGain.toFixed(2)} ふえる (ふつうは 1)。コンボ倍率の 上限 (1.5 倍) に はやく とどく`);
       L.push('ミスすると コンボは 0 に もどる');
@@ -184,6 +194,14 @@ function skillLines(id, s, def) {
       L.push(`ゆきだまで ${pw}`);
       L.push(`ゆきだま 1 こ につき 威力 +${pct(s.snowBoost)} (ゆきだまは へらない)`);
       break;
+    case 'torio':
+      L.push(`3 びきの 3 れんげきで ${pw}`);
+      L.push('3 かいめは かならず 会心 (1.5 倍)。あわせて 約 1.17 倍');
+      break;
+    case 'yurarin':
+      L.push(`しびれる しょくしゅで ${pw}`);
+      L.push(`${s.forgiveSecs} 秒間 ミスが ぜんぶ なかったことに なる`);
+      break;
     case 'fuerin':
       L.push(`ぶんしんの たいあたりで ${pw}`);
       L.push(`いまの コンボ 1 につき 威力 +${pct(s.comboBoost)} (最大 +${pct(s.boostMax)}。コンボ ${Math.round(s.boostMax / s.comboBoost)} で 最大)`);
@@ -227,6 +245,8 @@ function survivalLine(id, stage, t) {
   if (id === 'gorurin') x = `コイン ${times(sv.coin[stage])}`;
   if (id === 'yukidarun') x = `ふれた 敵が ${sv.chill[stage]} 秒 おそくなる`;
   if (id === 'yuusharin') x = `武器の ダメージ ${times(sv.dmg[stage])}・うける ダメージ ${pct(1 - sv.hurt[stage])} カット`;
+  if (id === 'torio') x = `武器の ダメージ ${times(sv.dmg[stage])}`;
+  if (id === 'yurarin') x = `うける ダメージ ${pct(1 - sv.hurt[stage])} カット`;
   if (id === 'fuerin') x = `武器を うつ 間かくが ${pct(1 - sv.cd[stage])} みじかい`;
   if (id === 'pitarin') x = `武器が ${pct(sv.crit[stage])} の 確率で 会心 (ダメージ 2 倍)`;
   return `${x}${w ? `。さいしょの 武器「${w.name}」` : ''}`;

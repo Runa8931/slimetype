@@ -282,7 +282,7 @@ function slimeSVG(id, stage = 0, look) {
 
   // ---- 最終進化: 王冠 + オーラ ----
   if (stage >= 2) {
-    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10, onpuru: 8, pitarin: 6, dororin: 6, gorurin: 0, yukidarun: -4, yuusharin: 6, fuerin: 8 }[id] ?? 6;
+    const crownY = { purun: -6, piriri: 6, gotsun: 8, homura: -8, moririn: 2, kagemaru: 4, ryumaru: 6, kirari: 8, koorin: 2, fuwari: 4, metarun: 10, onpuru: 8, pitarin: 6, dororin: 6, gorurin: 0, yukidarun: -4, yuusharin: 6, fuerin: 8, torio: 12, yurarin: -2 }[id] ?? 6;
     // ぼうしを かぶっているときは 王冠を はずす
     if (!look.hat) front += `<g transform="translate(60,${crownY})">
       <path d="M-20,18 L-22,0 L-11,9 L0,-6 L11,9 L22,0 L20,18 Z" fill="#ffd54a" stroke="#b8860b" stroke-width="2" stroke-linejoin="round"/>
@@ -349,7 +349,7 @@ function slimeSVG(id, stage = 0, look) {
     <ellipse cx="60" cy="109" rx="46" ry="7" fill="#000" opacity=".25"/>
     <g class="body">
       ${behind}
-      <path d="${bodies[id][Math.min(stage, 2)]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+      ${CUSTOM_BODY[id] ? CUSTOM_BODY[id](c, u, stage, look) : `<path d="${bodies[id][Math.min(stage, 2)]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
       <ellipse cx="40" cy="56" rx="9" ry="5" fill="#fff" opacity=".7" transform="rotate(-30 40 56)"/>
       <circle cx="30" cy="66" r="3" fill="#fff" opacity=".6"/>
       ${mid}
@@ -357,17 +357,73 @@ function slimeSVG(id, stage = 0, look) {
         <ellipse cx="46" cy="72" rx="6" ry="8" fill="#1d1d2b"/><ellipse cx="74" cy="72" rx="6" ry="8" fill="#1d1d2b"/>
         <circle cx="48" cy="69" r="2.4" fill="#fff"/><circle cx="76" cy="69" r="2.4" fill="#fff"/>
       </g>
-      <path d="M52,86 Q60,94 68,86" fill="none" stroke="#1d1d2b" stroke-width="3" stroke-linecap="round"/>`}
+      <path d="M52,86 Q60,94 68,86" fill="none" stroke="#1d1d2b" stroke-width="3" stroke-linecap="round"/>`}`}
       ${front}
     </g>
     ${look.pet && PET_SVG[look.pet] ? `<g class="pet" transform="translate(114,111) scale(1.5)">${PET_SVG[look.pet]()}</g>` : ''}
   </svg>`;
 }
 
+// ---------------- スライムの かたちに とらわれない キャラの 体 ----------------
+// (c: 色, u: この 絵の id, stage: 進化, look: きせかえ)。ふつうの 体・顔の かわりに 描く
+const CUSTOM_BODY = {
+  // トリオりん: 小さな 3 びきが ピラミッドの ように つみかさなる。顔も 3 びき ちがう
+  torio(c, u, stage, look) {
+    // 3 びきの 色: 進化ごとの 色 (きせかえの 色に tri が あれば それ)。ない ときは その 色の 3 だんかい
+    const tri = c.tri && !look.rainbow ? c.tri : [[c.main, c.dark], [c.accent || c.main, c.dark], [c.light || c.main, c.dark]];
+    const g = stage >= 1 ? 1.08 : 1;
+    const blob = (x, y, w, h) => `M${x},${y - h} C${x + w * 0.42},${y - h} ${x + w / 2},${y - h * 0.5} ${x + w / 2},${y - h * 0.22} C${x + w / 2},${y} ${x + w * 0.3},${y} ${x},${y} C${x - w * 0.3},${y} ${x - w / 2},${y} ${x - w / 2},${y - h * 0.22} C${x - w / 2},${y - h * 0.5} ${x - w * 0.42},${y - h} ${x},${y - h} Z`;
+    const one = (i, x, y, w, h, face) => {
+      const [col, dk] = tri[i];
+      return `<path d="${blob(x, y, w, h)}" fill="${look.rainbow ? `url(#${u}-g)` : col}" stroke="${dk}" stroke-width="2.6" stroke-linejoin="round"/>
+        <path d="${blob(x, y, w, h)}" fill="url(#${u}-tshade)"/>
+        <ellipse cx="${x - w * 0.2}" cy="${y - h * 0.72}" rx="${w * 0.14}" ry="${h * 0.08}" fill="#fff" opacity=".75" transform="rotate(-25 ${x - w * 0.2} ${y - h * 0.72})"/>
+        ${face(x, y - h * 0.42)}`;
+    };
+    const eyeDot = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="3.2" ry="4.2" fill="#1d1d2b"/><circle cx="${x + 1}" cy="${y - 1.6}" r="1.3" fill="#fff"/>`;
+    // ひだり (きいろ): にっこり 目 + あいた 口
+    const happy = (x, y) => `<path d="M${x - 11},${y + 1} Q${x - 7},${y - 5} ${x - 3},${y + 1} M${x + 3},${y + 1} Q${x + 7},${y - 5} ${x + 11},${y + 1}" fill="none" stroke="#1d1d2b" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M${x - 5},${y + 7} Q${x},${y + 14} ${x + 5},${y + 7} Z" fill="#c92a2a" stroke="#1d1d2b" stroke-width="1.8" stroke-linejoin="round"/>
+      <ellipse cx="${x - 13}" cy="${y + 7}" rx="3.5" ry="2" fill="#ff8787" opacity=".6"/><ellipse cx="${x + 13}" cy="${y + 7}" rx="3.5" ry="2" fill="#ff8787" opacity=".6"/>`;
+    // みぎ (あお): まるい 目 + ウインク + ちいさな 口
+    const wink = (x, y) => `${eyeDot(x - 7, y)}<path d="M${x + 3},${y} L${x + 11},${y}" stroke="#1d1d2b" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M${x - 3},${y + 9} Q${x + 1},${y + 12} ${x + 5},${y + 8}" fill="none" stroke="#1d1d2b" stroke-width="2.2" stroke-linecap="round"/>`;
+    // うえ (リーダー): きりっと まゆ + じしんまんまんの 口
+    const leader = (x, y) => `<path d="M${x - 12},${y - 7} L${x - 3},${y - 4} M${x + 12},${y - 7} L${x + 3},${y - 4}" stroke="#1d1d2b" stroke-width="2.6" stroke-linecap="round"/>
+      ${eyeDot(x - 7, y + 1)}${eyeDot(x + 7, y + 1)}
+      <path d="M${x - 6},${y + 9} Q${x},${y + 15} ${x + 7},${y + 8}" fill="none" stroke="#1d1d2b" stroke-width="2.4" stroke-linecap="round"/>`;
+    return `<defs><radialGradient id="${u}-tshade" cx="38%" cy="30%" r="80%"><stop offset="0%" stop-color="#fff" stop-opacity=".45"/><stop offset="55%" stop-color="#fff" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".22"/></radialGradient></defs>
+      <g class="trio-l">${one(1, 35, 106, 46 * g, 40 * g, happy)}</g>
+      <g class="trio-r">${one(2, 85, 106, 46 * g, 40 * g, wink)}</g>
+      <g class="trio-t">${one(0, 60, 76, 44 * g, 40 * g, leader)}${stage >= 1 ? `<path d="M60,${76 - 40 * g - 12} L62.5,${76 - 40 * g - 5} L60,${76 - 40 * g - 2} L57.5,${76 - 40 * g - 5} Z" fill="${c.accent}" stroke="${tri[0][1]}" stroke-width="1.5"/>` : ''}</g>`;
+  },
+  // ゆらりん: すきとおった かさ・ほしの ような もよう・ゆれる しょくしゅ
+  yurarin(c, u, stage) {
+    const len = stage >= 2 ? 108 : 102;
+    const tents = [24, 40, 60, 80, 96].map((x, i) => `<path class="jelly-tent" style="animation-delay:${-i * 0.35}s" d="M${x},64 C${x - 7},${74 + i % 2 * 4} ${x + 7},${86} ${x},${len - Math.abs(2 - i) * 6}" fill="none" stroke="${c.main}" stroke-width="5" stroke-linecap="round" opacity=".85"/>`).join('');
+    const arms = `<path class="jelly-tent" d="M52,64 C44,78 60,88 50,${len + 2}" fill="none" stroke="${c.light}" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+      <path class="jelly-tent" style="animation-delay:-.6s" d="M68,64 C76,78 60,88 70,${len + 2}" fill="none" stroke="${c.light}" stroke-width="7" stroke-linecap="round" opacity=".8"/>`;
+    const bell = 'M12,64 C12,30 34,16 60,16 C86,16 108,30 108,64 C102,70 96,62 90,68 C84,74 78,64 72,70 C66,76 54,76 48,70 C42,64 36,74 30,68 C24,62 18,70 12,64 Z';
+    const dots = stage >= 1 ? [[30, 44], [90, 42], [40, 28], [80, 28], [60, 24]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.2" fill="${c.accent}" class="spark-soft"/>`).join('') : '';
+    return `<g class="jelly">
+      ${tents}${arms}
+      <path d="${bell}" fill="url(#${u}-g)" opacity=".9" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M22,58 C24,36 40,26 60,26 C80,26 96,36 98,58" fill="none" stroke="${c.light}" stroke-width="3" opacity=".5"/>
+      ${[[44, 38, -30], [76, 38, 30], [52, 30, -10], [68, 30, 10]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="4" fill="${c.accent}" opacity=".35" transform="rotate(${r} ${x} ${y})"/>`).join('')}
+      <path d="M26,40 C30,28 40,22 50,21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+      ${dots}
+      <g class="eyes"><ellipse cx="46" cy="50" rx="5.5" ry="6.5" fill="#1d1d2b"/><ellipse cx="74" cy="50" rx="5.5" ry="6.5" fill="#1d1d2b"/>
+        <circle cx="48" cy="47.5" r="2.2" fill="#fff"/><circle cx="76" cy="47.5" r="2.2" fill="#fff"/><circle cx="44.5" cy="52.5" r="1" fill="#fff"/><circle cx="72.5" cy="52.5" r="1" fill="#fff"/></g>
+      <ellipse cx="36" cy="58" rx="4.5" ry="2.6" fill="${c.accent}" opacity=".6"/><ellipse cx="84" cy="58" rx="4.5" ry="2.6" fill="${c.accent}" opacity=".6"/>
+      <path d="M55,58 Q57.5,61 60,58 Q62.5,61 65,58" fill="none" stroke="#1d1d2b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+  },
+};
+
 const RAINBOW = ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa', '#f783ac'];
 
 // 頭の てっぺんの 高さ [最初の すがた, 進化後]。ぼうしの 位置に つかう
-const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32], onpuru: [34, 30], pitarin: [30, 26], dororin: [32, 28], gorurin: [18, 14], yukidarun: [16, 12], yuusharin: [32, 28], fuerin: [34, 28] };
+const HEAD_TOP = { purun: [22, 16], piriri: [30, 28], gotsun: [32, 28], homura: [30, 24], moririn: [34, 30], kagemaru: [30, 26], ryumaru: [30, 28], kirari: [32, 28], koorin: [30, 26], fuwari: [30, 26], metarun: [36, 32], onpuru: [34, 30], pitarin: [30, 26], dororin: [32, 28], gorurin: [18, 14], yukidarun: [16, 12], yuusharin: [32, 28], fuerin: [34, 28], torio: [34, 30], yurarin: [16, 16] };
 
 // ぼうし・アクセサリーの絵 (下のはしが y=0。eyes は 目の 高さに つける)
 const HAT_SVG = {

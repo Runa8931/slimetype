@@ -1460,3 +1460,18 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 /* 最終進化の つばさ: 付け根を 中心に ゆっくり はばたく */
 .slime .slime-wing { transform-box: fill-box; transform-origin: 0% 60%; animation: slime-wing 1.8s ease-in-out infinite alternate; }
 @keyframes slime-wing { from { transform: rotate(6deg); } to { transform: rotate(-10deg); } }
+
+/* まいにち タイピングガチャ */
+.gc-daily { position: relative; display: grid; gap: 2px; justify-items: center; margin: 12px auto 0; padding: 12px 26px 12px 50px;
+  background: linear-gradient(180deg, #20c997, #0ca678); box-shadow: 0 5px 0 #087f5b, 0 8px 20px rgba(0,0,0,.3); }
+.gc-daily small { font-size: 12px; font-weight: 700; opacity: .9; }
+.gc-daily.done { filter: grayscale(.8) brightness(.8); }
+.gacha-daily { color: #63e6be; font-size: 12px; margin-left: 6px; }
+/* トリオりん: 3 びきが すこしずつ ずれて はずむ / ゆらりん: ふわふわ うかび、しょくしゅが ゆれる */
+.slime .trio-l, .slime .trio-r, .slime .trio-t { animation: trio-hop 1.2s ease-in-out infinite; }
+.slime .trio-r { animation-delay: -.4s; } .slime .trio-t { animation-delay: -.8s; }
+@keyframes trio-hop { 50% { transform: translateY(-3px); } }
+.slime .jelly { animation: floaty 2.6s ease-in-out infinite; }
+.slime .jelly-tent { transform-box: fill-box; transform-origin: 50% 0%; animation: jelly-sway 1.8s ease-in-out infinite alternate; }
+@keyframes jelly-sway { from { transform: rotate(5deg); } to { transform: rotate(-5deg); } }
+.badge.type-torio { background: linear-gradient(90deg, #ff6b6b, #ffd43b, #4dabf7); } .badge.type-yurarin { background: #5f3dc4; }

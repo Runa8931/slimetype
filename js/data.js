@@ -667,6 +667,65 @@ const CHARACTERS = {
         skill: { name: 'インフィニティラッシュ', desc: '威力 420。コンボ 1 につき +0.3% (最大 +120%)。ゲージ +20%', power: 420, comboBoost: 0.003, boostMax: 1.2, charge: 1.2 } },
     ],
   },
+  // ---- ガチャ限定: スライムの かたちに とらわれない キャラ ----
+  // トリオりん: 小さな 3 びきで 1 キャラ (絵は sprites.js の CUSTOM_BODY)。tri = 3 びきの 色 [いろ, ふち]
+  torio: {
+    id: 'torio',
+    gacha: true,
+    names: ['トリオりん', 'トリオりんりん', 'トリプルスター', 'トリニティ', 'トリオキング'],
+    type: 'なかま', role: 'れんけい型',
+    colors: { main: '#ff6b6b', light: '#ffe3e3', dark: '#862e2e', accent: '#ffd43b' },
+    stageColors: [
+      { main: '#ff6b6b', light: '#ffe3e3', dark: '#862e2e', accent: '#ffd43b', tri: [['#ff6b6b', '#a61e1e'], ['#ffd43b', '#b8860b'], ['#4dabf7', '#1864ab']] },
+      { main: '#ff8787', light: '#fff5f5', dark: '#a61e1e', accent: '#ffe066', tri: [['#ff8787', '#c92a2a'], ['#ffe066', '#e67700'], ['#74c0fc', '#1971c2']] },
+      { main: '#f06595', light: '#fff0f6', dark: '#a61e4d', accent: '#ffa94d', tri: [['#f06595', '#a61e4d'], ['#ffa94d', '#d9480f'], ['#63e6be', '#087f5b']] },
+      { main: '#cc5de8', light: '#f8f0fc', dark: '#862e9c', accent: '#ff922b', tri: [['#cc5de8', '#862e9c'], ['#ff922b', '#c2410c'], ['#3bc9db', '#0b7285']] },
+      { main: '#fff3bf', light: '#ffffff', dark: '#e67700', accent: '#ffd43b', tri: [['#fff3bf', '#e67700'], ['#ffc9c9', '#e03131'], ['#d0ebff', '#1c7ed6']] },
+    ],
+    base: { hp: 82, atk: 87, def: 68, spd: 78 },
+    desc: 'いつも いっしょの 3 びきぐみ。ひとりでは よわいけど、3 びき そろうと むてき。',
+    forms: [
+      { trait: { name: 'れんけいプレイ', desc: 'お題を 打ち切ると 3 びきが じゅんに 攻撃 (会心は 1 ぴきずつ)。ノーミスで 3 つ つづけると 3 つめが +45%', trio: 0.45, statusCut: 0 },
+        skill: { name: 'トリプルアタック', desc: '威力 170 を 3 かいに わけて 当てる。3 かいめは かならず 会心', power: 170, charge: 1 } },
+      { trait: { name: 'れんけいプレイ+', desc: 'トリオボーナス +50%', trio: 0.5, statusCut: 0 },
+        skill: { name: 'トリプルアタック+', desc: '威力 240。3 かいめは かならず 会心。ゲージ +5%', power: 240, charge: 1.05 } },
+      { trait: { name: 'トリオの きずな', desc: 'トリオボーナス +55%。どく・やけどの時間が半分', trio: 0.55, statusCut: 0.5 },
+        skill: { name: 'トリプルスター', desc: '威力 300。3 かいめは かならず 会心。ゲージ +10%', power: 300, charge: 1.1 } },
+      { trait: { name: 'トリニティ', desc: 'トリオボーナス +60%。どく・やけどの時間が半分', trio: 0.6, statusCut: 0.5 },
+        skill: { name: 'トリニティバースト', desc: '威力 360。3 かいめは かならず 会心。ゲージ +15%', power: 360, charge: 1.15 } },
+      { trait: { name: 'トリオの おうさま', desc: 'トリオボーナス +70%。状態異常が きかない', trio: 0.7, statusCut: 1 },
+        skill: { name: 'キング・オブ・トリオ', desc: '威力 420。3 かいめは かならず 会心。ゲージ +20%', power: 420, charge: 1.2 } },
+    ],
+  },
+  // ゆらりん: クラゲの かたちの キャラ。ミスを なかったことに する
+  yurarin: {
+    id: 'yurarin',
+    gacha: true,
+    names: ['ゆらりん', 'ゆらゆらりん', 'ネオンゆらりん', 'オーロラゆらりん', 'ギャラクシーゆらりん'],
+    type: 'くらげ', role: 'まもり型',
+    colors: { main: '#a5d8ff', light: '#e7f5ff', dark: '#1971c2', accent: '#f783ac' },
+    stageColors: [
+      { main: '#a5d8ff', light: '#e7f5ff', dark: '#1971c2', accent: '#f783ac' },
+      { main: '#d0bfff', light: '#f3f0ff', dark: '#6741d9', accent: '#63e6be' },
+      { main: '#63e6be', light: '#e6fcf5', dark: '#087f5b', accent: '#ff8cc6' },
+      { main: '#99e9f2', light: '#e3fafc', dark: '#0b7285', accent: '#d0bfff' },
+      { main: '#5c3fb8', light: '#b197fc', dark: '#1e0f55', accent: '#ffe066' },
+    ],
+    base: { hp: 85, atk: 76, def: 74, spd: 70 },
+    desc: 'よぞらの うみを ただよう クラゲ。ゆらゆら ゆれて、ちょっとの ミスなら なかったことに する。',
+    forms: [
+      { trait: { name: 'ゆらゆらガード', desc: 'お題ごとに さいしょの ミス 1 かいを なかったことに する。そのとき HP 1.5% 回復', forgive: 1, forgiveHeal: 0.015, statusCut: 0 },
+        skill: { name: 'ゆらめきタッチ', desc: '威力 170。4 秒間 ミスが ぜんぶ なかったことに なる', power: 170, forgiveSecs: 4, charge: 1 } },
+      { trait: { name: 'ゆらゆらガード+', desc: 'HP 2% 回復', forgive: 1, forgiveHeal: 0.02, statusCut: 0 },
+        skill: { name: 'ゆらめきタッチ+', desc: '威力 240。4 秒間。ゲージ +5%', power: 240, forgiveSecs: 4, charge: 1.05 } },
+      { trait: { name: 'ネオンベール', desc: 'HP 2% 回復。どく・やけどの時間が半分', forgive: 1, forgiveHeal: 0.02, statusCut: 0.5 },
+        skill: { name: 'ネオンタッチ', desc: '威力 300。5 秒間。ゲージ +10%', power: 300, forgiveSecs: 5, charge: 1.1 } },
+      { trait: { name: 'オーロラベール', desc: 'HP 2.5% 回復。状態異常が きかない', forgive: 1, forgiveHeal: 0.025, statusCut: 1 },
+        skill: { name: 'オーロラタッチ', desc: '威力 360。5 秒間。ゲージ +15%', power: 360, forgiveSecs: 5, charge: 1.15 } },
+      { trait: { name: 'ギャラクシーベール', desc: 'お題ごとに ミス 2 かいまで なかったことに。HP 2.5% 回復。状態異常が きかない', forgive: 2, forgiveHeal: 0.025, statusCut: 1 },
+        skill: { name: 'ギャラクシータッチ', desc: '威力 420。6 秒間。ゲージ +20%', power: 420, forgiveSecs: 6, charge: 1.2 } },
+    ],
+  },
 };
 
 // とくべつな キャラ: ガチャ限定 = SSR / しょうごう・かくしステージ・ミッションで ひらく = とくべつ
@@ -700,6 +759,8 @@ const AWAKEN_BONUS = {
   yukidarun: { desc: 'ゆきだま 1 こ の カット +1%', apply: (t, n) => ({ ...t, snowCut: t.snowCut + 0.01 * n }) },
   yuusharin: { desc: '会心率 +1%', apply: (t, n) => ({ ...t, crit: t.crit + 0.01 * n }) },
   fuerin: { desc: 'コンボの ふえかた +0.05', apply: (t, n) => ({ ...t, comboGain: t.comboGain + 0.05 * n }) },
+  torio: { desc: 'トリオボーナス +3%', apply: (t, n) => ({ ...t, trio: t.trio + 0.03 * n }) },
+  yurarin: { desc: 'ミスを ふせいだ ときの 回復 +0.3%', apply: (t, n) => ({ ...t, forgiveHeal: t.forgiveHeal + 0.003 * n }) },
 };
 
 // サバイバルでの とくせい (進化の 段階ごと)。説明文も ここから 作る
@@ -721,6 +782,8 @@ const SV_CHAR = {
   yukidarun: { chill: [0.8, 0.9, 1.0, 1.1, 1.2] },   // ふれた 敵が おそくなる 秒数
   yuusharin: { dmg: [1.06, 1.08, 1.1, 1.12, 1.14], hurt: [0.94, 0.92, 0.9, 0.88, 0.86] }, // 武器の ダメージ / うける ダメージ
   fuerin: { cd: [0.92, 0.9, 0.88, 0.86, 0.84] },     // 武器を うつ 間かく
+  torio: { dmg: [1.08, 1.1, 1.12, 1.14, 1.16] },     // 武器の ダメージ
+  yurarin: { hurt: [0.86, 0.84, 0.82, 0.8, 0.78] },  // うける ダメージの 倍率
 };
 
 // 昔の書き方 (def.trait / def.skill) でも最初の形を読めるようにしておく

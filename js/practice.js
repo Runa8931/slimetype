@@ -79,12 +79,14 @@ Screens.psetup = {
 };
 
 Screens.practice = {
-  enter() {
+  // arg.daily: まいにち タイピングガチャ (30 秒・お題は ふつう。経験値の かわりに ガチャの 回数が ふえる)
+  enter(arg) {
     const s = Save.data.settings;
+    this.daily = !!(arg && arg.daily);
     this.char = charInfo(Save.data.active);
-    this.diff = s.diff;
-    this.duration = s.time;
-    this.weak = s.diff === 'weak' ? practiceWeakKeys() : null;
+    this.diff = this.daily ? 'normal' : s.diff;
+    this.duration = this.daily ? DAILY_SECS : s.time;
+    this.weak = !this.daily && s.diff === 'weak' ? practiceWeakKeys() : null;
     this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, [s.diff]);
     this.state = 'ready';
     this.correct = 0; this.miss = 0; this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.words = 0; this.bestKps = 0;
@@ -100,7 +102,11 @@ Screens.practice = {
     this.nextWord();
     this.updateHud();
     $('#p-timebar').style.width = '100%';
-    this.overlay(`<div class="ov-box"><div class="ov-title">${DIFFS[this.diff].name} ・ ${this.duration}秒</div>
+    $('#p-exp').previousElementSibling.textContent = this.daily ? 'ガチャ' : '獲得EXP';
+    this.overlay(this.daily
+      ? `<div class="ov-box"><div class="ov-title">⌨️ まいにち タイピングガチャ ・ ${this.duration}秒</div>
+        <div class="ov-sub">打ち切った お題 1 つ につき ガチャ ${DAILY_PER_WORD} 回！ (お題は ふつう)</div><div class="ov-key"><kbd>Space</kbd> でスタート</div></div>`
+      : `<div class="ov-box"><div class="ov-title">${DIFFS[this.diff].name} ・ ${this.duration}秒</div>
       <div class="ov-sub">ホームポジションに指をおいて…</div><div class="ov-key"><kbd>Space</kbd> でスタート</div></div>`);
   },
 
@@ -164,11 +170,12 @@ Screens.practice = {
     $('#p-kpm').textContent = this.elapsed() > 0 ? kpm : 0;
     $('#p-acc').textContent = Math.floor(acc * 100) + '%';
     $('#p-combo').textContent = this.combo;
-    $('#p-exp').textContent = typingExp(this.correct, this.miss, Math.max(this.elapsed(), 5), DIFFS[this.diff].mult, this.char.L);
+    $('#p-exp').textContent = this.daily ? `${this.words * DAILY_PER_WORD} 回` : typingExp(this.correct, this.miss, Math.max(this.elapsed(), 5), DIFFS[this.diff].mult, this.char.L);
   },
 
   onKey(e) {
-    if (e.key === 'Escape') { App.show('psetup'); return; }
+    // まいにちガチャは とちゅうで やめても それまでの ぶんは 回せる
+    if (e.key === 'Escape') { App.show(this.daily ? 'gacha' : 'psetup', this.daily ? { daily: this.words * DAILY_PER_WORD } : undefined); return; }
     if (this.state === 'ready') { if (e.key === ' ') this.countdown(); return; }
     if (this.state !== 'run' || e.key.length !== 1) return;
 
@@ -234,6 +241,16 @@ Screens.practice = {
   finish() {
     this.state = 'done';
     cancelAnimationFrame(this.raf);
+    if (this.daily) {
+      // まいにちガチャ: 経験値・きろくの かわりに ガチャへ
+      Save.data.totals.keys += this.correct;
+      Save.save();
+      this.overlay(`<div class="count go">FINISH!</div>`);
+      SFX.win();
+      const n = this.words * DAILY_PER_WORD;
+      setTimeout(() => App.show('gacha', { daily: n }), 1100);
+      return;
+    }
     const secs = this.duration;
     const correct = this.correct, miss = this.miss;
     const acc = correct + miss ? correct / (correct + miss) : 0;

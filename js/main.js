@@ -450,6 +450,7 @@ Screens.home = {
     $('#home-shards').textContent = gachaData().shards;
     const cc = collectCount();
     $('#gacha-count').textContent = `${cc.have}/${cc.total}`;
+    $('#gacha-daily').textContent = doorOpen('gacha') && !dailyDone() ? '⌨️ まいにちガチャ OK！' : '';
     const best = Save.data.best;
     const lang = s.lang;
     const diffName = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい' };
