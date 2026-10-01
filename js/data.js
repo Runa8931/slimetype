@@ -162,7 +162,7 @@ const CHARACTERS = {
       { main: '#a5d8ff', light: '#ffffff', dark: '#4c6ef5', accent: '#e599f7' },
       { main: '#495057', light: '#adb5bd', dark: '#212529', accent: '#ffd43b' },
     ],
-    base: { hp: 89, atk: 59, def: 79, spd: 45 },
+    base: { hp: 83, atk: 55, def: 74, spd: 45 },
     desc: '硬くて重たい岩スライム。のんびり屋だけど、とにかくタフ。',
     forms: [
       {
@@ -744,15 +744,15 @@ const CHARACTERS = {
     desc: 'ころころ転がるサイコロのスライム。強いか弱いかはサイコロ次第。',
     forms: [
       { trait: { name: 'サイコロ', desc: 'お題を打ち切るたびサイコロを振る。1:×0.6 2:×0.8 3:×1 4:×1.2 5:×1.4 6:×2', dice: [0.6, 0.8, 1, 1.2, 1.4, 2], statusCut: 0 },
-        skill: { name: 'ぞろ目チャンス', desc: '威力170。次の3回は4以上の目しか出ない', power: 170, luck: 3, charge: 1 } },
+        skill: { name: 'ダブルダイス', desc: '威力170。次の3回はサイコロ2個。ゾロ目で特大ダメージ（大きい目ほど強い）＋1回延長', power: 170, luck: 3, dice: 2, zoro: 0.2, charge: 1 } },
       { trait: { name: 'サイコロ+', desc: '1:×0.65 … 5:×1.45 6:×2.1', dice: [0.65, 0.8, 1, 1.2, 1.45, 2.1], statusCut: 0 },
-        skill: { name: 'ぞろ目チャンス+', desc: '威力240。次の3回。ゲージ+5%', power: 240, luck: 3, charge: 1.05 } },
+        skill: { name: 'ダブルダイス+', desc: '威力240。次の3回はサイコロ2個。ゾロ目が少し強い。ゲージ+5%', power: 240, luck: 3, dice: 2, zoro: 0.22, charge: 1.05 } },
       { trait: { name: 'ラッキーダイス', desc: '1:×0.7 … 5:×1.5 6:×2.2。毒・やけどの時間が半分', dice: [0.7, 0.85, 1, 1.25, 1.5, 2.2], statusCut: 0.5 },
-        skill: { name: 'ラッキーロール', desc: '威力300。次の4回。ゲージ+10%', power: 300, luck: 4, charge: 1.1 } },
+        skill: { name: 'トリプルダイス', desc: '威力300。次の4回はサイコロ3個。3つそろうとゾロ目のボーナス2倍。ゲージ+10%', power: 300, luck: 4, dice: 3, zoro: 0.25, charge: 1.1 } },
       { trait: { name: 'ゴールデンダイス', desc: '1:×0.7 … 5:×1.5 6:×2.35。毒・やけどの時間が半分', dice: [0.7, 0.9, 1.05, 1.25, 1.5, 2.35], statusCut: 0.5 },
-        skill: { name: 'ゴールデンロール', desc: '威力360。次の4回。ゲージ+15%', power: 360, luck: 4, charge: 1.15 } },
+        skill: { name: 'ゴールデントリプル', desc: '威力360。次の4回はサイコロ3個。ゲージ+15%', power: 360, luck: 4, dice: 3, zoro: 0.27, charge: 1.15 } },
       { trait: { name: 'ミラクルダイス', desc: '1:×0.75 … 5:×1.6 6:×2.5。状態異常が効かない', dice: [0.75, 0.9, 1.1, 1.3, 1.6, 2.5], statusCut: 1 },
-        skill: { name: 'ミラクルロール', desc: '威力420。次の5回。ゲージ+20%', power: 420, luck: 5, charge: 1.2 } },
+        skill: { name: 'ミラクルトリプル', desc: '威力420。次の5回はサイコロ3個。ゲージ+20%', power: 420, luck: 5, dice: 3, zoro: 0.3, charge: 1.2 } },
     ],
   },
   // いもりん: 玉が つながった イモムシ。4 段階目から チョウチョに なる。お題ごとに 体が のびて 強く なる
@@ -819,6 +819,47 @@ const CHARACTERS = {
 // HP・こうげき・ぼうぎょが 5% 高く、カード・登場・ひっさつの 演出が はでに なる
 const SPECIAL_STAT = 1.05;
 function charRank(id) { const d = CHARACTERS[id]; return d.gacha ? 'ssr' : d.title || d.special ? 'special' : ''; }
+
+// ---------------- 進化で 必殺に 新しい 効果が 加わる ----------------
+// [何段階目から (0〜4), 足す 値, 説明]。その段階から あとは ずっと つく (あとの 段階で 同じ 値を 書くと 上書き)
+// 数字が 上がる だけでなく「できることが ふえる」 ように した。効果の 中身は battle.js の skillExtras など
+const SKILL_UPS = {
+  purun: [[3, { ward: 5 }, '必殺のあと5秒間、状態異常にならない'], [4, { refund: 0.25 }, '必殺ゲージが25%戻る']],
+  piriri: [[4, { echo: 0.6 }, '雷がもう1回落ちる（60%のダメージ）']],
+  gotsun: [[2, { guards: 3 }, 'ガードが3回に増える'], [4, { counterCrit: true }, '反撃が必ず会心（1.5倍）']],
+  homura: [[2, { burnBoost: 0.15 }, 'やけど中の敵への攻撃+15%'], [4, { burnPct: 0.06 }, 'やけどのダメージが2倍（毎秒6%）']],
+  moririn: [[2, { ward: 5 }, '必殺のあと5秒間、状態異常にならない'], [4, { regenBoost: 8 }, '8秒間、光合成の回復が2倍']],
+  kagemaru: [[2, { bindBoost: 0.2 }, '縛っている間、敵が受けるダメージ+20%'], [4, { echo: 0.5 }, '影がもう1回攻撃（50%のダメージ）']],
+  ryumaru: [[2, { lifesteal: 0.15 }, '与えたダメージの15%分HP回復'], [4, { rageSecs: 8 }, '8秒間、HPに関係なく怒り状態になる']],
+  kirari: [[4, { streakGuard: 2 }, '次の2回のミスでリズムが消えない']],
+  koorin: [[2, { chillWeak: 0.2 }, 'こごえている敵の攻撃-20%'], [4, { resetGauge: true }, '敵の攻撃ゲージを0に戻す']],
+  fuwari: [[2, { evadeCounter: 80 }, 'かわすたびに威力80の風で反撃'], [4, { doubleSecs: 6 }, '6秒間、追い打ちが必ず出る']],
+  metarun: [[2, { breakPierce: true }, 'ブレイク中は、よろい・殻を無視'], [4, { breakWeak: 0.3 }, 'ブレイク中、敵の攻撃-30%']],
+  onpuru: [[2, { refund: 0.2 }, '必殺ゲージが20%戻る'], [4, { tempoCrit: true }, 'テンポアップ中のお題は必ず会心']],
+  pitarin: [[4, { reflectMult: 2 }, 'はね返すダメージが2倍']],
+  dororin: [[2, { poisonBoostSecs: 6 }, '6秒間、毒のダメージが2倍'], [4, { poisonFill: true }, '毒が一気に最大まで重なる']],
+  gorurin: [[2, { drainSecs: 8 }, '8秒間、攻撃で吸い取る量が2倍'], [4, { addBarrier: 1 }, '金のバリアで敵の攻撃を1回防ぐ']],
+  yukidarun: [[2, { addSnow: 2 }, '使ったあと雪玉+2'], [4, { chill: 5 }, '敵を5秒こごえさせる（攻撃ゲージが半分の速さ）']],
+  yuusharin: [[2, { critSecs: 8, critAdd: 0.3 }, '8秒間、会心率+30%'], [4, { addBarrier: 1 }, '聖なる盾で敵の攻撃を1回防ぐ']],
+  fuerin: [[2, { comboGuardSecs: 6 }, '6秒間、ミスしてもコンボが切れない'], [4, { comboAdd: 50 }, 'コンボ+50']],
+  torio: [[2, { trioNext: true }, '次のお題で必ずトリオボーナス'], [4, { allCrit: true }, '3回とも必ず会心']],
+  yurarin: [[2, { wardForgive: true }, 'ゆらめいている間、状態異常にならない'], [4, { addBarrier: 1 }, '敵の攻撃を1回防ぐ']],
+  saikoro: [[1, { zoroRefund: 0.3 }, 'ゾロ目が出ると必殺ゲージが30%戻る'], [3, { weight: 1.6 }, '4・5・6の目が出やすい'], [4, { weight: 2.2, tripleMult: 3 }, '4・5・6がもっと出やすく、3つそろうとボーナス3倍']],
+  imomushi: [[2, { segFill: true }, '体が一気に最大まで伸びる'], [4, { segGuardSecs: 8 }, '8秒間、攻撃を受けても体が縮まない']],
+  chochin: [[2, { flareMax: true }, '人魂がいる間、ぎりぎりのボーナスが常に最大'], [4, { guardHit: 100 }, '人魂が防ぐたびに威力100で反撃']],
+};
+for (const [id, ups] of Object.entries(SKILL_UPS)) {
+  CHARACTERS[id].forms.forEach((f, i) => {
+    const list = []; // [値の キー, 説明]。あとの 段階で 同じ 値が 強く なったら 前の 説明は けす
+    for (const [from, vals, text] of ups) if (i >= from) {
+      Object.assign(f.skill, vals);
+      const keys = Object.keys(vals);
+      for (let k = list.length - 1; k >= 0; k--) if (list[k][0].some(x => keys.includes(x))) list.splice(k, 1);
+      list.push([keys, text]);
+    }
+    f.skill.ups = list.map(x => x[1]);
+  });
+}
 
 // さいしょから つかえるキャラ (ガチャ限定・しょうごうや とびらで ひらく キャラを のぞく)
 const STARTERS = Object.keys(CHARACTERS).filter(id => !CHARACTERS[id].gacha && !CHARACTERS[id].title && !CHARACTERS[id].special);
@@ -1113,6 +1154,22 @@ function stageExp(i) {
   return (expForLevel(next) - expForLevel(lv)) * 0.6;
 }
 
+// サイコロりん: サイコロを n 個 ふって 攻撃の 倍率を きめる (バトルと 計算道具で つかう)
+// 倍率は 出た 目の 平均。2 個 以上 おなじ 目 (ゾロ目) なら「目 × zoro」の ボーナス (大きい 目ほど 強い)。3 個 そろうと ボーナス 2 倍
+// weight: 4・5・6 の 出やすさ (1 = ふつう) / tripleMult: 3 つ そろった ときの ボーナスの 倍率
+function rollDice(trait, n = 1, zoro = 0, weight = 1, tripleMult = 2) {
+  const one = () => { let r = Math.random() * (3 + 3 * weight); return r < 3 ? 1 + Math.floor(r) : 4 + Math.min(2, Math.floor((r - 3) / weight)); };
+  const faces = Array.from({ length: n }, one);
+  let mult = faces.reduce((a, f) => a + trait.dice[f - 1], 0) / n;
+  const count = {};
+  for (const f of faces) count[f] = (count[f] || 0) + 1;
+  let face = 0, same = 0;
+  for (const [f, c] of Object.entries(count)) if (c >= 2 && (c > same || (c === same && +f > face))) { face = +f; same = c; }
+  const bonus = face ? zoro * face * (same >= 3 ? tripleMult : 1) : 0;
+  mult *= 1 + bonus;
+  return { faces, mult, zoro: face, triple: same >= 3, bonus };
+}
+
 // 決めてある威力を反映
 function applyEnemyPower() { for (const e of ENEMIES) if (ENEMY_POWER[e.id]) e.power = ENEMY_POWER[e.id]; }
 applyEnemyPower();
@@ -1150,5 +1207,5 @@ function rankFor(score) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { SPECIAL_STAT, charRank, MAIN_STAGES, HIDDEN_DEFS, levelNeed, stageExp, STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
+  module.exports = { rollDice, SPECIAL_STAT, charRank, MAIN_STAGES, HIDDEN_DEFS, levelNeed, stageExp, STARTERS, AWAKEN_BONUS, expForLevel, levelFromExp, calcStats, calcDamage, wordPower, evoStage, CHARACTERS, ENEMIES, ENEMY_POWER, applyEnemyPower, BATTLE_HP_SCALE, ENEMY_HP_SCALE, WORLDS, MAX_LV };
 }

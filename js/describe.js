@@ -211,7 +211,9 @@ function skillLines(id, s, def) {
       break;
     case 'saikoro':
       L.push(`転がる体当たりで${pw}`);
-      L.push(`次の${s.luck}回はサイコロで4・5・6の目しか出ない`);
+      L.push(`次の${s.luck}回はサイコロを${s.dice}個振る（倍率は出た目の平均）`);
+      L.push(`ゾロ目（2個以上同じ目）で「目×${pct(s.zoro)}」の特大ダメージ（6のゾロ目なら+${pct(s.zoro * 6)}）。さらに1回延長（最大3回）`);
+      if (s.dice >= 3) L.push('3つそろうとボーナス2倍');
       break;
     case 'imomushi':
       L.push(`体をぐるぐる回して${pw}`);
@@ -248,6 +250,7 @@ function skillLines(id, s, def) {
   }
   // ゲージの たまりかた
   const per = (0.7 + def.base.spd / 200) * s.charge;
+  for (const u of s.ups || []) L.push(`★進化: ${u}`); // 進化で ふえた 効果
   L.push(`ゲージ: 正しく1打つごとに${+per.toFixed(2)}%（約${Math.ceil(100 / per)}打で自動発動）。ミスで-3%${s.charge > 1 ? `。他より${pct(s.charge - 1)}早くたまる` : ''}`);
   return L.filter(Boolean);
 }

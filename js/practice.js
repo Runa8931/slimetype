@@ -142,6 +142,7 @@ Screens.practice = {
     this.startAt += d;
     if (this.wordStart) this.wordStart += d;
     this.state = 'run';
+    this.overlay(''); // 「GO!」が 出ている うちに 止めた ときも 消す
     this.raf = requestAnimationFrame(t => this.tick(t));
   },
 

@@ -1422,7 +1422,8 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .gc-stage.omen .gs-rays { opacity: .5; animation: gs-spin 3s linear infinite; }
 .gc-stage.omen { background: radial-gradient(circle at 50% 30%, rgb(60,40,0), rgb(8,8,24)); }
 .gs-cap.gold { filter: drop-shadow(0 0 30px #ffd43b) drop-shadow(0 0 60px rgba(255,212,59,.6)); }
-.gs-cap.gold .gs-top { background: linear-gradient(120deg, #fff9db, #ffd43b 40%, #f59f00); }
+/* かくていの 金色は SSR に きまるまで (きまったら ほかと おなじ 虹色) */
+.gs-cap.gold:not(.ssr) .gs-top { background: linear-gradient(120deg, #fff9db, #ffd43b 40%, #f59f00); }
 /* SSR が きまった: 下から 光の 柱が のぼる */
 .gc-stage.ssr::after {
   content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
