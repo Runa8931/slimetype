@@ -6,6 +6,10 @@ const SFX = {
   ctx: null,
   enabled: true,
   volume: 0.8,   // 全体の音量 (0〜1)
+  seVol: 1,      // 効果音の 大きさ (設定画面)
+  keyVol: 1,     // 打鍵音の 大きさ (設定画面)
+  _keyNow: false, // いま 鳴らしているのが 打鍵音か
+  catVol() { return this._keyNow ? this.keyVol : this.seVol; },
   master: null,  // すべての音が通る「音量つまみ」
 
   ensure() {
@@ -29,7 +33,7 @@ const SFX = {
     o.type = type;
     o.frequency.setValueAtTime(freq, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
-    g.gain.setValueAtTime(vol, t);
+    g.gain.setValueAtTime(Math.max(0.0001, vol * this.catVol()), t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g).connect(this.master);
     o.start(t); o.stop(t + dur + 0.02);
@@ -50,7 +54,7 @@ const SFX = {
     f.frequency.setValueAtTime(filter, t);
     if (sweep) f.frequency.exponentialRampToValueAtTime(sweep, t + dur);
     const g = this.ctx.createGain();
-    g.gain.value = vol;
+    g.gain.value = vol * this.catVol();
     src.connect(f).connect(g).connect(this.master);
     src.start(t);
   },
@@ -61,7 +65,7 @@ const SFX = {
     if (this.master) this.master.gain.value = this.volume;
   },
 
-  key() { this.tone(1200 + Math.random() * 200, 0.03, { type: 'triangle', vol: 0.04 }); },
+  key() { this._keyNow = true; this.tone(1200 + Math.random() * 200, 0.03, { type: 'triangle', vol: 0.04 }); this._keyNow = false; },
   miss() { this.tone(160, 0.14, { type: 'sawtooth', vol: 0.05, slide: 90 }); },
   word() { this.tone(880, 0.06, { vol: 0.04 }); this.tone(1320, 0.08, { vol: 0.04, delay: 0.05 }); },
   hit() { this.noise(0.15, { vol: 0.12, filter: 1800 }); this.tone(220, 0.12, { vol: 0.05, slide: 80 }); },

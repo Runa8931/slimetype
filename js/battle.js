@@ -429,6 +429,7 @@ Screens.battle = {
       return;
     }
     if (this.state === 'pause') {
+      if (e.key.toLowerCase() === 's') { Settings.open(); return; }
       if (e.key === ' ') { this.state = 'run'; this.overlay(''); this.last = performance.now(); this.raf = requestAnimationFrame(t => this.tick(t)); }
       if (e.key === 'Escape') App.show('stages');
       return;
@@ -437,7 +438,7 @@ Screens.battle = {
     if (e.key === 'Escape') {
       this.state = 'pause';
       cancelAnimationFrame(this.raf);
-      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Space</kbd>で再開　<kbd>Esc</kbd>で逃げる</div></div>');
+      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Space</kbd>で再開　<kbd>S</kbd>で設定　<kbd>Esc</kbd>で逃げる</div></div>');
       return;
     }
     if (e.key.length !== 1) return;

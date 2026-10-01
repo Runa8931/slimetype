@@ -186,7 +186,7 @@ function replayAnim(el, cls, ms) {
   if (ms) setTimeout(() => el.classList.remove(cls), ms);
 }
 
-function shake(el, strong = false) { replayAnim(el, strong ? 'shake-strong' : 'shake', 450); }
+function shake(el, strong = false) { if (Save.data.settings.shake === false) return; replayAnim(el, strong ? 'shake-strong' : 'shake', 450); }
 
 // 画面を横切る必殺技のカットイン
 // rank: とくべつな キャラ ('ssr' / 'special') は 画面が 暗くなり、ふちが 光る 大きな カットインに なる

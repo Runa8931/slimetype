@@ -1514,3 +1514,23 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .aw-key { margin-top: 8px; font-size: 13px; color: var(--sub); }
 /* ホーム: 名前・札が 進化した キャラの つばさに かくれない ように 手前に */
 .home-char .hc-id { position: relative; z-index: 1; }
+
+/* ---------- 設定画面 (settings.js) ---------- */
+.settings-modal { position: fixed; inset: 0; z-index: 90; display: none; place-items: center; background: rgba(5, 5, 20, .72); backdrop-filter: blur(3px); }
+.settings-modal.show { display: grid; animation: gs-fade .2s ease-out; }
+.st-box { width: min(620px, 94vw); max-height: 92vh; overflow-y: auto; background: linear-gradient(180deg, #23264f, #181a3a); border: 2px solid var(--panel-bd); border-radius: 20px; padding: 18px 22px; display: grid; gap: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.st-title { font-family: var(--pixel); font-size: 26px; text-align: center; }
+.st-rows { display: grid; gap: 6px; }
+.st-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 12px; border: 2px solid transparent; background: rgba(255,255,255,.04); }
+.st-row.sel { border-color: #74c0fc; background: rgba(116,192,252,.12); }
+.st-label { font-weight: 800; display: grid; }
+.st-label small { font-weight: 400; font-size: 11px; color: var(--sub); }
+.st-ctrl { display: flex; align-items: center; gap: 6px; }
+.st-btn, .st-opt { border: 1px solid var(--panel-bd); background: rgba(255,255,255,.08); border-radius: 8px; padding: 4px 10px; font-weight: 700; }
+.st-opt.on { background: #4dabf7; border-color: #4dabf7; color: #0b1a33; }
+.st-range { width: 150px; accent-color: #4dabf7; }
+.st-num { width: 44px; text-align: right; font-family: var(--pixel); }
+.st-help { text-align: center; font-size: 13px; color: var(--sub); }
+.st-close { justify-self: center; }
+/* 練習の キーボードを かくす */
+body.no-kb #p-kb { display: none; }

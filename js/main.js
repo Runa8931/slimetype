@@ -17,7 +17,7 @@ const Save = {
       chars: Object.fromEntries(Object.keys(CHARACTERS).map(id => [id, { exp: 0 }])),
       cleared: 0,
       best: {},
-      settings: { lang: 'ja', sound: true, volume: 0.8, diff: 'easy', time: 60, lite: false },
+      settings: { lang: 'ja', sound: true, volume: 0.8, seVol: 1, keyVol: 1, diff: 'easy', time: 60, lite: false, shake: true, kps: true, kb: true },
       missKeys: {},
       totals: { keys: 0, plays: 0, wins: 0 },
       coins: START_COINS,
@@ -144,6 +144,7 @@ function typingExp(correct, miss, seconds, mult = 1, L = 1) {
 
 // お題を 打ち終わったとき「5.8 打/秒」を お題の 枠の 左上に 出す (hot: おんぷるの ボーナスが つく 速さ)
 function showKps(root, kps, extra = '', hot = false) {
+  if (Save.data.settings.kps === false) return; // 設定で 表示しない
   const r = root.getBoundingClientRect(); // お題の 枠の 左上 (PERFECT! や ひっさつ欄と かさならない)
   floatText(r.left + 90, r.top + 2, `${kps.toFixed(1)}打/秒${extra}`, 'kps-pop' + (hot ? ' hot' : ''));
 }
@@ -240,11 +241,7 @@ const App = {
     Save.load();
     if (Save.needDoorMigrate) migrateDoors();
     PlayTime.init(Save.needPtEstimate);
-    SFX.enabled = Save.data.settings.sound;
-    SFX.setVolume(Save.data.settings.volume);
-    // 動作確認用: アドレスに ?mute=1 を付けたときは音を出さない (設定は保存しない)
-    if (new URLSearchParams(location.search).has('mute')) SFX.enabled = false;
-    document.body.classList.toggle('lite', !!Save.data.settings.lite);
+    applySettings(); // 音量・エフェクトなど (settings.js)
     FX.init();
 
     document.addEventListener('keydown', e => {
@@ -256,6 +253,9 @@ const App = {
         e.preventDefault();
         return;
       }
+      // 設定画面が 開いている あいだは 設定画面だけが キーを うけとる
+      if (Settings.isOpen) { Settings.onKey(e); return; }
+      if (e.key === '0' && SETTINGS_KEY_SCREENS.includes(this.current)) { Settings.open(); return; }
       const s = Screens[this.current];
       if (e.key === 'Tab') e.preventDefault();
       if (s && s.onKey) {
@@ -393,9 +393,10 @@ Screens.home = {
       Save.save(); SFX.select(); this.render();
       toast(Save.data.settings.lite ? 'エフェクトを控えめにしました（パソコンが熱くなりにくい）' : 'エフェクトを普通に戻しました');
     };
+    $('#go-settings').onclick = () => Settings.open();
     $('#set-sound').onclick = () => {
       Save.data.settings.sound = !Save.data.settings.sound;
-      SFX.enabled = Save.data.settings.sound;
+      applySettings();
       Save.save(); SFX.select(); this.render();
     };
   },
@@ -476,6 +477,7 @@ Screens.home = {
     if (e.key === '7') $('#go-gacha').click();
     if (e.key === '8') $('#go-wardrobe').click();
     if (e.key === '9') $('#go-doors').click();
+    // 0 は 設定 (App の キー処理で 開く)
     if (e.key === 'Escape') App.show('title');
   },
 };

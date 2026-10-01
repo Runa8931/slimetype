@@ -1543,6 +1543,7 @@ Screens.survival = {
       return;
     }
     if (this.state === 'pause') {
+      if (e.key.toLowerCase() === 's') { Settings.open(); return; }
       if (e.key === 'Escape' || e.key === ' ') { this.state = 'run'; this.overlay(''); this.last = performance.now(); }
       if (e.key === 'Enter') App.show('home');
       return;
@@ -1551,7 +1552,7 @@ Screens.survival = {
     if (e.key === 'Escape') {
       this.state = 'pause';
       this.held.clear();
-      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Esc</kbd>で再開　<kbd>Enter</kbd>でホームへ（記録なし）</div></div>');
+      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Esc</kbd>で再開　<kbd>S</kbd>で設定　<kbd>Enter</kbd>でホームへ（記録なし）</div></div>');
       return;
     }
     if (KEY_DIR[k]) { this.held.add(k); e.preventDefault(); }
