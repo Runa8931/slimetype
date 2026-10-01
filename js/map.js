@@ -487,7 +487,7 @@ Screens.stages = {
     $('#map-svg').innerHTML = mapBackgroundSVG(this.world) + island + roads;
 
     const start = `<div class="node start" style="left:${m.start.x}px;top:${m.start.y}px">
-      <div class="node-pad"></div><div class="node-flag">${this.world === 0 ? 'START' : '◀ もどる'}</div></div>`;
+      <div class="node-pad"></div><div class="node-flag">${this.world === 0 ? 'START' : '◀ 戻る'}</div></div>`;
     const nodes = list.map((g, i) => {
       const e = ENEMIES[g];
       const p = m.nodes[i];
@@ -515,16 +515,16 @@ Screens.stages = {
     if (hdef) {
       const he = ENEMIES[hdef.idx], hp = hiddenLink(hdef).pos, done = hiddenCleared(hdef);
       const open = !!hid && this.unlockAnim !== 'hidden';
-      hnode = `<div class="node hidden-node boss ${done ? 'cleared' : ''} ${open ? '' : 'locked sealed'}" id="node-hidden" data-g="${hdef.idx}" data-i="${HID_POS}" style="left:${hp.x}px;top:${hp.y}px" title="${open ? '' : '🔒 ' + hdef.reveal.text + 'と 道が のびる'}">
+      hnode = `<div class="node hidden-node boss ${done ? 'cleared' : ''} ${open ? '' : 'locked sealed'}" id="node-hidden" data-g="${hdef.idx}" data-i="${HID_POS}" style="left:${hp.x}px;top:${hp.y}px" title="${open ? '' : '🔒 ' + hdef.reveal.text + 'と道が伸びる'}">
         <div class="node-pad"></div><div class="node-icon">${enemySVG(he.id)}</div>
-        ${done ? '<div class="node-star">★</div>' : ''}<div class="node-label">${open ? 'かくし ' + he.name : '？？？'}</div></div>`;
+        ${done ? '<div class="node-star">★</div>' : ''}<div class="node-label">${open ? '隠し ' + he.name : '？？？'}</div></div>`;
     }
     $('#map-nodes').innerHTML = start + nodes + gate + hnode;
     $('#map-nodes').querySelectorAll('.node[data-g]').forEach(n => {
       n.onclick = () => {
         const g = +n.dataset.g;
         // まだ 道が ない かくしステージは 条件を 知らせる
-        if (ENEMIES[g].hidden && !this.hidden()) { SFX.miss(); toast(`🔒 ${this.hiddenDef().reveal.text}と 道が のびる`, 2800); return; }
+        if (ENEMIES[g].hidden && !this.hidden()) { SFX.miss(); toast(`🔒 ${this.hiddenDef().reveal.text}と道が伸びる`, 2800); return; }
         if (g <= this.cleared || ENEMIES[g].hidden) this.startBattle(g);
       };
     });
@@ -548,17 +548,17 @@ Screens.stages = {
         const warn = !locked && c.L < e.lv - 2 ? '<span class="warn">レベル不足かも</span>' : '';
         const key = w === this.world ? `<span class="mc-key">${e.hidden ? worldStages(w).length + 1 : i + 1}</span>` : '';
         const here = w === this.world && i === this.pos;
-        return `<div class="stage-card ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''} ${here ? 'here' : ''}" data-g="${g}" title="${locked ? '' : 'クリックで このステージへ ワープ'}">
+        return `<div class="stage-card ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''} ${here ? 'here' : ''}" data-g="${g}" title="${locked ? '' : 'クリックでこのステージへワープ'}">
           ${key}
           <div class="st-sprite">${locked ? '<div class="lock">?</div>' : enemySVG(e.id)}</div>
           <div class="st-body">
-            <div class="st-name">${locked ? '？？？' : e.name}${e.hidden ? ' <span class="badge boss">かくし</span>' : e.boss && !locked ? ' <span class="badge boss">BOSS</span>' : ''}</div>
-            <div class="st-meta">${stageLabel(g)} ・ Lv.${e.lv} ・ お題 ${diffStars[e.diff]} ${warn}</div>
-            <div class="st-desc">${locked ? 'まえのあいてをたおすと あらわれる' : e.desc}</div>
+            <div class="st-name">${locked ? '？？？' : e.name}${e.hidden ? ' <span class="badge boss">隠し</span>' : e.boss && !locked ? ' <span class="badge boss">BOSS</span>' : ''}</div>
+            <div class="st-meta">${stageLabel(g)}・${e.matchLv ? `あなたのLv+${e.matchLv}` : `Lv.${e.lv}`}・お題${diffStars[e.diff]} ${warn}</div>
+            <div class="st-desc">${locked ? '前の相手を倒すと現れる' : e.desc}</div>
             ${locked ? '' : `<div class="st-ability">${e.abilityDesc}</div>`}
           </div>
           ${cleared ? '<div class="st-clear">CLEAR</div>' : ''}
-          ${locked ? '' : `<div class="st-actions">${here ? '<span class="st-here">いまここ</span>' : '<span class="st-warp">ワープ</span>'}<button class="st-fight" data-g="${g}">たたかう</button></div>`}
+          ${locked ? '' : `<div class="st-actions">${here ? '<span class="st-here">今ここ</span>' : '<span class="st-warp">ワープ</span>'}<button class="st-fight" data-g="${g}">戦う</button></div>`}
         </div>`;
       }).join('');
       // ワールドごとに 折りたためる (最初は 今いるワールドだけ ひらく)
@@ -567,8 +567,8 @@ Screens.stages = {
       const reached = list[0] <= this.cleared;
       const open = this.openWorlds.has(w);
       return `<div class="drawer-group ${open ? 'open' : ''} ${reached ? '' : 'far'}" data-w="${w}">
-        <button class="drawer-world w-${wd.id}" data-w="${w}"><span class="dw-arrow">${open ? '▼' : '▶'}</span>ワールド ${w + 1}　${wd.name}
-          <span class="dw-count">${reached ? `${done}/${list.length} クリア` : 'まだ いけない'}</span></button>
+        <button class="drawer-world w-${wd.id}" data-w="${w}"><span class="dw-arrow">${open ? '▼' : '▶'}</span>ワールド${w + 1}　${wd.name}
+          <span class="dw-count">${reached ? `${done}/${list.length}クリア` : 'まだ行けない'}</span></button>
         <div class="drawer-cards">${cards}</div></div>`;
     }).join('');
     $('#stage-list').querySelectorAll('.drawer-world').forEach(b => {
@@ -697,30 +697,30 @@ Screens.stages = {
     const info = $('#map-info');
     const wd = WORLDS[this.world];
     const list = this.stages();
-    const head = `ワールド ${this.world + 1} <span class="wname">${wd.name}</span>`;
+    const head = `ワールド${this.world + 1} <span class="wname">${wd.name}</span>`;
     if (this.pos < 0) {
       $('#map-world').innerHTML = `${head} <b>スタート</b>`;
-      info.innerHTML = `<div class="mi-body"><div class="mi-name">スタートちてん</div>
-        <div class="mi-desc">WASD で みちを すすもう${this.world > 0 ? '<br>ぎゃくほうこうで まえのワールドへ もどれる' : ''}</div></div>`;
+      info.innerHTML = `<div class="mi-body"><div class="mi-name">スタート地点</div>
+        <div class="mi-desc">WASDで道を進もう${this.world > 0 ? '<br>逆方向で前のワールドへ戻れる' : ''}</div></div>`;
       return;
     }
     if (this.pos === HID_POS && this.hidden()) {
       const h = this.hidden(), e = ENEMIES[h.idx];
       const reward = DOORS.find(d => d.hidden === h.e.id);
-      $('#map-world').innerHTML = `${head} - <b>かくし</b>`;
+      $('#map-world').innerHTML = `${head} - <b>隠し</b>`;
       info.innerHTML = `<div class="mi-sprite">${enemySVG(e.id)}</div>
         <div class="mi-body">
-          <div class="mi-name">${e.name} <small>Lv.${e.lv}</small> <span class="badge boss">かくし</span> ${hiddenCleared(h) ? '<span class="mi-clear">CLEAR</span>' : ''}</div>
+          <div class="mi-name">${e.name} <small>${e.matchLv ? `あなたのLv+${e.matchLv}` : `Lv.${e.lv}`}</small> <span class="badge boss">隠し</span> ${hiddenCleared(h) ? '<span class="mi-clear">CLEAR</span>' : ''}</div>
           <div class="mi-desc">${e.abilityDesc}</div>
-          ${reward ? `<div class="mi-low">たおすと「${reward.name}」が なかまに なる</div>` : ''}
-          <div class="mi-go"><kbd>Space</kbd> で たたかう　難易度 <b style="color:${BATTLE_DIFFS[battleDiffKey()].color}">${BATTLE_DIFFS[battleDiffKey()].name}</b>・推奨 Lv.${e.lv}</div>
+          ${reward ? `<div class="mi-low">倒すと「${reward.name}」が仲間になる</div>` : ''}
+          <div class="mi-go"><kbd>Space</kbd>で戦う　難易度 <b style="color:${BATTLE_DIFFS[battleDiffKey()].color}">${BATTLE_DIFFS[battleDiffKey()].name}</b>・${e.matchLv ? `レベルがあなたに合わせて変わる（Lv.${e.lv}以上）` : `推奨Lv.${e.lv}`}</div>
         </div>`;
       replayAnim(info, 'pop-in', 300);
       return;
     }
     if (this.pos >= list.length) {
       $('#map-world').innerHTML = `${head} <b>ゲート</b>`;
-      info.innerHTML = `<div class="mi-body"><div class="mi-name">つぎのワールドへの ゲート</div><div class="mi-desc">すすむと ワールド ${this.world + 2} へ いどうします</div></div>`;
+      info.innerHTML = `<div class="mi-body"><div class="mi-name">次のワールドへのゲート</div><div class="mi-desc">進むとワールド${this.world + 2}へ移動します</div></div>`;
       return;
     }
     const g = list[this.pos];
@@ -730,13 +730,13 @@ Screens.stages = {
     const bd = BATTLE_DIFFS[battleDiffKey()];
     const elv = diffEnemyLv(e); // 推奨レベル (難易度では かわらない)
     const gap = levelGapMult(elv, this.ch.L);
-    const warn = this.ch.L < elv ? `<div class="mi-warn">レベルが たりないかも (推奨 Lv.${elv}・${bd.note})</div>`
-      : gap < 0.8 ? `<div class="mi-low">格下の あいて: もらえる経験値 ×${gap.toFixed(2)}</div>` : '';
+    const warn = this.ch.L < elv ? `<div class="mi-warn">レベルが足りないかも（推奨Lv.${elv}・${bd.note}）</div>`
+      : gap < 0.8 ? `<div class="mi-low">格下の相手: もらえる経験値×${gap.toFixed(2)}</div>` : '';
     info.innerHTML = `<div class="mi-sprite">${enemySVG(e.id)}</div>
       <div class="mi-body">
         <div class="mi-name">${e.name} <small>Lv.${elv}</small> ${e.boss ? '<span class="badge boss">BOSS</span>' : ''} ${cleared ? '<span class="mi-clear">CLEAR</span>' : ''} <span class="dmarks">${diffBadges(g)}</span></div>
         <div class="mi-desc">${e.abilityDesc}</div>${warn}
-        <div class="mi-go"><kbd>Space</kbd> で たたかう　難易度 <b style="color:${BATTLE_DIFFS[battleDiffKey()].color}">${BATTLE_DIFFS[battleDiffKey()].name}</b>・推奨 Lv.${elv} <small>(<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> で かえる)</small></div>
+        <div class="mi-go"><kbd>Space</kbd>で戦う　難易度 <b style="color:${BATTLE_DIFFS[battleDiffKey()].color}">${BATTLE_DIFFS[battleDiffKey()].name}</b>・推奨Lv.${elv} <small>（<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>で変える）</small></div>
       </div>`;
     replayAnim(info, 'pop-in', 300);
   },
@@ -809,7 +809,7 @@ Screens.stages = {
     this.moving = true;
     this.updateArrows();
     const fade = $('#map-fade');
-    fade.innerHTML = `<div class="mf-title">ワールド ${w + 1}</div><div class="mf-name">${WORLDS[w].name}</div>`;
+    fade.innerHTML = `<div class="mf-title">ワールド${w + 1}</div><div class="mf-name">${WORLDS[w].name}</div>`;
     fade.className = 'map-fade show theme-' + WORLDS[w].id;
     SFX.charge();
     setTimeout(() => {
@@ -879,10 +879,10 @@ Screens.stages = {
       }
       if (isHidden) {
         node.classList.remove('sealed');
-        node.querySelector('.node-label').textContent = 'かくし ' + ENEMIES[this.hidden().idx].name;
-        toast('❗ かくしステージへの 道が のびた！', 3000); SFX.win(); this.updateArrows(); return;
+        node.querySelector('.node-label').textContent = '隠し ' + ENEMIES[this.hidden().idx].name;
+        toast('❗ 隠しステージへの道が伸びた！', 3000); SFX.win(); this.updateArrows(); return;
       }
-      toast(isGate ? `ゲートが ひらいた！ ワールド ${this.world + 2}「${WORLDS[this.world + 1].name}」へ すすもう` : 'あたらしい みちが ひらけた！ WASD で すすもう', 2800);
+      toast(isGate ? `ゲートが開いた！ ワールド${this.world + 2}「${WORLDS[this.world + 1].name}」へ進もう` : '新しい道が開けた！ WASDで進もう', 2800);
       this.updateArrows();
     }, 1500);
   },

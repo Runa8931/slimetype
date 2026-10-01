@@ -7,10 +7,10 @@
 // ============================================================
 
 const PT_MODES = {
-  practice: 'れんしゅう', psetup: 'れんしゅう',
+  practice: '練習', psetup: '練習',
   battle: 'バトル', stages: 'バトル',
   survival: 'サバイバル',
-  gacha: 'ガチャ・きせかえ', wardrobe: 'ガチャ・きせかえ',
+  gacha: 'ガチャ・着せ替え', wardrobe: 'ガチャ・着せ替え',
 };
 const PT_SAVE_MS = 30000;
 const PT_MAX_STEP = 60; // 見えている ときに 60 秒 以上 あいたら (パソコンの スリープ など) 数えない
@@ -51,7 +51,7 @@ const PlayTime = {
     if (this.visible) {
       if (dt > PT_MAX_STEP) return;
       t.play += dt;
-      const m = PT_MODES[App.current] || 'そのほか';
+      const m = PT_MODES[App.current] || 'その他';
       t.modes[m] = (t.modes[m] || 0) + dt;
     } else {
       t.bg += dt;
@@ -76,8 +76,8 @@ function playTimeHtml() {
   const modes = Object.entries(t.modes).sort((a, b) => b[1] - a[1]);
   return `<div class="pt-box">
     <div class="pt-main"><span>🎮 プレイ時間</span><b>${fmtHMS(PlayTime.total())}</b></div>
-    <div class="pt-row"><span>🌙 裏画面 (ほかの タブや アプリ)</span><b>${fmtHMS(t.bg)}</b></div>
-    ${t.est ? `<div class="pt-row"><span>📜 記録する 前の ぶん (打った キーの 数からの 推定)</span><b>約 ${fmtHMS(t.est)}</b></div>` : ''}
+    <div class="pt-row"><span>🌙 裏画面（他のタブやアプリ）</span><b>${fmtHMS(t.bg)}</b></div>
+    ${t.est ? `<div class="pt-row"><span>📜 記録する前の分（打ったキーの数からの推定）</span><b>約${fmtHMS(t.est)}</b></div>` : ''}
     <div class="pt-modes">${modes.map(([m, s]) => `<div><span>${m}</span><b>${fmtHMS(s)}</b></div>`).join('')}</div>
   </div>`;
 }

@@ -83,7 +83,7 @@ function rankFrame(id) {
 }
 function rankBadge(id) {
   const r = charRank(id);
-  return r === 'ssr' ? '<span class="badge rank-ssr">✦ SSR</span>' : r === 'special' ? '<span class="badge rank-sp">★ とくべつ</span>' : '';
+  return r === 'ssr' ? '<span class="badge rank-ssr">✦ SSR</span>' : r === 'special' ? '<span class="badge rank-sp">★特別</span>' : '';
 }
 
 // 正しく 1 回 打ったときに ふえる コンボ (ふえりんは 1.5〜2 ずつ。はんぱは o.comboAcc に ためる)
@@ -145,7 +145,7 @@ function typingExp(correct, miss, seconds, mult = 1, L = 1) {
 // お題を 打ち終わったとき「5.8 打/秒」を お題の 枠の 左上に 出す (hot: おんぷるの ボーナスが つく 速さ)
 function showKps(root, kps, extra = '', hot = false) {
   const r = root.getBoundingClientRect(); // お題の 枠の 左上 (PERFECT! や ひっさつ欄と かさならない)
-  floatText(r.left + 90, r.top + 2, `${kps.toFixed(1)} 打/秒${extra}`, 'kps-pop' + (hot ? ' hot' : ''));
+  floatText(r.left + 90, r.top + 2, `${kps.toFixed(1)}打/秒${extra}`, 'kps-pop' + (hot ? ' hot' : ''));
 }
 
 function recordMiss(key) {
@@ -178,7 +178,7 @@ function renderTyping(root, word, target, { hideRoma = false } = {}) {
 // サバイバルの記録: クリアした一番むずかしい難易度 (なければ 一番長く生きのこった時間)
 function svRecord(best) {
   const keys = ['hell', 'oni', 'hard', 'normal', 'easy'];
-  const names = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい', oni: 'おに', hell: 'じごく' };
+  const names = { easy: '簡単', normal: '普通', hard: '難しい', oni: '鬼', hell: '地獄' };
   const c = keys.find(k => best['sv-' + k] && best['sv-' + k].cleared);
   if (c) return `<small>${names[c]}</small>クリア`;
   const t = keys.map(k => best['sv-' + k]).filter(Boolean).sort((a, b) => b.time - a.time)[0];
@@ -295,7 +295,7 @@ Screens.title = {
 
 // ---------------- キャラクター選択 ----------------
 function statBars(stats, max) {
-  const labels = { hp: 'HP', atk: 'こうげき', def: 'ぼうぎょ', spd: 'すばやさ' };
+  const labels = { hp: 'HP', atk: '攻撃', def: '防御', spd: '素早さ' };
   return Object.keys(labels).map(k =>
     `<div class="stat"><span>${labels[k]}</span><div class="stat-bar"><div class="stat-fill s-${k}" style="width:${clamp(stats[k] / max * 100, 4, 100)}%"></div></div><b>${stats[k]}</b></div>`
   ).join('');
@@ -313,8 +313,8 @@ Screens.select = {
           <span class="mc-key">${i + 1}</span>
           <div class="sprite">${slimeSVG(id, 0, {})}</div>
           <div class="cc-name">？？？</div>
-          <div class="badges">${d.gacha ? '<span class="badge gacha">ガチャ限定</span>' : '<span class="badge door">🚪 とびら</span>'}<span class="badge">${d.role}</span></div>
-          <p class="cc-desc">${d.gacha ? 'ガチャで であえる ふしぎな スライム。こうかんじょで かけらと こうかんも できる。' : lockNote('ch_' + id)}</p>
+          <div class="badges">${d.gacha ? '<span class="badge gacha">ガチャ限定</span>' : '<span class="badge door">🚪 扉</span>'}<span class="badge">${d.role}</span></div>
+          <p class="cc-desc">${d.gacha ? 'ガチャで出会える不思議なスライム。交換所でかけらと交換もできる。' : lockNote('ch_' + id)}</p>
         </button>`;
       }
       return `<button class="char-card ${Save.data.active === id ? 'current' : ''} ${charRank(id) ? 'rank-' + charRank(id) : ''}" data-id="${id}" style="--cc:${d.colors.main};--cd:${d.colors.dark}">
@@ -326,7 +326,7 @@ Screens.select = {
         <p class="cc-desc">${d.desc}</p>
         <div class="stats">${statBars(rankBase(id), 100)}</div>
         ${abilityHtml(c)}
-        <div class="evo-note">Lv.20・40・60・80 で進化すると とくせい・ひっさつも パワーアップ</div>
+        <div class="evo-note">Lv.20・40・60・80で進化すると特性・必殺もパワーアップ</div>
       </button>`;
     }).join('');
     $('#select-grid').querySelectorAll('.char-card:not(.locked)').forEach(b => { b.onclick = () => this.pick(b.dataset.id); });
@@ -367,7 +367,7 @@ Screens.home = {
     $('#go-doors').onclick = () => { SFX.select(); App.show('doors'); };
     // これまでの記録で とれる しょうごうが あれば 知らせる
     announceDoors(checkDoors(), 300);
-    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 しょうごう「${a.name}」を 手に入れた！ (🪙+${ACH_COINS})`, 2600), 400 + i * 2800));
+    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 400 + i * 2800));
     document.querySelectorAll('#set-lang button').forEach(b => {
       b.onclick = () => { Save.data.settings.lang = b.dataset.v; Save.save(); SFX.select(); this.render(); };
     });
@@ -391,7 +391,7 @@ Screens.home = {
       document.body.classList.toggle('lite', Save.data.settings.lite);
       FX.resize();
       Save.save(); SFX.select(); this.render();
-      toast(Save.data.settings.lite ? 'エフェクトを ひかえめにしました (パソコンが熱くなりにくい)' : 'エフェクトを ふつうに もどしました');
+      toast(Save.data.settings.lite ? 'エフェクトを控えめにしました（パソコンが熱くなりにくい）' : 'エフェクトを普通に戻しました');
     };
     $('#set-sound').onclick = () => {
       Save.data.settings.sound = !Save.data.settings.sound;
@@ -406,11 +406,11 @@ Screens.home = {
     const s = Save.data.settings;
     document.querySelectorAll('#set-lang button').forEach(b => b.classList.toggle('on', b.dataset.v === s.lang));
     $('#set-sound').textContent = s.sound ? '♪ 効果音 ON' : '♪ 効果音 OFF';
-    $('#set-lite').textContent = s.lite ? '✨ エフェクト ひかえめ' : '✨ エフェクト ふつう';
+    $('#set-lite').textContent = s.lite ? '✨ エフェクト 控えめ' : '✨ エフェクト 普通';
     $('#set-lite').classList.toggle('on', !!s.lite);
 
     const expPct = c.nextLvExp ? (c.exp - c.curLvExp) / (c.nextLvExp - c.curLvExp) * 100 : 100;
-    const nextEvo = c.stage < EVO_LEVELS.length ? `Lv.${EVO_LEVELS[c.stage]} で${c.stage === EVO_LEVELS.length - 1 ? '最終' : ''}進化！` : 'さいごの すがた';
+    const nextEvo = c.stage < EVO_LEVELS.length ? `Lv.${EVO_LEVELS[c.stage]}で${c.stage === EVO_LEVELS.length - 1 ? '最終' : ''}進化！` : '最後の姿';
     $('#home-char').style.setProperty('--cc', d.colors.main);
     $('#home-char').className = 'panel home-char' + (charRank(c.id) ? ' rank-' + charRank(c.id) : '');
     $('#home-char').innerHTML = `${rankFrame(c.id)}
@@ -422,7 +422,7 @@ Screens.home = {
           <div class="badges">${rankBadge(c.id)}<span class="badge type-${c.id}">${d.type}</span><span class="badge">${d.role}</span><span class="badge evo">${nextEvo}</span></div>
           <div class="hc-lv">Lv.<b>${c.L}</b></div>
           <div class="expbar"><div class="exp-fill" style="width:${expPct}%"></div></div>
-          <div class="exp-text">${c.nextLvExp ? `つぎのレベルまで あと <b>${c.nextLvExp - c.exp}</b> EXP` : 'レベル MAX！'}</div>
+          <div class="exp-text">${c.nextLvExp ? `次のレベルまであと <b>${c.nextLvExp - c.exp}</b> EXP` : 'レベルMAX！'}</div>
         </div>
       </div>
       <div class="stats">${statBars(c.stats, Math.max(60, c.stats.hp))}</div>
@@ -431,9 +431,9 @@ Screens.home = {
         // 進化したときの すがた (かくせいの ぶんも ふくめる)
         const nt = d.forms[c.stage + 1].trait;
         const next = { ...c, stage: c.stage + 1, trait: c.awaken ? AWAKEN_BONUS[c.id].apply(nt, c.awaken) : nt, skill: d.forms[c.stage + 1].skill };
-        return `<div class="next-evo"><b>Lv.${EVO_LEVELS[c.stage]} で「${d.names[c.stage + 1]}」に進化すると…</b>${abilityHtml(next)}</div>`;
+        return `<div class="next-evo"><b>Lv.${EVO_LEVELS[c.stage]}で「${d.names[c.stage + 1]}」に進化すると…</b>${abilityHtml(next)}</div>`;
       })() : ''}
-      <details class="base-rules"><summary>ふつうの キャラの 基本 (くらべる ための 数字)</summary><ul>${BASE_RULES.map(x => `<li>${x}</li>`).join('')}</ul></details>`;
+      <details class="base-rules"><summary>普通のキャラの基本（比べるための数字）</summary><ul>${BASE_RULES.map(x => `<li>${x}</li>`).join('')}</ul></details>`;
 
     $('#dex-count').textContent = `${dexCount()}/${ENEMIES.length}`;
     $('#ach-count').textContent = `${achCount()}/${ACHIEVEMENTS.length}`;
@@ -450,13 +450,13 @@ Screens.home = {
     $('#home-shards').textContent = gachaData().shards;
     const cc = collectCount();
     $('#gacha-count').textContent = `${cc.have}/${cc.total}`;
-    $('#gacha-daily').textContent = doorOpen('gacha') && !dailyDone() ? '⌨️ まいにちガチャ OK！' : '';
+    $('#gacha-daily').textContent = doorOpen('gacha') && !dailyDone() ? '⌨️ 毎日ガチャOK！' : '';
     const best = Save.data.best;
     const lang = s.lang;
-    const diffName = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい' };
+    const diffName = { easy: '簡単', normal: '普通', hard: '難しい' };
     const wk = weakKeys(5);
     $('#home-records').innerHTML = `
-      <h3>きろく <small>(${lang === 'en' ? 'English' : '日本語'})</small></h3>
+      <h3>記録 <small>（${lang === 'en' ? 'English' : '日本語'}）</small></h3>
       <div class="rec-grid">
         ${Object.keys(diffName).map(k => `<div><span>${diffName[k]}</span><b>${best[lang + '-' + k] ?? '—'}</b></div>`).join('')}
         <div><span>バトル突破</span><b>${Save.data.cleared}/${MAIN_STAGES}</b></div>

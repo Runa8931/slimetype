@@ -418,17 +418,18 @@ const CUSTOM_BODY = {
       <path d="M55,58 Q57.5,61 60,58 Q62.5,61 65,58" fill="none" stroke="#1d1d2b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
   },
-  // サイコロりん: 立体の サイコロ。手前の 面に 顔、上と 横の 面に サイコロの 目
+  // サイコロりん: 立体の サイコロ。手前の 面に 顔、上の 面に 5、横の 面に 3 (となりあう 面に おなじ 目は こない)
   saikoro(c, u, stage) {
-    const pip = (x, y, r = 3.6) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.accent}"/>`;
+    // 目は ふちと おなじ 色で うすく (目立ちすぎない ように)
+    const pip = (x, y, r = 3.6) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.dark}" opacity=".4"/>`;
     return `<g class="dice">
       <path d="M22,50 L44,36 L102,36 L80,50 Z" fill="${c.light}" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
       <path d="M80,50 L102,36 L102,90 L80,104 Z" fill="${c.main}" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
       <path d="M80,50 L102,36 L102,90 L80,104 Z" fill="#000" opacity=".14"/>
       <rect x="22" y="50" width="58" height="54" rx="9" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3"/>
       <path d="M30,56 C40,54 56,54 66,56" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>
-      ${[[50, 43], [62, 40], [74, 37]].map(([x, y]) => `<ellipse cx="${x}" cy="${y + 0.5}" rx="4.4" ry="2.4" fill="${c.accent}"/>`).join('')}
-      ${pip(88, 58, 3)}${pip(94, 72, 3)}${pip(88, 86, 3)}
+      ${[[42, 46.5], [71, 46.5], [62, 43], [53, 39.5], [82, 39.5]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="3.8" ry="2.1" fill="${c.dark}" opacity=".4"/>`).join('')}
+      ${pip(85.5, 60, 3)}${pip(91, 70, 3)}${pip(96.5, 80, 3)}
       <g class="eyes"><ellipse cx="41" cy="74" rx="5" ry="6.5" fill="#1d1d2b"/><ellipse cx="61" cy="74" rx="5" ry="6.5" fill="#1d1d2b"/>
         <circle cx="42.5" cy="71.5" r="2" fill="#fff"/><circle cx="62.5" cy="71.5" r="2" fill="#fff"/></g>
       <path d="M45,86 Q51,93 57,86" fill="none" stroke="#1d1d2b" stroke-width="2.8" stroke-linecap="round"/>

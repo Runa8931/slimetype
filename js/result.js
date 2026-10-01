@@ -15,43 +15,43 @@ Screens.result = {
     if (r.mode === 'practice') {
       const rank = rankFor(r.score);
       head = `<div class="res-head">
-        <div class="res-title">れんしゅう けっか <small>${DIFFS[r.diff].name}</small></div>
+        <div class="res-title">練習結果 <small>${DIFFS[r.diff].name}</small></div>
         <div class="rank-box"><div class="rank rank-${rank.name}">${rank.name}</div><div class="rank-label">${rank.label}</div></div>
         <div class="score">スコア <b>${r.score}</b>${r.newBest ? '<span class="new">NEW RECORD!</span>' : ''}</div>
         <div class="score-note">スコア = 打鍵/分 × 正確率³</div>
       </div>`;
     } else if (r.mode === 'survival') {
       head = `<div class="res-head ${r.won ? 'won' : 'lost'}">
-        <div class="res-title">${r.won ? `サバイバル クリア！ ${SV_BOSS[r.boss].name}を たおした！` : `${ch.name} は たおれてしまった…`}</div>
+        <div class="res-title">${r.won ? `サバイバルクリア！ ${SV_BOSS[r.boss].name}を倒した！` : `${ch.name}は倒れてしまった…`}</div>
         <div class="res-diff" style="color:${r.diffColor}">難易度: ${r.diffName}</div>
-        <div class="score">生きのこった時間 <b>${fmtTime(r.time)}</b>${r.newBest ? '<span class="new">NEW RECORD!</span>' : ''}</div>
+        <div class="score">生き残った時間 <b>${fmtTime(r.time)}</b>${r.newBest ? '<span class="new">NEW RECORD!</span>' : ''}</div>
         <div class="sv-res-weapons">${r.weapons.map(w => `<div class="sv-w" style="--wc:${SV_WEAPONS[w.id].color}">${SV_WEAPONS[w.id].icon}<small>${w.lv >= SV_MAX_LV ? 'MAX' : 'Lv' + w.lv}</small></div>`).join('')}</div>
-        ${!r.won ? '<div class="tip">ヒント: 宝箱をたくさん拾って武器をそろえよう。タイピングでレベルを上げると HP と攻撃力も上がるよ</div>' : ''}
+        ${!r.won ? '<div class="tip">ヒント: 宝箱をたくさん拾って武器をそろえよう。タイピングでレベルを上げるとHPと攻撃力も上がるよ</div>' : ''}
       </div>`;
     } else {
       const e = ENEMIES[r.enemyIdx];
       head = `<div class="res-head ${r.won ? 'won' : 'lost'}">
-        <div class="res-title">${r.won ? `${e.name} をたおした！` : `${ch.name} はたおれてしまった…`}</div>
+        <div class="res-title">${r.won ? `${e.name}を倒した！` : `${ch.name}は倒れてしまった…`}</div>
         ${r.bdiff ? `<div class="res-diff" style="color:${BATTLE_DIFFS[r.bdiff].color}">難易度: ${BATTLE_DIFFS[r.bdiff].name}</div>` : ''}
         <div class="res-enemy ${r.won ? '' : 'gray'}">${enemySVG(e.id)}</div>
-        ${e.hidden && r.won ? `<div class="unlock">かくしステージ「${e.name}」を たおした！</div>` : ''}
+        ${e.hidden && r.won ? `<div class="unlock">隠しステージ「${e.name}」を倒した！</div>` : ''}
         ${r.firstClear && r.enemyIdx + 1 < MAIN_STAGES ? (ENEMIES[r.enemyIdx + 1].world !== e.world
-          ? `<div class="unlock">ワールド ${e.world + 2}「${WORLDS[e.world + 1].name}」への ゲートが ひらいた！</div>`
-          : `<div class="unlock">あたらしいあいて「${ENEMIES[r.enemyIdx + 1].name}」があらわれた！</div>`) : ''}
-        ${r.firstClear && r.enemyIdx + 1 >= MAIN_STAGES ? `<div class="unlock">${e.name}を たおした！ ぜんぶの ワールドを クリア！ おめでとう！</div>` : ''}
-        ${!r.won ? '<div class="tip">ヒント: れんしゅうでレベルを上げたり、コンボを切らさないように打つと有利だよ</div>' : ''}
+          ? `<div class="unlock">ワールド${e.world + 2}「${WORLDS[e.world + 1].name}」へのゲートが開いた！</div>`
+          : `<div class="unlock">新しい相手「${ENEMIES[r.enemyIdx + 1].name}」が現れた！</div>`) : ''}
+        ${r.firstClear && r.enemyIdx + 1 >= MAIN_STAGES ? `<div class="unlock">${e.name}を倒した！ 全部のワールドをクリア！ おめでとう！</div>` : ''}
+        ${!r.won ? '<div class="tip">ヒント: 練習でレベルを上げたり、コンボを切らさないように打つと有利だよ</div>' : ''}
       </div>`;
     }
 
     const misses = Object.entries(r.missMap || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const statsHtml = r.mode === 'survival' ? `<div class="res-stats">
-      <div><span>じかん</span><b>${fmtTime(r.time)}</b></div>
-      <div><span>たおした数</span><b>${r.kills}</b></div>
+      <div><span>時間</span><b>${fmtTime(r.time)}</b></div>
+      <div><span>倒した数</span><b>${r.kills}</b></div>
       <div><span>ジェム</span><b>${r.gems}</b></div>
     </div>` : `<div class="res-stats">
       <div><span>打鍵/分</span><b>${r.kpm}</b></div>
-      <div><span>平均 打/秒</span><b>${(r.kps || 0).toFixed(1)}</b></div>
-      <div><span>さいこう 打/秒</span><b>${r.bestKps ? r.bestKps.toFixed(1) : '—'}</b></div>
+      <div><span>平均打/秒</span><b>${(r.kps || 0).toFixed(1)}</b></div>
+      <div><span>最高打/秒</span><b>${r.bestKps ? r.bestKps.toFixed(1) : '—'}</b></div>
       <div><span>正確率</span><b>${(r.acc * 100).toFixed(1)}%</b></div>
       <div><span>正しく打った数</span><b>${r.correct}</b></div>
       <div><span>ミス</span><b>${r.miss}</b></div>
@@ -71,24 +71,24 @@ Screens.result = {
       </div>
     </div>`;
 
-    const coinHtml = r.coins != null ? `<div class="res-coin">🪙 <b>+${r.coins}</b> コイン <small>${r.coinNote || ''}</small><span>もっている コイン <b class="res-coin-have">${Save.data.coins}</b></span></div>` : '';
+    const coinHtml = r.coins != null ? `<div class="res-coin">🪙 <b>+${r.coins}</b> コイン <small>${r.coinNote || ''}</small><span>持っているコイン <b class="res-coin-have">${Save.data.coins}</b></span></div>` : '';
     $('#result-wrap').innerHTML = head + `<div class="res-cols"><div class="panel">${statsHtml}${coinHtml}</div>${expHtml}</div>
       <div class="bottom-bar">
         ${r.mode === 'battle' && r.won ? '' : `<button class="btn ghost" id="res-home">${r.mode === 'battle' ? 'マップへ' : 'ホームへ'} <kbd>Esc</kbd></button>`}
-        <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もういちど <kbd>Space</kbd>' : r.mode === 'survival' ? 'もういちど <kbd>Space</kbd>' : r.won ? 'マップへ <kbd>Space</kbd> <kbd>Esc</kbd>' : 'リベンジ <kbd>Space</kbd>'}</button>
+        <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もう一度 <kbd>Space</kbd>' : r.mode === 'survival' ? 'もう一度 <kbd>Space</kbd>' : r.won ? 'マップへ <kbd>Space</kbd> <kbd>Esc</kbd>' : 'リベンジ <kbd>Space</kbd>'}</button>
       </div>`;
     // しょうごう: 新しく とれたものを 知らせる
     const got = checkAchievements(r);
     // ぼうけんのとびら: 新しく ひらいた ものを 知らせる
     const doors = checkDoors();
     if (doors.length) {
-      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="door-get">${doors.map(d => `<div>🚪 ぼうけんのとびらが ひらいた！「<b>${d.name}</b>」<small>${d.what}</small></div>`).join('')}</div>`);
+      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="door-get">${doors.map(d => `<div>🚪 冒険の扉が開いた！「<b>${d.name}</b>」<small>${d.what}</small></div>`).join('')}</div>`);
       setTimeout(() => { SFX.win(); FX.confetti(); }, 900);
     }
     const have = $('#result-wrap .res-coin-have');
     if (have) have.textContent = Save.data.coins; // しょうごうの コインも ふくめる
     if (got.length) {
-      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="ach-get">${got.map(a => `<div>🏅 しょうごう「<b>${a.name}</b>」ゲット！ 🪙+${ACH_COINS}<small>${a.desc}</small></div>`).join('')}</div>`);
+      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="ach-get">${got.map(a => `<div>🏅 称号「<b>${a.name}</b>」ゲット！ 🪙+${ACH_COINS}<small>${a.desc}</small></div>`).join('')}</div>`);
       setTimeout(() => { SFX.levelup(); FX.confetti(); }, 600);
     }
     if ($('#res-home')) $('#res-home').onclick = () => this.home();
@@ -136,7 +136,7 @@ Screens.result = {
 
     if (ex.leveled) {
       const b = ex.before.stats, a = ex.after.stats;
-      const names = { hp: 'HP', atk: 'こうげき', def: 'ぼうぎょ', spd: 'すばやさ' };
+      const names = { hp: 'HP', atk: '攻撃', def: '防御', spd: '素早さ' };
       $('#re-up').innerHTML = `<div class="up-table">${Object.keys(names).map(k =>
         `<div><span>${names[k]}</span><b>${b[k]}</b>→<b class="up">${a[k]}</b><small>+${a[k] - b[k]}</small></div>`).join('')}</div>`;
     }
@@ -172,11 +172,11 @@ Screens.result = {
     SFX.win();
     FX.burst(c.x, c.y, { colors: ['#fff', '#ffd23f', ex.after.def.colors.accent], count: 80, shape: 'star', size: 8, speed: 10 });
     FX.confetti();
-    cutin(`${ex.after.name} に進化！`, `${ex.before.name} のようすが…？`, ex.after.def.colors.main, slimeSVG(ex.after.id, ex.after.stage));
+    cutin(`${ex.after.name}に進化！`, `${ex.before.name}の様子が…？`, ex.after.def.colors.main, slimeSVG(ex.after.id, ex.after.stage));
     // とくせい・ひっさつの パワーアップを知らせる
     $('#re-up').insertAdjacentHTML('beforeend', `<div class="evo-up">
-      <div><b>とくせい</b> ${ex.before.trait.name} → <em>${ex.after.trait.name}</em><small>${traitLines(ex.after.id, ex.after.trait).join(' / ')}</small></div>
-      <div><b>ひっさつ</b> ${ex.before.skill.name} → <em>${ex.after.skill.name}</em><small>${skillLines(ex.after.id, ex.after.skill, ex.after.def).join(' / ')}</small></div></div>`);
+      <div><b>特性</b> ${ex.before.trait.name} → <em>${ex.after.trait.name}</em><small>${traitLines(ex.after.id, ex.after.trait).join(' / ')}</small></div>
+      <div><b>必殺</b> ${ex.before.skill.name} → <em>${ex.after.skill.name}</em><small>${skillLines(ex.after.id, ex.after.skill, ex.after.def).join(' / ')}</small></div></div>`);
   },
 
   again() {

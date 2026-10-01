@@ -15,6 +15,8 @@ const RARITY = {
   R: { name: 'R', color: '#4dabf7', shard: 2, price: 25 },
   SR: { name: 'SR', color: '#cc5de8', shard: 5, price: 60 },
   SSR: { name: 'SSR', color: '#ffd43b', shard: 15, price: 150 },
+  // ★4 (かくせい MAX) の ごほうびだけの レア度。ガチャでは 出ない
+  EX: { name: '★4限定', color: '#ff6bff', shard: 15, price: 150 },
 };
 
 // ガチャの確率: まず キャラ枠か アイテム枠かを きめ、アイテムは レア度で きめる
@@ -24,105 +26,105 @@ const ITEM_RATES = [['SSR', 0.03], ['SR', 0.12], ['R', 0.33], ['N', 0.52]];
 const CHAR_SHARD = { gacha: 30, starter: 12 };
 const CHAR_PRICE = { gacha: 200, starter: 80 };
 
-const KIND_NAME = { char: 'キャラ', color: 'いろ', hat: 'ぼうし', fx: 'エフェクト', pet: 'おとも' };
+const KIND_NAME = { char: 'キャラ', color: '色', hat: '帽子', fx: 'エフェクト', pet: 'お供' };
 
 const GACHA_ITEMS = [
   // ---- 色ちがい (どのキャラにも ぬれる) ----
-  { id: 'c_sakura', kind: 'color', rarity: 'N', name: 'さくらいろ', colors: { main: '#ffa8c5', light: '#fff0f6', dark: '#c2255c', accent: '#ffffff' } },
-  { id: 'c_mint', kind: 'color', rarity: 'N', name: 'ミントいろ', colors: { main: '#63e6be', light: '#e6fcf5', dark: '#087f5b', accent: '#ffffff' } },
-  { id: 'c_lemon', kind: 'color', rarity: 'N', name: 'レモンいろ', colors: { main: '#ffe066', light: '#fff9db', dark: '#e67700', accent: '#ffffff' } },
+  { id: 'c_sakura', kind: 'color', rarity: 'N', name: '桜色', colors: { main: '#ffa8c5', light: '#fff0f6', dark: '#c2255c', accent: '#ffffff' } },
+  { id: 'c_mint', kind: 'color', rarity: 'N', name: 'ミント色', colors: { main: '#63e6be', light: '#e6fcf5', dark: '#087f5b', accent: '#ffffff' } },
+  { id: 'c_lemon', kind: 'color', rarity: 'N', name: 'レモン色', colors: { main: '#ffe066', light: '#fff9db', dark: '#e67700', accent: '#ffffff' } },
   { id: 'c_lavender', kind: 'color', rarity: 'N', name: 'ラベンダー', colors: { main: '#b197fc', light: '#f3f0ff', dark: '#6741d9', accent: '#ffdeeb' } },
-  { id: 'c_sunset', kind: 'color', rarity: 'R', name: 'ゆうやけいろ', colors: { main: '#ff8787', light: '#ffe8cc', dark: '#c92a2a', accent: '#ffd43b' } },
-  { id: 'c_deepsea', kind: 'color', rarity: 'R', name: 'しんかいいろ', colors: { main: '#1971c2', light: '#74c0fc', dark: '#0b2545', accent: '#63e6be' } },
-  { id: 'c_choco', kind: 'color', rarity: 'R', name: 'チョコいろ', colors: { main: '#8d5524', light: '#e0b089', dark: '#4a2511', accent: '#ffc9de' } },
-  { id: 'c_snow', kind: 'color', rarity: 'R', name: 'ゆきいろ', colors: { main: '#e7f5ff', light: '#ffffff', dark: '#74c0fc', accent: '#a5d8ff' } },
-  { id: 'c_silver', kind: 'color', rarity: 'SR', name: 'ぎんいろ', colors: { main: '#ced4da', light: '#ffffff', dark: '#495057', accent: '#e9ecef' } },
-  { id: 'c_midnight', kind: 'color', rarity: 'SR', name: 'まよなかいろ', colors: { main: '#343a40', light: '#868e96', dark: '#000000', accent: '#00f5d4' } },
-  { id: 'c_gold', kind: 'color', rarity: 'SSR', name: 'きんいろ', colors: { main: '#fcc419', light: '#fff9db', dark: '#b8860b', accent: '#ffffff' } },
-  { id: 'c_rainbow', kind: 'color', rarity: 'SSR', name: 'にじいろ', rainbow: true, colors: { main: '#ffe066', light: '#ffffff', dark: '#5f3dc4', accent: '#ffffff' } },
+  { id: 'c_sunset', kind: 'color', rarity: 'R', name: '夕焼け色', colors: { main: '#ff8787', light: '#ffe8cc', dark: '#c92a2a', accent: '#ffd43b' } },
+  { id: 'c_deepsea', kind: 'color', rarity: 'R', name: '深海色', colors: { main: '#1971c2', light: '#74c0fc', dark: '#0b2545', accent: '#63e6be' } },
+  { id: 'c_choco', kind: 'color', rarity: 'R', name: 'チョコ色', colors: { main: '#8d5524', light: '#e0b089', dark: '#4a2511', accent: '#ffc9de' } },
+  { id: 'c_snow', kind: 'color', rarity: 'R', name: '雪色', colors: { main: '#e7f5ff', light: '#ffffff', dark: '#74c0fc', accent: '#a5d8ff' } },
+  { id: 'c_silver', kind: 'color', rarity: 'SR', name: '銀色', colors: { main: '#ced4da', light: '#ffffff', dark: '#495057', accent: '#e9ecef' } },
+  { id: 'c_midnight', kind: 'color', rarity: 'SR', name: '真夜中色', colors: { main: '#343a40', light: '#868e96', dark: '#000000', accent: '#00f5d4' } },
+  { id: 'c_gold', kind: 'color', rarity: 'SSR', name: '金色', colors: { main: '#fcc419', light: '#fff9db', dark: '#b8860b', accent: '#ffffff' } },
+  { id: 'c_rainbow', kind: 'color', rarity: 'SSR', name: '虹色', rainbow: true, colors: { main: '#ffe066', light: '#ffffff', dark: '#5f3dc4', accent: '#ffffff' } },
   // ---- ぼうし・アクセサリー ----
   // (v5.2 で ふやした いろ)
-  { id: 'c_peach', kind: 'color', rarity: 'N', name: 'ピーチいろ', colors: { main: '#ffc9a8', light: '#fff4e6', dark: '#e8590c', accent: '#ffffff' } },
-  { id: 'c_sky', kind: 'color', rarity: 'N', name: 'そらいろ', colors: { main: '#a5d8ff', light: '#e7f5ff', dark: '#1c7ed6', accent: '#ffffff' } },
-  { id: 'c_matcha', kind: 'color', rarity: 'R', name: 'まっちゃいろ', colors: { main: '#94d82d', light: '#f4fce3', dark: '#5c940d', accent: '#fff3bf' } },
-  { id: 'c_berry', kind: 'color', rarity: 'R', name: 'ベリーいろ', colors: { main: '#cc5de8', light: '#f8f0fc', dark: '#862e9c', accent: '#ffdeeb' } },
-  { id: 'c_lava', kind: 'color', rarity: 'SR', name: 'マグマいろ', colors: { main: '#fa5252', light: '#ffd43b', dark: '#5c0f0f', accent: '#ff922b' } },
-  { id: 'c_galaxy', kind: 'color', rarity: 'SSR', name: 'ぎんがいろ', colors: { main: '#5f3dc4', light: '#f783ac', dark: '#10002b', accent: '#66d9e8' } },
+  { id: 'c_peach', kind: 'color', rarity: 'N', name: 'ピーチ色', colors: { main: '#ffc9a8', light: '#fff4e6', dark: '#e8590c', accent: '#ffffff' } },
+  { id: 'c_sky', kind: 'color', rarity: 'N', name: '空色', colors: { main: '#a5d8ff', light: '#e7f5ff', dark: '#1c7ed6', accent: '#ffffff' } },
+  { id: 'c_matcha', kind: 'color', rarity: 'R', name: '抹茶色', colors: { main: '#94d82d', light: '#f4fce3', dark: '#5c940d', accent: '#fff3bf' } },
+  { id: 'c_berry', kind: 'color', rarity: 'R', name: 'ベリー色', colors: { main: '#cc5de8', light: '#f8f0fc', dark: '#862e9c', accent: '#ffdeeb' } },
+  { id: 'c_lava', kind: 'color', rarity: 'SR', name: 'マグマ色', colors: { main: '#fa5252', light: '#ffd43b', dark: '#5c0f0f', accent: '#ff922b' } },
+  { id: 'c_galaxy', kind: 'color', rarity: 'SSR', name: '銀河色', colors: { main: '#5f3dc4', light: '#f783ac', dark: '#10002b', accent: '#66d9e8' } },
   { id: 'h_ribbon', kind: 'hat', rarity: 'N', name: 'リボン' },
   { id: 'h_hachimaki', kind: 'hat', rarity: 'N', name: 'はちまき' },
-  { id: 'h_beret', kind: 'hat', rarity: 'N', name: 'ベレーぼう' },
-  { id: 'h_sprout', kind: 'hat', rarity: 'N', name: 'ふたば' },
-  { id: 'h_witch', kind: 'hat', rarity: 'R', name: 'まほうのぼうし' },
-  { id: 'h_straw', kind: 'hat', rarity: 'R', name: 'むぎわらぼうし' },
-  { id: 'h_cat', kind: 'hat', rarity: 'R', name: 'ねこみみ' },
+  { id: 'h_beret', kind: 'hat', rarity: 'N', name: 'ベレー帽' },
+  { id: 'h_sprout', kind: 'hat', rarity: 'N', name: '双葉' },
+  { id: 'h_witch', kind: 'hat', rarity: 'R', name: '魔法の帽子' },
+  { id: 'h_straw', kind: 'hat', rarity: 'R', name: '麦わら帽子' },
+  { id: 'h_cat', kind: 'hat', rarity: 'R', name: '猫耳' },
   { id: 'h_shades', kind: 'hat', rarity: 'R', name: 'サングラス' },
   { id: 'h_tiara', kind: 'hat', rarity: 'SR', name: 'ティアラ' },
-  { id: 'h_pirate', kind: 'hat', rarity: 'SR', name: 'かいぞくぼうし' },
-  { id: 'h_starcrown', kind: 'hat', rarity: 'SSR', name: 'ほしのかんむり' },
-  { id: 'h_kabuto', kind: 'hat', rarity: 'SSR', name: 'でんせつのかぶと' },
-  { id: 'h_flower', kind: 'hat', rarity: 'N', name: 'はなかざり' },
+  { id: 'h_pirate', kind: 'hat', rarity: 'SR', name: '海賊帽子' },
+  { id: 'h_starcrown', kind: 'hat', rarity: 'SSR', name: '星の冠' },
+  { id: 'h_kabuto', kind: 'hat', rarity: 'SSR', name: '伝説のかぶと' },
+  { id: 'h_flower', kind: 'hat', rarity: 'N', name: '花飾り' },
   { id: 'h_cap', kind: 'hat', rarity: 'N', name: 'キャップ' },
-  { id: 'h_chef', kind: 'hat', rarity: 'R', name: 'コックぼうし' },
-  { id: 'h_bunny', kind: 'hat', rarity: 'R', name: 'うさみみ' },
-  { id: 'h_santa', kind: 'hat', rarity: 'SR', name: 'サンタぼうし' },
-  { id: 'h_dragonhorn', kind: 'hat', rarity: 'SSR', name: 'りゅうのつの' },
+  { id: 'h_chef', kind: 'hat', rarity: 'R', name: 'コック帽子' },
+  { id: 'h_bunny', kind: 'hat', rarity: 'R', name: 'うさ耳' },
+  { id: 'h_santa', kind: 'hat', rarity: 'SR', name: 'サンタ帽子' },
+  { id: 'h_dragonhorn', kind: 'hat', rarity: 'SSR', name: '竜の角' },
   // ---- 打つときのエフェクト ----
   { id: 'f_kira', kind: 'fx', rarity: 'N', name: 'きらきら', icon: '✨', shape: 'star', colors: ['#fff3bf', '#ffffff', '#ffd43b'], size: 5 },
-  { id: 'f_bubble', kind: 'fx', rarity: 'N', name: 'あわ', icon: '🫧', shape: 'circle', colors: ['#a5d8ff', '#e7f5ff', '#74c0fc'], size: 5, gravity: -0.06 },
+  { id: 'f_bubble', kind: 'fx', rarity: 'N', name: '泡', icon: '🫧', shape: 'circle', colors: ['#a5d8ff', '#e7f5ff', '#74c0fc'], size: 5, gravity: -0.06 },
   { id: 'f_heart', kind: 'fx', rarity: 'R', name: 'ハート', icon: '💗', shape: 'heart', colors: ['#ff6b9d', '#ffa8c5', '#ff8787'], size: 7 },
-  { id: 'f_snow', kind: 'fx', rarity: 'R', name: 'ゆき', icon: '❄️', shape: 'snow', colors: ['#ffffff', '#d0ebff', '#a5d8ff'], size: 6, gravity: 0.04 },
-  { id: 'f_note', kind: 'fx', rarity: 'R', name: 'おんぷ', icon: '🎵', shape: 'text', text: '♪', colors: ['#ffd43b', '#69db7c', '#4dabf7', '#f783ac'], size: 7, gravity: -0.04 },
-  { id: 'f_flame', kind: 'fx', rarity: 'SR', name: 'ほのお', icon: '🔥', shape: 'circle', colors: ['#ff922b', '#ffd43b', '#ff6b6b'], size: 6, gravity: -0.12 },
-  { id: 'f_sakura', kind: 'fx', rarity: 'SR', name: 'さくらふぶき', icon: '🌸', shape: 'petal', colors: ['#ffc9de', '#ffa8c5', '#fff0f6'], size: 6, gravity: 0.03 },
-  { id: 'f_rainbow', kind: 'fx', rarity: 'SSR', name: 'にじのほし', icon: '🌈', shape: 'star', colors: RAINBOW, size: 7 },
-  { id: 'f_thunder', kind: 'fx', rarity: 'SSR', name: 'いなずま', icon: '⚡', shape: 'star', colors: ['#fff27a', '#ffffff', '#74c0fc'], size: 6, bolt: true },
-  { id: 'f_leaf', kind: 'fx', rarity: 'N', name: 'はっぱ', icon: '🍃', shape: 'petal', colors: ['#69db7c', '#8ce99a', '#40c057'], size: 6, gravity: 0.03 },
+  { id: 'f_snow', kind: 'fx', rarity: 'R', name: '雪', icon: '❄️', shape: 'snow', colors: ['#ffffff', '#d0ebff', '#a5d8ff'], size: 6, gravity: 0.04 },
+  { id: 'f_note', kind: 'fx', rarity: 'R', name: '音符', icon: '🎵', shape: 'text', text: '♪', colors: ['#ffd43b', '#69db7c', '#4dabf7', '#f783ac'], size: 7, gravity: -0.04 },
+  { id: 'f_flame', kind: 'fx', rarity: 'SR', name: '炎', icon: '🔥', shape: 'circle', colors: ['#ff922b', '#ffd43b', '#ff6b6b'], size: 6, gravity: -0.12 },
+  { id: 'f_sakura', kind: 'fx', rarity: 'SR', name: '桜吹雪', icon: '🌸', shape: 'petal', colors: ['#ffc9de', '#ffa8c5', '#fff0f6'], size: 6, gravity: 0.03 },
+  { id: 'f_rainbow', kind: 'fx', rarity: 'SSR', name: '虹の星', icon: '🌈', shape: 'star', colors: RAINBOW, size: 7 },
+  { id: 'f_thunder', kind: 'fx', rarity: 'SSR', name: '稲妻', icon: '⚡', shape: 'star', colors: ['#fff27a', '#ffffff', '#74c0fc'], size: 6, bolt: true },
+  { id: 'f_leaf', kind: 'fx', rarity: 'N', name: '葉っぱ', icon: '🍃', shape: 'petal', colors: ['#69db7c', '#8ce99a', '#40c057'], size: 6, gravity: 0.03 },
   { id: 'f_coin', kind: 'fx', rarity: 'N', name: 'コイン', icon: '🪙', shape: 'circle', colors: ['#ffd43b', '#fab005', '#fff3bf'], size: 5 },
-  { id: 'f_candy', kind: 'fx', rarity: 'R', name: 'あめだま', icon: '🍬', shape: 'circle', colors: ['#ffa8c5', '#a5d8ff', '#b2f2bb', '#ffe066'], size: 6 },
-  { id: 'f_moon', kind: 'fx', rarity: 'R', name: 'みかづき', icon: '🌙', shape: 'text', text: '☾', colors: ['#ffe066', '#fff3bf'], size: 8, gravity: -0.03 },
+  { id: 'f_candy', kind: 'fx', rarity: 'R', name: 'あめ玉', icon: '🍬', shape: 'circle', colors: ['#ffa8c5', '#a5d8ff', '#b2f2bb', '#ffe066'], size: 6 },
+  { id: 'f_moon', kind: 'fx', rarity: 'R', name: '三日月', icon: '🌙', shape: 'text', text: '☾', colors: ['#ffe066', '#fff3bf'], size: 8, gravity: -0.03 },
   { id: 'f_ghost', kind: 'fx', rarity: 'SR', name: 'おばけ', icon: '👻', shape: 'text', text: '👻', colors: ['#fff'], size: 7, gravity: -0.05 },
-  { id: 'f_fireworks', kind: 'fx', rarity: 'SSR', name: 'はなび', icon: '🎆', shape: 'star', colors: ['#ff6b6b', '#ffd43b', '#4dabf7', '#f783ac', '#69db7c', '#ffffff'], size: 8 },
+  { id: 'f_fireworks', kind: 'fx', rarity: 'SSR', name: '花火', icon: '🎆', shape: 'star', colors: ['#ff6b6b', '#ffd43b', '#4dabf7', '#f783ac', '#69db7c', '#ffffff'], size: 8 },
   // ---- おとも (スライムの そばに いる 小さな なかま) ----
   { id: 'p_chick', kind: 'pet', rarity: 'N', name: 'ひよこ' },
-  { id: 'p_cat', kind: 'pet', rarity: 'N', name: 'こねこ' },
-  { id: 'p_bunny', kind: 'pet', rarity: 'R', name: 'こうさぎ' },
+  { id: 'p_cat', kind: 'pet', rarity: 'N', name: '子猫' },
+  { id: 'p_bunny', kind: 'pet', rarity: 'R', name: '子うさぎ' },
   { id: 'p_bat', kind: 'pet', rarity: 'R', name: 'ミニこうもり' },
   { id: 'p_ghost', kind: 'pet', rarity: 'R', name: 'ちびおばけ' },
   { id: 'p_robo', kind: 'pet', rarity: 'SR', name: 'ミニロボ' },
-  { id: 'p_fairy', kind: 'pet', rarity: 'SR', name: 'ほしのせい' },
+  { id: 'p_fairy', kind: 'pet', rarity: 'SR', name: '星の精' },
   { id: 'p_dragon', kind: 'pet', rarity: 'SSR', name: 'ミニドラゴン' },
   // とびらの ごほうび (ガチャでは 出ない)
-  { id: 'p_phoenix', kind: 'pet', rarity: 'SSR', name: 'ふしちょう', special: true },
+  { id: 'p_phoenix', kind: 'pet', rarity: 'SSR', name: '不死鳥', special: true },
 ];
 
 // ★4 に なったときの ごほうび: そのキャラ専用の いろ (ガチャでは 出ない)
 const AWAKEN_COLORS = {
-  purun: { name: 'すいしょう', colors: { main: '#99e9f2', light: '#ffffff', dark: '#0b7285', accent: '#ffd43b' } },
-  piriri: { name: 'しろいいなずま', colors: { main: '#f8f9fa', light: '#ffffff', dark: '#f08c00', accent: '#74c0fc' } },
+  purun: { name: '水晶', colors: { main: '#99e9f2', light: '#ffffff', dark: '#0b7285', accent: '#ffd43b' } },
+  piriri: { name: '白い稲妻', colors: { main: '#f8f9fa', light: '#ffffff', dark: '#f08c00', accent: '#74c0fc' } },
   gotsun: { name: 'ひすい', colors: { main: '#38d9a9', light: '#e6fcf5', dark: '#087f5b', accent: '#ffd43b' } },
-  homura: { name: 'あおいほのお', colors: { main: '#4dabf7', light: '#e7f5ff', dark: '#1864ab', accent: '#ffffff' } },
-  moririn: { name: 'もみじ', colors: { main: '#ff922b', light: '#fff4e6', dark: '#a63c06', accent: '#ffd43b' } },
-  kagemaru: { name: 'しろいかげ', colors: { main: '#f1f3f5', light: '#ffffff', dark: '#343a40', accent: '#e03131' } },
-  ryumaru: { name: 'せいりゅう', colors: { main: '#20c997', light: '#c3fae8', dark: '#054d3b', accent: '#ffd43b' } },
-  kirari: { name: 'よぞら', colors: { main: '#364fc7', light: '#dbe4ff', dark: '#0b1a5c', accent: '#ffe066' } },
+  homura: { name: '青い炎', colors: { main: '#4dabf7', light: '#e7f5ff', dark: '#1864ab', accent: '#ffffff' } },
+  moririn: { name: '紅葉', colors: { main: '#ff922b', light: '#fff4e6', dark: '#a63c06', accent: '#ffd43b' } },
+  kagemaru: { name: '白い影', colors: { main: '#f1f3f5', light: '#ffffff', dark: '#343a40', accent: '#e03131' } },
+  ryumaru: { name: '青竜', colors: { main: '#20c997', light: '#c3fae8', dark: '#054d3b', accent: '#ffd43b' } },
+  kirari: { name: '夜空', colors: { main: '#364fc7', light: '#dbe4ff', dark: '#0b1a5c', accent: '#ffe066' } },
   koorin: { name: 'オーロラ', colors: { main: '#b197fc', light: '#e3fafc', dark: '#087f5b', accent: '#63e6be' } },
-  fuwari: { name: 'はるかぜ', colors: { main: '#ffc9de', light: '#fff0f6', dark: '#a61e4d', accent: '#fff' } },
+  fuwari: { name: '春風', colors: { main: '#ffc9de', light: '#fff0f6', dark: '#a61e4d', accent: '#fff' } },
   metarun: { name: 'ゴールドメタル', colors: { main: '#fcc419', light: '#fff9db', dark: '#8a5a00', accent: '#e03131' } },
   onpuru: { name: 'ネオン', colors: { main: '#20c997', light: '#e6fcf5', dark: '#0b3d2e', accent: '#ff6bff' } },
   dororin: { name: 'ヘドロ', colors: { main: '#5c940d', light: '#d8f5a2', dark: '#1b3a05', accent: '#e599f7' } },
   gorurin: { name: 'ブラックゴールド', colors: { main: '#343a40', light: '#868e96', dark: '#000000', accent: '#ffd43b' } },
-  yukidarun: { name: 'ゆきどけ', colors: { main: '#ffc9de', light: '#ffffff', dark: '#e64980', accent: '#69db7c' } },
-  yuusharin: { name: 'まおうのよろい', colors: { main: '#3b1f6b', light: '#b197fc', dark: '#10002b', accent: '#ff006e' } },
-  saikoro: { name: 'くろダイス', colors: { main: '#343a40', light: '#495057', dark: '#000000', accent: '#ffd43b' } },
+  yukidarun: { name: '雪解け', colors: { main: '#ffc9de', light: '#ffffff', dark: '#e64980', accent: '#69db7c' } },
+  yuusharin: { name: '魔王のよろい', colors: { main: '#3b1f6b', light: '#b197fc', dark: '#10002b', accent: '#ff006e' } },
+  saikoro: { name: '黒ダイス', colors: { main: '#343a40', light: '#495057', dark: '#000000', accent: '#ffd43b' } },
   imomushi: { name: 'ルリタテハ', colors: { main: '#1c7ed6', light: '#a5d8ff', dark: '#0b3d6b', accent: '#ffd43b' } },
-  chochin: { name: 'しろちょうちん', colors: { main: '#f8f9fa', light: '#ffffff', dark: '#495057', accent: '#ff6b6b' } },
-  torio: { name: 'しんごう', colors: { main: '#51cf66', light: '#ebfbee', dark: '#1b5e20', accent: '#ffd43b', tri: [['#51cf66', '#1b5e20'], ['#ffd43b', '#b8860b'], ['#ff6b6b', '#a61e1e']] } },
-  yurarin: { name: 'しんかいの ひかり', colors: { main: '#1e1b4b', light: '#4c6ef5', dark: '#0b0a24', accent: '#63e6be' } },
+  chochin: { name: '白ちょうちん', colors: { main: '#f8f9fa', light: '#ffffff', dark: '#495057', accent: '#ff6b6b' } },
+  torio: { name: '信号', colors: { main: '#51cf66', light: '#ebfbee', dark: '#1b5e20', accent: '#ffd43b', tri: [['#51cf66', '#1b5e20'], ['#ffd43b', '#b8860b'], ['#ff6b6b', '#a61e1e']] } },
+  yurarin: { name: '深海の光', colors: { main: '#1e1b4b', light: '#4c6ef5', dark: '#0b0a24', accent: '#63e6be' } },
   fuerin: { name: 'いちごゼリー', colors: { main: '#ff8787', light: '#fff5f5', dark: '#c92a2a', accent: '#94d82d' } },
   pitarin: { name: 'ブラッドムーン', colors: { main: '#c92a2a', light: '#ffc9c9', dark: '#3a0808', accent: '#ffe066' } },
 };
 for (const [id, a] of Object.entries(AWAKEN_COLORS)) {
-  GACHA_ITEMS.push({ id: 'aw_' + id, kind: 'color', rarity: 'SSR', name: a.name, colors: a.colors, only: id, special: true });
+  GACHA_ITEMS.push({ id: 'aw_' + id, kind: 'color', rarity: 'EX', name: a.name, colors: a.colors, only: id, special: true });
 }
 
 // キャラも ガチャの なかみとして あつかう
@@ -258,14 +260,56 @@ function itemRate(it) {
   return share * r / POOL_ITEMS.filter(x => x.rarity === it.rarity).length;
 }
 
+// ★4 (かくせい MAX) に なった ものが あれば、その キャラ専用の いろを 結果に 足す
+function withAwakenBonus(res) {
+  return res.flatMap(r => (r.kind === 'awaken' && r.stars === AWAKEN_MAX ? [r, { it: ITEM_BY_ID['aw_' + r.it.char], kind: 'bonus' }] : [r]));
+}
+// ★4 の ごほうびを 大きく 見せる (Space・クリックで とじる)
+async function showAwakenRewards(res) {
+  for (const r of res) if (r.kind === 'awaken' && r.stars === AWAKEN_MAX) await showAwakenReward(r.it.char);
+}
+function showAwakenReward(id) {
+  return new Promise(done => {
+    const a = AWAKEN_COLORS[id], d = CHARACTERS[id];
+    const stage = charInfo(id).stage;
+    const el = document.createElement('div');
+    el.className = 'aw-reward';
+    el.innerHTML = `<div class="aw-rays"></div><div class="aw-box">
+      <div class="aw-title">🌟 覚醒MAX！ 🌟</div>
+      <div class="aw-stars">★★★★</div>
+      <div class="sprite aw-sprite">${slimeSVG(id, stage, { colors: a.colors, stars: 4 })}</div>
+      <div class="aw-rar">★4限定の色</div>
+      <div class="aw-name">「${a.name}」を獲得しました！</div>
+      <div class="aw-sub">${d.names[0]}だけの色。ガチャでは出ない。着せ替えで着られるよ</div>
+      <div class="aw-key"><kbd>Space</kbd>で閉じる</div></div>`;
+    document.body.appendChild(el);
+    SFX.levelup(); setTimeout(() => SFX.win(), 350);
+    setTimeout(() => { const p = FX.center(el.querySelector('.aw-sprite')); FX.burst(p.x, p.y, { colors: [...RAINBOW, '#fff'], count: 90, shape: 'star', size: 8, speed: 11 }); FX.confetti(); }, 300);
+    let closed = false;
+    const close = () => {
+      if (closed) return;
+      closed = true;
+      document.removeEventListener('keydown', onKey, true);
+      el.classList.add('out');
+      setTimeout(() => el.remove(), 300);
+      done();
+    };
+    const onKey = e => { if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } };
+    setTimeout(() => { if (!closed) document.addEventListener('keydown', onKey, true); }, 700);
+    el.onclick = close;
+    setTimeout(close, 7000);
+  });
+}
+
 // 結果の カード 1 まい
 function resultCard(r, delay = 0) {
   const it = r.it;
   const tag = r.kind === 'new' ? '<span class="gc-new">NEW!</span>'
-    : r.kind === 'awaken' ? `<span class="gc-aw">かくせい ${starText(r.stars)}</span>`
+    : r.kind === 'awaken' ? `<span class="gc-aw">覚醒${starText(r.stars)}</span>`
+      : r.kind === 'bonus' ? '<span class="gc-aw">★4ごほうび</span>'
       : `<span class="gc-shard">💎 +${r.n}</span>`;
   return `<div class="gc-card r-${it.rarity}" style="--rc:${RARITY[it.rarity].color};animation-delay:${delay}s">
-    <span class="gc-rar">${it.rarity}</span>
+    <span class="gc-rar">${RARITY[it.rarity].name}</span>
     ${itemIcon(it)}
     <div class="gc-name">${it.name}</div>
     <div class="gc-kind">${KIND_NAME[it.kind]}</div>
@@ -349,14 +393,14 @@ Screens.gacha = {
     this.render();
     if (arg && arg.daily != null) {
       if (arg.daily > 0) setTimeout(() => this.pullDaily(arg.daily), 300);
-      else toast('お題を 打ち切れなかったので ガチャは なし… また あした！', 2800);
+      else toast('お題を打ち切れなかったのでガチャはなし… また明日！', 2800);
     }
   },
 
   // まいにち タイピングガチャを はじめる (はじめた 時点で きょうの 1 回を つかう)
   startDaily() {
     if (this.busy) return;
-    if (dailyDone()) { SFX.miss(); toast('きょうの まいにち タイピングガチャは おわり。また あした！', 2400); return; }
+    if (dailyDone()) { SFX.miss(); toast('今日の毎日タイピングガチャは終わり。また明日！', 2400); return; }
     gachaData().daily = todayKey();
     Save.save();
     SFX.select();
@@ -370,11 +414,13 @@ Screens.gacha = {
     this.tab = 'result';
     this.last = null;
     this.render();
-    toast(`⌨️ まいにち タイピングガチャ: ${times} 回 まわす！`, 2200);
+    toast(`⌨️ 毎日タイピングガチャ: ${times}回回す！`, 2200);
     // 10 回ずつ 見せる。とばしたら のこりも とばす
     this.skip = false;
     for (let i = 0; i < res.length; i += 10) await this.show(res.slice(i, i + 10), true);
-    this.last = res;
+    await showAwakenRewards(res);
+    this.last = withAwakenBonus(res);
+    this.lastTimes = times;
     this.lastDaily = true;
     this.render();
     $('#gc-last').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -396,7 +442,7 @@ Screens.gacha = {
     $('#gc-collect').textContent = `${cc.have}/${cc.total}`;
     const dd = dailyDone();
     $('#gc-daily').classList.toggle('done', dd);
-    $('#gc-daily-sub').textContent = dd ? 'きょうは おわり。また あした！' : `${DAILY_SECS} 秒 タイピング → 打ち切った お題 1 つ で ${DAILY_PER_WORD} 回 ただで 回せる`;
+    $('#gc-daily-sub').textContent = dd ? '今日は終わり。また明日！' : `${DAILY_SECS}秒タイピング → 打ち切ったお題1つで${DAILY_PER_WORD}回無料で回せる`;
     $('#gc-one').disabled = coins < GACHA_COST;
     $('#gc-ten').disabled = coins < GACHA_COST10;
     document.querySelectorAll('#gc-tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === this.tab));
@@ -414,12 +460,13 @@ Screens.gacha = {
   resultHtml() {
     if (!this.last) {
       return `<div class="gc-empty">
-        <p class="gc-help">キャラが かぶると <b>せんざいかくせい</b> (★1〜★4) で 少し強くなる。<br>
-        ★4 の あとや、ほかのものが かぶると <b>かけら 💎</b> に なる。<br>かけらは <b>こうかんじょ</b> で 好きなものと こうかんできる。</p>
-        <p class="gc-help">コインは れんしゅう・バトル・サバイバル・しょうごう で もらえるよ</p></div>`;
+        <p class="gc-help">キャラがかぶると<b>潜在覚醒</b>（★1〜★4）で少し強くなる。<br>
+        ★4の後や、他のものがかぶると<b>かけら 💎</b>になる。<br>かけらは<b>交換所</b>で好きなものと交換できる。</p>
+        <p class="gc-help">コインは練習・バトル・サバイバル・称号でもらえるよ</p></div>`;
     }
+    const n = this.lastTimes || this.last.length;
     return `<div class="gc-results ${this.last.length > 1 ? 'ten' : 'one'}">${this.last.map((r, i) => resultCard(r, i * 0.05)).join('')}</div>
-      <div class="gc-again">${this.lastDaily ? `まいにち タイピングガチャで ${this.last.length} 回 まわした！　` : `<kbd>Space</kbd> もう一度 ${this.last.length > 1 ? '10 かい' : '1 かい'} 引く　`}<kbd>Esc</kbd> もどる</div>`;
+      <div class="gc-again">${this.lastDaily ? `毎日タイピングガチャで${n}回回した！　` : `<kbd>Space</kbd> もう一度${n > 1 ? '10回' : '1回'}引く　`}<kbd>Esc</kbd> 戻る</div>`;
   },
 
   // かけらの こうかんじょ
@@ -430,15 +477,15 @@ Screens.gacha = {
       const price = CHAR_PRICE[gacha ? 'gacha' : 'starter'];
       const aw = awakenOf(id);
       const full = hasChar(id) && aw >= AWAKEN_MAX;
-      const what = !hasChar(id) ? 'なかまにする' : full ? 'かくせい MAX' : `かくせい ★${aw + 1} にする`;
+      const what = !hasChar(id) ? '仲間にする' : full ? '覚醒MAX' : `覚醒★${aw + 1}にする`;
       return this.shopRow(CHAR_ITEMS.find(c => c.char === id), price, full, what);
     }).join('');
     const items = POOL_ITEMS.filter(it => !hasItem(it.id))
       .sort((a, b) => Object.keys(RARITY).indexOf(b.rarity) - Object.keys(RARITY).indexOf(a.rarity))
-      .map(it => this.shopRow(it, RARITY[it.rarity].price, false, 'てにいれる')).join('');
-    return `<div class="gc-shop-head">もっている かけら <b>💎 ${g.shards}</b>　・　ボタンを 2 回 おすと こうかん</div>
+      .map(it => this.shopRow(it, RARITY[it.rarity].price, false, '手に入れる')).join('');
+    return `<div class="gc-shop-head">持っているかけら <b>💎 ${g.shards}</b>　・　ボタンを2回押すと交換</div>
       <h4>キャラ</h4><div class="gc-shop">${chars}</div>
-      <h4>まだ もっていない アイテム</h4><div class="gc-shop">${items || '<p class="gc-help">ぜんぶ あつめた！ すごい！</p>'}</div>`;
+      <h4>まだ持っていないアイテム</h4><div class="gc-shop">${items || '<p class="gc-help">全部集めた！ すごい！</p>'}</div>`;
   },
 
   shopRow(it, price, disabled, what) {
@@ -447,8 +494,8 @@ Screens.gacha = {
     const asking = this.confirm === it.id;
     return `<div class="gc-row r-${it.rarity}" style="--rc:${RARITY[it.rarity].color}">
       ${itemIcon(it)}
-      <div class="gc-row-body"><div class="gc-name">${it.name} <span class="gc-rar-s">${it.rarity}</span></div><div class="gc-kind">${KIND_NAME[it.kind]}・${what}</div></div>
-      <button class="gc-buy ${asking ? 'ask' : ''}" data-buy="${it.id}" ${can ? '' : 'disabled'}>${disabled ? '—' : asking ? 'こうかんする？' : `💎 ${price}`}</button></div>`;
+      <div class="gc-row-body"><div class="gc-name">${it.name} <span class="gc-rar-s">${RARITY[it.rarity].name}</span></div><div class="gc-kind">${KIND_NAME[it.kind]}・${what}</div></div>
+      <button class="gc-buy ${asking ? 'ask' : ''}" data-buy="${it.id}" ${can ? '' : 'disabled'}>${disabled ? '—' : asking ? '交換する？' : `💎 ${price}`}</button></div>`;
   },
 
   buy(id) {
@@ -462,7 +509,8 @@ Screens.gacha = {
     Save.save();
     this.confirm = null;
     SFX.levelup();
-    toast(r.kind === 'awaken' ? `${it.name} が かくせい ${starText(r.stars)} に なった！` : `${it.name} を てにいれた！`);
+    toast(r.kind === 'awaken' ? `${it.name}が覚醒${starText(r.stars)}になった！` : `${it.name}を手に入れた！`);
+    if (r.kind === 'awaken' && r.stars === AWAKEN_MAX) showAwakenReward(it.char);
     this.afterGet([r]);
     this.render();
   },
@@ -483,17 +531,17 @@ Screens.gacha = {
     const sec = (kind, list) => `<h4>${KIND_NAME[kind]}</h4><div class="gc-list">${list.map(it => {
       const own = it.kind === 'char' ? hasChar(it.char) : hasItem(it.id);
       return `<div class="gc-cell ${own ? 'own' : 'none'}" style="--rc:${RARITY[it.rarity].color}" title="${own ? it.name : '？？？'}">
-        <span class="gc-rar-s">${it.rarity}</span>${own ? itemIcon(it) : '<div class="gc-q">？</div>'}<div class="gc-name">${own ? it.name : '？？？'}</div>
+        <span class="gc-rar-s">${RARITY[it.rarity].name}</span>${own ? itemIcon(it) : '<div class="gc-q">？</div>'}<div class="gc-name">${own ? it.name : '？？？'}</div>
         <div class="gc-pct">${f(itemRate(it))}</div>
         ${it.kind === 'char' && hasChar(it.char) && awakenOf(it.char) ? `<div class="gc-stars">${starText(awakenOf(it.char))}</div>` : ''}</div>`;
     }).join('')}</div>`;
     return `<div class="gc-rates">
-        <h4>はいしゅつ かくりつ (1 回 あたり)</h4>
+        <h4>排出確率（1回あたり）</h4>
         ${table}
-        <div class="gc-help">10 回 引いて 9 回目までに SR 以上が 出なかったときは、10 回目は SR・SSR だけから 出る
-          (SSR ${f(sum('SSR') / g10)}・SR ${f(sum('SR') / g10)}。1 つ ずつの 確率は 上の ${+(1 / g10).toFixed(2)} 倍)</div>
-        <div class="gc-help">同じ レア度・同じ わく の 中は どれも 同じ 確率。キャラ枠: ガチャ限定 ${pct(GACHA_RATES.newChar)}・いつものキャラ ${pct(GACHA_RATES.starterChar)}。
-          のこり ${pct(1 - GACHA_RATES.newChar - GACHA_RATES.starterChar)} が アイテム (その中で ${ITEM_RATES.map(([k, p]) => `${k} ${pct(p)}`).join('・')})</div></div>
+        <div class="gc-help">10回引いて9回目までにSR以上が出なかったときは、10回目はSR・SSRだけから出る
+          （SSR ${f(sum('SSR') / g10)}・SR ${f(sum('SR') / g10)}。1つずつの確率は上の${+(1 / g10).toFixed(2)}倍）</div>
+        <div class="gc-help">同じレア度・同じ枠の中はどれも同じ確率。キャラ枠: ガチャ限定 ${pct(GACHA_RATES.newChar)}・いつものキャラ ${pct(GACHA_RATES.starterChar)}。
+          残り${pct(1 - GACHA_RATES.newChar - GACHA_RATES.starterChar)}がアイテム（その中で${ITEM_RATES.map(([k, p]) => `${k} ${pct(p)}`).join('・')}）</div></div>
       ${kinds.map(k => sec(k, k === 'char' ? CHAR_ITEMS : POOL_ITEMS.filter(i => i.kind === k))).join('')}`;
   },
 
@@ -501,13 +549,15 @@ Screens.gacha = {
   async pull(times) {
     if (this.busy) return;
     const res = pullGacha(times);
-    if (!res) { toast('コインが たりないよ'); return; }
+    if (!res) { toast('コインが足りないよ'); return; }
     this.busy = true;
     this.tab = 'result';
     this.last = null;
     this.render();
     await this.show(res);
-    this.last = res;
+    await showAwakenRewards(res);
+    this.last = withAwakenBonus(res);
+    this.lastTimes = times;
     this.render();
     $('#gc-last').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     const best = bestRarity(res);
@@ -539,7 +589,7 @@ Screens.gacha = {
       <div class="gs-item"></div>
       <div class="gs-stamp"></div>
       <div class="gs-tray ${ten ? 'ten' : ''}"></div>
-      <div class="gs-skip"><kbd>Space</kbd> で とばす</div>`;
+      <div class="gs-skip"><kbd>Space</kbd>で飛ばす</div>`;
     stage.style.setProperty('--spd', ten ? 0.7 : 1);
     stage.className = 'gc-stage show';
 
@@ -599,7 +649,7 @@ Screens.gacha = {
     if (direct) {
       // かくてい: 金色の まま ぶるぶる → 「かくてい！」
       set('center hold');
-      this.stamp(stage, 'かくてい！', 'small');
+      this.stamp(stage, '確定！', 'small');
       SFX.tone(160, 1.1, { type: 'sawtooth', vol: 0.035, slide: 520 });
       await this.wait(1200);
       await this.ssrReveal(stage, cap, base, set);
@@ -642,7 +692,7 @@ Screens.gacha = {
       // SSR キャラ: ひっさつと おなじ はでな カットインで おひろめ
       const d = CHARACTERS[r.it.char];
       await this.wait(500);
-      cutin(d.names[0], r.kind === 'new' ? 'SSR キャラが なかまに なった！' : 'SSR キャラが かさなった！', d.colors.main, slimeSVG(r.it.char, 0), 'ssr');
+      cutin(d.names[0], r.kind === 'new' ? 'SSRキャラが仲間になった！' : 'SSRキャラが重なった！', d.colors.main, slimeSVG(r.it.char, 0), 'ssr');
       SFX.entrance();
     }
     await this.wait(ssr ? 1800 : ten ? 650 : 900);
@@ -689,10 +739,10 @@ Screens.gacha = {
   // 新しい なかま・★4・しょうごうを 知らせる
   afterGet(res) {
     res.forEach((r, i) => {
-      if (r.it.kind === 'char' && r.kind === 'new') setTimeout(() => toast(`🎉 ${r.it.name} が なかまに なった！「スライムをかえる」で えらべるよ`, 3200), 900 + i * 200);
-      if (r.kind === 'awaken' && r.stars === AWAKEN_MAX) setTimeout(() => toast(`🌟 ${r.it.name} が かくせい MAX！ 専用の いろ「${AWAKEN_COLORS[r.it.char].name}」を てにいれた`, 3400), 900 + i * 200);
+      if (r.it.kind === 'char' && r.kind === 'new') setTimeout(() => toast(`🎉 ${r.it.name}が仲間になった！「スライムを変える」で選べるよ`, 3200), 900 + i * 200);
+      // ★4 は showAwakenReward で 大きく 見せる
     });
-    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 しょうごう「${a.name}」を 手に入れた！ (🪙+${ACH_COINS})`, 2600), 1800 + i * 2800));
+    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 1800 + i * 2800));
     this.render();
   },
 
@@ -704,7 +754,7 @@ Screens.gacha = {
     }
     // 回した あと: Space で おなじ 回数を もう一度、Esc で けっかを とじて ガチャ機に もどる
     if (this.last && this.tab === 'result') {
-      if (e.key === ' ' && !this.lastDaily) { e.preventDefault(); this.pull(this.last.length); return; }
+      if (e.key === ' ' && !this.lastDaily) { e.preventDefault(); this.pull(this.lastTimes || 1); return; }
       if (e.key === 'Escape') { this.last = null; SFX.select(); this.render(); return; }
     }
     if (e.key === '6') this.startDaily();
@@ -740,29 +790,29 @@ Screens.wardrobe = {
 
     $('#wd-preview').innerHTML = `<div class="sprite big bounce" id="wd-sprite">${slimeSVG(id, c.stage)}</div>
       <div class="wd-name">${c.name} <small>Lv.${c.L}</small></div>
-      <div class="wd-stars">${aw ? starText(aw) : '<small>かくせい なし</small>'}</div>
+      <div class="wd-stars">${aw ? starText(aw) : '<small>覚醒なし</small>'}</div>
       <div class="wd-aw">
-        <b>せんざいかくせい ${aw}/${AWAKEN_MAX}</b>
+        <b>潜在覚醒 ${aw}/${AWAKEN_MAX}</b>
         <span>能力値 +${Math.round(aw * AWAKEN_STAT * 100)}%　・　レベルの上限 Lv.${c.cap}</span>
-        <span>${aw ? `${AWAKEN_BONUS[id].desc} × ${aw}` : `★ 1 つごとに ${AWAKEN_BONUS[id].desc}`}</span>
-        <span class="wd-note">ガチャで ${CHARACTERS[id].names[0]} が かぶると ★ が ふえる。★4 で 専用の いろ「${AWAKEN_COLORS[id].name}」と しょうごう</span>
+        <span>${aw ? `${AWAKEN_BONUS[id].desc}×${aw}` : `★1つごとに${AWAKEN_BONUS[id].desc}`}</span>
+        <span class="wd-note">ガチャで${CHARACTERS[id].names[0]}がかぶると★が増える。★4で専用の色「${AWAKEN_COLORS[id].name}」と称号</span>
       </div>`;
 
     document.querySelectorAll('#wd-tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === this.tab));
     $('#wd-try').style.display = this.tab === 'fx' ? '' : 'none';
     const list = GACHA_ITEMS.filter(it => it.kind === this.tab && (!it.only || it.only === id) && (!it.special || hasItem(it.id)));
     const cur = w[this.tab];
-    const none = `<button class="wd-item ${!cur ? 'on' : ''}" data-id=""><div class="wd-none">なし</div><div class="gc-name">${this.tab === 'color' ? 'もとの いろ' : 'はずす'}</div></button>`;
+    const none = `<button class="wd-item ${!cur ? 'on' : ''}" data-id=""><div class="wd-none">なし</div><div class="gc-name">${this.tab === 'color' ? '元の色' : '外す'}</div></button>`;
     $('#wd-items').innerHTML = none + list.map(it => {
       const own = hasItem(it.id);
-      return `<button class="wd-item ${cur === it.id ? 'on' : ''} ${own ? '' : 'locked'}" data-id="${it.id}" style="--rc:${RARITY[it.rarity].color}" ${own ? '' : 'disabled'}>
-        <span class="gc-rar-s">${it.rarity}</span>
+      return `<button class="wd-item r-${it.rarity} ${cur === it.id ? 'on' : ''} ${own ? '' : 'locked'}" data-id="${it.id}" style="--rc:${RARITY[it.rarity].color}" ${own ? '' : 'disabled'}>
+        <span class="gc-rar-s">${RARITY[it.rarity].name}</span>
         ${own ? itemIcon(it, id) : '<div class="gc-q">？</div>'}
         <div class="gc-name">${own ? it.name : '？？？'}</div></button>`;
     }).join('');
     $('#wd-items').querySelectorAll('.wd-item:not(.locked)').forEach(b => { b.onclick = () => this.wear(b.dataset.id || null); });
     const owned = list.filter(it => hasItem(it.id)).length;
-    $('#wd-count').textContent = `${KIND_NAME[this.tab]} ${owned}/${list.length}${this.tab === 'fx' ? '　・　バトルの 攻撃の 弾と、お題を 打ちおわったときに 枠から 出る' : ''}`;
+    $('#wd-count').textContent = `${KIND_NAME[this.tab]} ${owned}/${list.length}${this.tab === 'fx' ? '　・　バトルの攻撃の弾と、お題を打ち終わったときに枠から出る' : ''}`;
   },
 
   wear(itemId) {

@@ -24,30 +24,30 @@ const SV_ENEMY_HP_BOOST = 1.0; // 敵1体のかたさの調整用 (1 = そのま
 // 難易度: 敵の HP・攻撃・出現数・ボスの HP・もらえる経験値の倍率
 const SV_DIFFS = {
   easy: {
-    name: 'かんたん', color: '#6dff8a', rec: 'Lv.1〜', hp: 0.8, dmg: 0.6, spawn: 0.85, bossHp: 0.45, exp: 0.7, boss: 'dragon',
-    desc: 'そうげんの 敵だけ。はじめての人に',
+    name: '簡単', color: '#6dff8a', rec: 'Lv.1〜', hp: 0.8, dmg: 0.6, spawn: 0.85, bossHp: 0.45, exp: 0.7, boss: 'dragon',
+    desc: '草原の敵だけ。初めての人に',
     tiers: [['bat', 'mush'], ['bat', 'mush', 'ghost'], ['mush', 'ghost', 'goblin'], ['ghost', 'goblin', 'golem']],
   },
   normal: {
-    name: 'ふつう', color: '#4fb3ff', rec: 'Lv.20〜', hp: 1.5, dmg: 1.35, spawn: 1.1, bossHp: 1.4, exp: 1, boss: 'kraken',
-    desc: 'うみの 敵も まざる。ボスは クラーケン',
+    name: '普通', color: '#4fb3ff', rec: 'Lv.20〜', hp: 1.5, dmg: 1.35, spawn: 1.1, bossHp: 1.4, exp: 1, boss: 'kraken',
+    desc: '海の敵も混ざる。ボスはクラーケン',
     tiers: [['bat', 'mush'], ['bat', 'ghost', 'crab'], ['ghost', 'goblin', 'jelly', 'crab'], ['goblin', 'golem', 'shark', 'jelly']],
   },
   hard: {
-    name: 'むずかしい', color: '#ffd23f', rec: 'Lv.45〜', hp: 2.5, dmg: 1.85, spawn: 1.3, bossHp: 2.4, exp: 1.6, boss: 'yeti',
-    desc: 'うみ と ゆきやまの 強い敵。ボスは イエティ',
+    name: '難しい', color: '#ffd23f', rec: 'Lv.45〜', hp: 2.5, dmg: 1.85, spawn: 1.3, bossHp: 2.4, exp: 1.6, boss: 'yeti',
+    desc: '海と雪山の強い敵。ボスはイエティ',
     tiers: [['crab', 'jelly'], ['jelly', 'shark', 'penguin'], ['penguin', 'snowman', 'wolf'], ['wolf', 'golem', 'snowman', 'shark']],
   },
   oni: {
-    name: 'おに', color: '#ff5d5d', rec: 'Lv.70〜', hp: 3.3, dmg: 2.0, spawn: 1.4, bossHp: 3.6, exp: 2.4, boss: 'demon',
-    desc: 'マグマのしろの 敵が だいしゅうごう。ボスは まおう',
+    name: '鬼', color: '#ff5d5d', rec: 'Lv.70〜', hp: 3.3, dmg: 2.0, spawn: 1.4, bossHp: 3.6, exp: 2.4, boss: 'demon',
+    desc: 'マグマの城の敵が大集合。ボスは魔王',
     tiers: [['crab', 'jelly', 'penguin'], ['penguin', 'wolf', 'snowman'], ['wolf', 'imp', 'salamander'], ['imp', 'salamander', 'mgolem']],
   },
   // いちばん 上: 「おに」を Lv70 で あそぶ 手ごたえを、Lv124・かくせい★4 で さらに 1.4 倍 きびしく したもの
   // (Lv が 上がると 自分の 攻撃力の 伸びが 敵より 大きいので、HP ×1.15・攻撃 ×2.26 で そろえてから ×1.4)
   hell: {
-    name: 'じごく', color: '#c77dff', rec: 'Lv.110〜', hp: 5.3, dmg: 6.3, spawn: 1.6, bossHp: 5.8, exp: 3.5, boss: 'v_demon',
-    desc: 'うらの せかいの へんい種が おしよせる。ボスは しんまおう',
+    name: '地獄', color: '#c77dff', rec: 'Lv.110〜', hp: 5.3, dmg: 6.3, spawn: 1.6, bossHp: 5.8, exp: 3.5, boss: 'v_demon',
+    desc: '裏の世界の変異種が押し寄せる。ボスは真魔王',
     tiers: [['v_jelly', 'v_penguin', 'wolf'], ['v_penguin', 'v_goblin', 'imp'], ['v_goblin', 'salamander', 'v_golem'], ['v_golem', 'mgolem', 'salamander', 'v_goblin']],
   },
 };
@@ -87,31 +87,31 @@ const SV_BOSS = {
   dragon: { name: 'ドラゴン', color: '#ff7a1a', core: '#ffe14d', ring: 10, aim: 3, spd: 190, dash: true },
   kraken: { name: 'クラーケン', color: '#7b2cbf', core: '#10002b', ring: 14, aim: 0, spd: 150, dash: false, summon: 'jelly' },
   yeti: { name: 'イエティ', color: '#a5d8ff', core: '#ffffff', ring: 8, aim: 5, spd: 240, dash: true, slow: true },
-  demon: { name: 'まおう', color: '#9d4edd', core: '#ff006e', ring: 16, aim: 3, spd: 200, dash: true, summon: 'imp', homing: true },
-  v_demon: { name: 'しんまおう', color: '#3bc9db', core: '#ffffff', ring: 20, aim: 4, spd: 230, dash: true, summon: 'v_goblin', homing: true },
+  demon: { name: '魔王', color: '#9d4edd', core: '#ff006e', ring: 16, aim: 3, spd: 200, dash: true, summon: 'imp', homing: true },
+  v_demon: { name: '真魔王', color: '#3bc9db', core: '#ffffff', ring: 20, aim: 4, spd: 230, dash: true, summon: 'v_goblin', homing: true },
 };
 
 // 武器
 const SV_WEAPONS = {
-  water: { name: 'みずでっぽう', icon: '💧', color: '#4fb3ff', desc: 'いちばん近い敵に 水の玉をうつ' },
-  thunder: { name: 'サンダー', icon: '⚡', color: '#ffe14d', desc: '近くの敵に かみなりを落とす' },
-  rock: { name: 'いわシールド', icon: '🪨', color: '#b08a64', desc: 'まわりを 岩がぐるぐる回って守る' },
-  fire: { name: 'ほのおのわ', icon: '🔥', color: '#ff7a1a', desc: 'まわりに 炎の輪を広げて 敵をはじく' },
-  boomerang: { name: 'ブーメラン', icon: '🪃', color: '#c38bff', desc: '進む方向に投げると もどってくる' },
-  star: { name: 'ホーミングスター', icon: '⭐', color: '#ffd43b', desc: '敵を おいかける 星をとばす' },
-  ice: { name: 'アイスノヴァ', icon: '❄️', color: '#a5d8ff', desc: '氷のつぶを 全方向にとばし 敵をおそくする' },
-  laser: { name: 'レーザー', icon: '🔆', color: '#ff5dd6', desc: '進む方向に 太いビームを 発射する' },
-  meteor: { name: 'メテオ', icon: '☄️', color: '#ff6a00', desc: '空から いんせきを落として 大ばくはつ' },
-  tornado: { name: 'たつまき', icon: '🌪️', color: '#96f2d7', desc: '敵を まきこむ たつまきを 生みだす' },
-  icicle: { name: 'つららのあめ', icon: '🧊', color: '#74c0fc', desc: '近くの敵に つららを 落として おそくする' },
-  wind: { name: 'かまいたち', icon: '🍃', color: '#63e6be', desc: '風の刃を まわり ぜんぶに とばす (つらぬく)' },
-  sonic: { name: 'ソニックウェーブ', icon: '🎵', color: '#ff8cc6', desc: '音の 輪を 広げて まわりの 敵を はじく' },
-  arrow: { name: 'つきのや', icon: '🏹', color: '#ffe066', desc: '近くで いちばん HP の 多い 敵を ねらう 強い 矢' },
-  poolw: { name: 'どくのぬま', icon: '☠️', color: '#9775fa', desc: '敵の 足もとに どくの ぬまを つくる (のっている 間 ダメージ)' },
-  coin: { name: 'こばんなげ', icon: '🪙', color: '#ffd43b', desc: 'こばんが 敵から 敵へ はねる' },
-  snowball: { name: 'ゆきだま', icon: '⛄', color: '#e7f5ff', desc: 'ゆきだまを なげて まわりの 敵を おそくする' },
-  sword: { name: 'ゆうしゃのけん', icon: '🗡️', color: '#4dabf7', desc: 'むいている 方向を おおきく なぎはらう' },
-  drill: { name: 'ドリル', icon: '🔩', color: '#adb5bd', desc: '近くの敵へ ドリルを うちだす。どこまでも つらぬく' },
+  water: { name: '水鉄砲', icon: '💧', color: '#4fb3ff', desc: '一番近い敵に水の玉を撃つ' },
+  thunder: { name: 'サンダー', icon: '⚡', color: '#ffe14d', desc: '近くの敵に雷を落とす' },
+  rock: { name: '岩シールド', icon: '🪨', color: '#b08a64', desc: '周りを岩がぐるぐる回って守る' },
+  fire: { name: '炎の輪', icon: '🔥', color: '#ff7a1a', desc: '周りに炎の輪を広げて敵をはじく' },
+  boomerang: { name: 'ブーメラン', icon: '🪃', color: '#c38bff', desc: '進む方向に投げると戻ってくる' },
+  star: { name: 'ホーミングスター', icon: '⭐', color: '#ffd43b', desc: '敵を追いかける星を飛ばす' },
+  ice: { name: 'アイスノヴァ', icon: '❄️', color: '#a5d8ff', desc: '氷の粒を全方向に飛ばし敵を遅くする' },
+  laser: { name: 'レーザー', icon: '🔆', color: '#ff5dd6', desc: '進む方向に太いビームを発射する' },
+  meteor: { name: 'メテオ', icon: '☄️', color: '#ff6a00', desc: '空から隕石を落として大爆発' },
+  tornado: { name: '竜巻', icon: '🌪️', color: '#96f2d7', desc: '敵を巻き込む竜巻を生み出す' },
+  icicle: { name: 'つららの雨', icon: '🧊', color: '#74c0fc', desc: '近くの敵につららを落として遅くする' },
+  wind: { name: 'かまいたち', icon: '🍃', color: '#63e6be', desc: '風の刃を周り全部に飛ばす（貫く）' },
+  sonic: { name: 'ソニックウェーブ', icon: '🎵', color: '#ff8cc6', desc: '音の輪を広げて周りの敵をはじく' },
+  arrow: { name: '月の矢', icon: '🏹', color: '#ffe066', desc: '近くで一番HPの多い敵を狙う強い矢' },
+  poolw: { name: '毒の沼', icon: '☠️', color: '#9775fa', desc: '敵の足元に毒の沼を作る（乗っている間ダメージ）' },
+  coin: { name: '小判投げ', icon: '🪙', color: '#ffd43b', desc: '小判が敵から敵へ跳ねる' },
+  snowball: { name: '雪玉', icon: '⛄', color: '#e7f5ff', desc: '雪玉を投げて周りの敵を遅くする' },
+  sword: { name: '勇者の剣', icon: '🗡️', color: '#4dabf7', desc: '向いている方向を大きくなぎ払う' },
+  drill: { name: 'ドリル', icon: '🔩', color: '#adb5bd', desc: '近くの敵へドリルを撃ち出す。どこまでも貫く' },
 };
 const SV_START_WEAPON = { purun: 'water', piriri: 'thunder', gotsun: 'rock', homura: 'fire', moririn: 'boomerang', kagemaru: 'star', ryumaru: 'meteor', kirari: 'laser', koorin: 'icicle', fuwari: 'wind', metarun: 'drill', onpuru: 'sonic', pitarin: 'arrow', dororin: 'poolw', gorurin: 'coin', yukidarun: 'snowball', yuusharin: 'sword', fuerin: 'ice', torio: 'star', yurarin: 'tornado', saikoro: 'boomerang', imomushi: 'poolw', chochin: 'fire' };
 
@@ -273,7 +273,7 @@ Screens.survival = {
     const w = SV_WEAPONS[SV_START_WEAPON[this.ch.id]];
     const best = k => {
       const b = Save.data.best['sv-' + k];
-      return b ? (b.cleared ? '<span class="svd-best clear">クリア済み</span>' : `<span class="svd-best">さいこう ${fmtTime(b.time)}</span>`) : '';
+      return b ? (b.cleared ? '<span class="svd-best clear">クリア済み</span>' : `<span class="svd-best">最高 ${fmtTime(b.time)}</span>`) : '';
     };
     const cards = SV_DIFF_KEYS.map((k, i) => {
       const d = SV_DIFFS[k];
@@ -290,13 +290,13 @@ Screens.survival = {
     }).join('');
     this.overlay(`<div class="ov-box sv-ready">
       <div class="ov-title">サバイバルモード</div>
-      <div class="ov-sub">まわりから せまる敵を たおして 生きのころう！ 2:30 に ボスが あらわれる</div>
+      <div class="ov-sub">周りから迫る敵を倒して生き残ろう！ 2:30にボスが現れる</div>
       <div class="svd-grid">${cards}</div>
       <div class="sv-rules">
-        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> いどう (攻撃は自動)　🎁 宝箱で 武器を入手・強化 (最大 ${SV_MAX_WEAPONS} こ)</div>
-        <div>💎 ジェム = 経験値　❤️ = 回復　さいしょの武器: ${w.icon} ${w.name}</div>
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動（攻撃は自動）　🎁 宝箱で武器を入手・強化（最大${SV_MAX_WEAPONS}個）</div>
+        <div>💎 ジェム = 経験値　❤️ = 回復　最初の武器: ${w.icon} ${w.name}</div>
       </div>
-      <div class="ov-key"><kbd>1</kbd>〜<kbd>${SV_DIFF_KEYS.length}</kbd> で難易度　<kbd>Space</kbd> でスタート</div></div>`);
+      <div class="ov-key"><kbd>1</kbd>〜<kbd>${SV_DIFF_KEYS.length}</kbd>で難易度　<kbd>Space</kbd>でスタート</div></div>`);
     document.querySelectorAll('.svd-card').forEach(b => { b.onclick = () => this.pickDiff(b.dataset.k); });
   },
 
@@ -469,7 +469,7 @@ Screens.survival = {
       const a = (i / n) * Math.PI * 2;
       this.enemies.push(this.makeEnemy(type, this.p.x + Math.cos(a) * 480, this.p.y + Math.sin(a) * 480));
     }
-    this.banner('かこまれた！');
+    this.banner('囲まれた！');
   },
 
   spawnBoss() {
@@ -485,7 +485,7 @@ Screens.survival = {
     $('#sv-boss').classList.add('show');
     SFX.thunder();
     this.shakeAmt = 16;
-    cutin('ボス しゅつげん！', `${SV_BOSS[id].name}が あらわれた`, SV_BOSS[id].color, enemySVG(id));
+    cutin('ボス出現！', `${SV_BOSS[id].name}が現れた`, SV_BOSS[id].color, enemySVG(id));
   },
 
   banner(text) {
@@ -894,7 +894,7 @@ Screens.survival = {
     if (cfg.dash && b.dashT <= 0) {
       b.dashT = enraged ? 6 : 8;
       b.warn = 0.7; b.aimx = ux; b.aimy = uy;
-      this.banner(`${cfg.name}の とっしん！`);
+      this.banner(`${cfg.name}の突進！`);
     }
   },
 
@@ -1090,16 +1090,16 @@ Screens.survival = {
     this.held.clear();
     SFX.levelup();
     const cards = this.choices.map((id, i) => {
-      if (id === 'heal') return `<button class="sv-choice" data-i="${i}"><span class="mc-key">${i + 1}</span><div class="svc-icon">❤️</div><div class="svc-name">かいふく</div><div class="svc-desc">武器はぜんぶ MAX！ HP を 40% 回復</div></button>`;
+      if (id === 'heal') return `<button class="sv-choice" data-i="${i}"><span class="mc-key">${i + 1}</span><div class="svc-icon">❤️</div><div class="svc-name">回復</div><div class="svc-desc">武器は全部MAX！ HPを40%回復</div></button>`;
       const w = SV_WEAPONS[id];
       const cur = this.weapons[id];
       const tag = cur ? `Lv.${cur.lv} → <b>Lv.${cur.lv + 1}</b>` : '<b class="new">NEW!</b>';
       return `<button class="sv-choice" data-i="${i}" style="--wc:${w.color}"><span class="mc-key">${i + 1}</span>
         <div class="svc-icon">${w.icon}</div><div class="svc-name">${w.name}</div><div class="svc-tag">${tag}</div><div class="svc-desc">${w.desc}</div></button>`;
     }).join('');
-    this.overlay(`<div class="ov-box chest"><div class="ov-title">🎁 たからばこ！</div><div class="ov-sub">ほしいものを えらぼう (武器 ${owned.length}/${SV_MAX_WEAPONS})</div>
+    this.overlay(`<div class="ov-box chest"><div class="ov-title">🎁 宝箱！</div><div class="ov-sub">欲しいものを選ぼう（武器 ${owned.length}/${SV_MAX_WEAPONS}）</div>
       <div class="sv-choices">${cards}</div>
-      <div class="ov-key"><kbd>A</kbd><kbd>D</kbd> で えらんで <kbd>Space</kbd> で けってい　(<kbd>1</kbd>〜<kbd>${this.choices.length}</kbd> でも えらべる)</div></div>`);
+      <div class="ov-key"><kbd>A</kbd><kbd>D</kbd>で選んで<kbd>Space</kbd>で決定　（<kbd>1</kbd>〜<kbd>${this.choices.length}</kbd>でも選べる）</div></div>`);
     document.querySelectorAll('.sv-choice').forEach(b => {
       b.onclick = () => this.choose(+b.dataset.i);
       b.onmouseenter = () => this.moveSel(+b.dataset.i - this.sel);
@@ -1519,8 +1519,8 @@ Screens.survival = {
     setTimeout(() => App.show('result', {
       mode: 'survival', won, time: this.time, kills: this.kills, gems: this.gems, diffName: d.name, diffColor: d.color, boss: d.boss,
       weapons: Object.entries(this.weapons).map(([id, w]) => ({ id, lv: w.lv })), expRes, newBest: better,
-      coins, coinNote: `(たおした数 ÷ 4 + 秒 ÷ 2${won ? ' + クリア 150' : ''}) × 難易度 ${d.exp}`,
-      expBreakdown: [`1 レベルぶん × 0.6 × 難易度 ${d.exp} × 生きのこった 時間 ${surv.toFixed(2)}${won ? ' × クリア 1.5' : ''}`],
+      coins, coinNote: `（倒した数÷4＋秒÷2${won ? '＋クリア150' : ''}）×難易度${d.exp}`,
+      expBreakdown: [`1レベル分×0.6×難易度${d.exp}×生き残った時間${surv.toFixed(2)}${won ? '×クリア1.5' : ''}`],
     }), 1800);
   },
 
@@ -1551,7 +1551,7 @@ Screens.survival = {
     if (e.key === 'Escape') {
       this.state = 'pause';
       this.held.clear();
-      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Esc</kbd> で再開　<kbd>Enter</kbd> でホームへ (記録なし)</div></div>');
+      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Esc</kbd>で再開　<kbd>Enter</kbd>でホームへ（記録なし）</div></div>');
       return;
     }
     if (KEY_DIR[k]) { this.held.add(k); e.preventDefault(); }

@@ -1485,3 +1485,32 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .slime .lantern { transform-origin: 60px 0; animation: lantern-sway 2.4s ease-in-out infinite alternate; }
 @keyframes lantern-sway { from { transform: rotate(6deg); } to { transform: rotate(-6deg); } }
 .badge.type-saikoro { background: #c92a2a; } .badge.type-imomushi { background: #5c940d; } .badge.type-chochin { background: #d9480f; }
+
+/* ---------- ★4げんてい (かくせい MAX の ごほうび): にじいろで SSR と 見わける ---------- */
+.gc-card.r-EX, .wd-item.r-EX { animation: ex-glow 3s linear infinite; }
+@keyframes ex-glow {
+  0%, 100% { box-shadow: 0 0 0 3px #ff6b6b, 0 0 20px rgba(255,107,107,.6); }
+  25% { box-shadow: 0 0 0 3px #ffd43b, 0 0 20px rgba(255,212,59,.6); }
+  50% { box-shadow: 0 0 0 3px #69db7c, 0 0 20px rgba(105,219,124,.6); }
+  75% { box-shadow: 0 0 0 3px #4dabf7, 0 0 20px rgba(77,171,247,.6); }
+}
+.r-EX .gc-rar, .r-EX .gc-rar-s { background: linear-gradient(90deg, #ff6b6b, #ffd43b, #69db7c, #4dabf7, #b197fc); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; }
+
+/* ★4 に なった ときの 演出 */
+.aw-reward { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; overflow: hidden; cursor: pointer;
+  background: radial-gradient(circle at 50% 45%, rgba(80, 30, 120, .9), rgba(8, 6, 24, .97)); animation: gs-fade .35s ease-out; }
+.aw-reward.out { opacity: 0; transition: opacity .3s; }
+.aw-rays { position: absolute; left: 50%; top: 45%; width: 180vmax; height: 180vmax; margin: -90vmax 0 0 -90vmax; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255,107,107,.3) 0 6deg, transparent 6deg 15deg, rgba(255,212,59,.3) 15deg 21deg, transparent 21deg 30deg, rgba(77,171,247,.3) 30deg 36deg, transparent 36deg 45deg);
+  -webkit-mask: radial-gradient(circle, #000 0 15%, transparent 60%); mask: radial-gradient(circle, #000 0 15%, transparent 60%); animation: gs-spin 8s linear infinite; }
+.aw-box { position: relative; text-align: center; display: grid; justify-items: center; gap: 6px; animation: gs-card .6s cubic-bezier(.3,1.6,.5,1) both; }
+.aw-title { font-family: var(--pixel); font-size: 40px; color: #fff; text-shadow: 0 0 16px #ff6bff, 0 4px 0 rgba(0,0,0,.4); }
+.aw-stars { font-size: 30px; letter-spacing: .15em; color: #ffd43b; text-shadow: 0 0 12px #ffd43b; }
+.aw-sprite { width: 200px; height: 200px; margin: 6px 0; }
+.aw-rar { font-family: var(--pixel); font-size: 18px; padding: 4px 16px; border-radius: 99px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
+  background: linear-gradient(90deg, #ff6b6b, #ffa94d, #ffd43b, #69db7c, #4dabf7, #9775fa); }
+.aw-name { font-size: 26px; font-weight: 800; color: #fff; }
+.aw-sub { font-size: 14px; color: var(--sub); }
+.aw-key { margin-top: 8px; font-size: 13px; color: var(--sub); }
+/* ホーム: 名前・札が 進化した キャラの つばさに かくれない ように 手前に */
+.home-char .hc-id { position: relative; z-index: 1; }

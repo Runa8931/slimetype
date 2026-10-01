@@ -3,10 +3,10 @@
 // ============================================================
 
 const DIFFS = {
-  easy: { name: 'かんたん', mult: 1.0, desc: '短い単語', ex: { ja: 'ねこ / 電車 / 学校', en: 'cat / slime / magic' } },
-  normal: { name: 'ふつう', mult: 1.2, desc: '少し長いことば', ex: { ja: '新幹線 / 必殺技', en: 'keyboard / adventure' } },
-  hard: { name: 'むずかしい', mult: 1.5, desc: 'ことわざ・文章', ex: { ja: '急がば回れ', en: 'practice makes perfect' } },
-  weak: { name: 'にがてキー特訓', mult: 1.2, desc: 'にがてなキーを たくさん使う お題', ex: { ja: '', en: '' } },
+  easy: { name: '簡単', mult: 1.0, desc: '短い単語', ex: { ja: 'ねこ / 電車 / 学校', en: 'cat / slime / magic' } },
+  normal: { name: '普通', mult: 1.2, desc: '少し長い言葉', ex: { ja: '新幹線 / 必殺技', en: 'keyboard / adventure' } },
+  hard: { name: '難しい', mult: 1.5, desc: 'ことわざ・文章', ex: { ja: '急がば回れ', en: 'practice makes perfect' } },
+  weak: { name: '苦手キー特訓', mult: 1.2, desc: '苦手なキーをたくさん使うお題', ex: { ja: '', en: '' } },
 };
 
 // にがてなキー (記録が少ないうちは まちがえやすい キーで練習する)
@@ -40,7 +40,7 @@ Screens.psetup = {
     const s = Save.data.settings;
     const wk = practiceWeakKeys();
     DIFFS.weak.ex = { ja: wk.keys.map(k => k.toUpperCase()).join(' '), en: wk.keys.map(k => k.toUpperCase()).join(' ') };
-    DIFFS.weak.desc = wk.fromRecord ? 'きろくした にがてキーを たくさん使う' : 'きろくが少ないので まちがえやすいキーで';
+    DIFFS.weak.desc = wk.fromRecord ? '記録した苦手キーをたくさん使う' : '記録が少ないので間違えやすいキーで';
     $('#diff-grid').innerHTML = Object.entries(DIFFS).map(([k, d], i) => `
       <button class="diff-card ${s.diff === k ? 'on' : ''} ${k === 'weak' && !doorOpen('weak') ? 'locked' : ''}" data-k="${k}">
         <span class="mc-key">${i + 1}</span>
@@ -104,10 +104,10 @@ Screens.practice = {
     $('#p-timebar').style.width = '100%';
     $('#p-exp').previousElementSibling.textContent = this.daily ? 'ガチャ' : '獲得EXP';
     this.overlay(this.daily
-      ? `<div class="ov-box"><div class="ov-title">⌨️ まいにち タイピングガチャ ・ ${this.duration}秒</div>
-        <div class="ov-sub">打ち切った お題 1 つ につき ガチャ ${DAILY_PER_WORD} 回！ (お題は ふつう)</div><div class="ov-key"><kbd>Space</kbd> でスタート</div></div>`
-      : `<div class="ov-box"><div class="ov-title">${DIFFS[this.diff].name} ・ ${this.duration}秒</div>
-      <div class="ov-sub">ホームポジションに指をおいて…</div><div class="ov-key"><kbd>Space</kbd> でスタート</div></div>`);
+      ? `<div class="ov-box"><div class="ov-title">⌨️ 毎日タイピングガチャ・${this.duration}秒</div>
+        <div class="ov-sub">打ち切ったお題1つにつきガチャ${DAILY_PER_WORD}回！（お題は普通）</div><div class="ov-key"><kbd>Space</kbd>でスタート</div></div>`
+      : `<div class="ov-box"><div class="ov-title">${DIFFS[this.diff].name}・${this.duration}秒</div>
+      <div class="ov-sub">ホームポジションに指を置いて…</div><div class="ov-key"><kbd>Space</kbd>でスタート</div></div>`);
   },
 
   leave() { this.state = 'off'; cancelAnimationFrame(this.raf); },
@@ -170,7 +170,7 @@ Screens.practice = {
     $('#p-kpm').textContent = this.elapsed() > 0 ? kpm : 0;
     $('#p-acc').textContent = Math.floor(acc * 100) + '%';
     $('#p-combo').textContent = this.combo;
-    $('#p-exp').textContent = this.daily ? `${this.words * DAILY_PER_WORD} 回` : typingExp(this.correct, this.miss, Math.max(this.elapsed(), 5), DIFFS[this.diff].mult, this.char.L);
+    $('#p-exp').textContent = this.daily ? `${this.words * DAILY_PER_WORD}回` : typingExp(this.correct, this.miss, Math.max(this.elapsed(), 5), DIFFS[this.diff].mult, this.char.L);
   },
 
   onKey(e) {
@@ -274,8 +274,8 @@ Screens.practice = {
     setTimeout(() => App.show('result', {
       mode: 'practice', diff: this.diff, correct, miss, acc, kpm, score, newBest, kps: correct / secs, bestKps: this.bestKps,
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
-      coins, coinNote: '打鍵 ÷ 8 × 正確率² × 難易度',
-      expBreakdown: [`1 レベルぶん ${levelNeed(this.char.L)} × (打鍵 ${correct} × 正確率² × (1 + ${kpm}/300) ÷ 600) × 難易度 ${DIFFS[this.diff].mult}`],
+      coins, coinNote: '打鍵÷8×正確率²×難易度',
+      expBreakdown: [`1レベル分${levelNeed(this.char.L)}×（打鍵${correct}×正確率²×（1＋${kpm}/300）÷600）×難易度${DIFFS[this.diff].mult}`],
     }), 1100);
   },
 };

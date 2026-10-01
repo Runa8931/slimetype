@@ -29,6 +29,8 @@ Screens.battle = {
     this.k = diffK(this.bd, idx); // 難易度と ステージで きまる 敵の 強さ
     const ch = charInfo(Save.data.active);
     this.ch = ch;
+    // ダイヤマイマイ: いどんだ キャラの レベルに あわせて つよく なる
+    if (this.ed.matchLv) this.ed = { ...this.ed, lv: Math.max(this.ed.lv, ch.L + this.ed.matchLv) };
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
     this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, evade: 0, reflect: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
@@ -75,10 +77,10 @@ Screens.battle = {
     this.updateCombo();
     this.overlay(`<div class="ov-box vs">
       <div class="vs-row"><div class="sprite">${slimeSVG(ch.id, ch.stage)}</div><div class="vs-text">VS</div><div class="sprite enemy-mini">${enemySVG(this.ed.id)}</div></div>
-      <div class="ov-title">${this.ed.name} があらわれた！</div>
+      <div class="ov-title">${this.ed.name}が現れた！</div>
       <div class="ov-sub">${this.ed.abilityDesc}</div>
       <div class="ov-diff" id="b-diff"></div>
-      <div class="ov-key"><kbd>A</kbd><kbd>D</kbd> で 難易度　<kbd>Space</kbd> でバトル開始</div></div>`);
+      <div class="ov-key"><kbd>A</kbd><kbd>D</kbd>で難易度　<kbd>Space</kbd>でバトル開始</div></div>`);
     this.renderDiff();
   },
 
@@ -87,7 +89,7 @@ Screens.battle = {
     const box = $('#b-diff');
     if (!box) return;
     box.innerHTML = `<span>難易度</span>${BATTLE_DIFF_KEYS.map((k, i) => `<button class="${k === this.dk ? 'on' : ''}" data-k="${k}" style="--dc:${BATTLE_DIFFS[k].color}"><kbd>${i + 1}</kbd> ${BATTLE_DIFFS[k].name}</button>`).join('')}
-      <small>推奨 Lv.${this.ed.lv}・敵の 攻撃 ×${this.k.toFixed(2)}・HP ×${Math.pow(this.k, 0.7).toFixed(2)}${this.bd.reward > 1 ? `・コイン ×${this.bd.reward}` : ''} (${this.bd.note})</small>`;
+      <small>推奨Lv.${this.ed.lv}・敵の攻撃×${this.k.toFixed(2)}・HP×${Math.pow(this.k, 0.7).toFixed(2)}${this.bd.reward > 1 ? `・コイン×${this.bd.reward}` : ''}（${this.bd.note}）</small>`;
     box.querySelectorAll('button').forEach(b => { b.onclick = () => this.pickDiff(b.dataset.k); });
   },
   pickDiff(k) {
@@ -180,18 +182,18 @@ Screens.battle = {
       }
     }
     const status = [
-      this.p.poisonUntil > this.elapsed ? `<i class="st poison">${this.ed.statusName || 'どく'}</i>` : '',
+      this.p.poisonUntil > this.elapsed ? `<i class="st poison">${this.ed.statusName || '毒'}</i>` : '',
       this.frozenUntil > this.elapsed ? '<i class="st frozen">こごえ</i>' : '',
       this.p.shield > 0 ? `<i class="st shield">シールド×${this.p.shield}</i>` : '',
       this.p.barrier > 0 ? `<i class="st barrier">バリア×${this.p.barrier}</i>` : '',
       this.p.evade > 0 ? `<i class="st evade">かわす×${this.p.evade}</i>` : '',
       this.p.reflect > 0 ? `<i class="st reflect">はね返し×${this.p.reflect}</i>` : '',
       this.tempo > 0 ? `<i class="st boost">テンポ×${this.tempo}</i>` : '',
-      this.snow > 0 ? `<i class="st frozen">ゆきだま×${this.snow}</i>` : '',
-      this.seg > 0 ? `<i class="st boost">からだ×${this.seg}</i>` : '',
-      this.luck > 0 ? `<i class="st boost">ぞろめ×${this.luck}</i>` : '',
-      this.p.boost > 1 ? '<i class="st boost">こうげきUP</i>' : '',
-      this.raging() ? '<i class="st rage">いかり</i>' : '',
+      this.snow > 0 ? `<i class="st frozen">雪玉×${this.snow}</i>` : '',
+      this.seg > 0 ? `<i class="st boost">体×${this.seg}</i>` : '',
+      this.luck > 0 ? `<i class="st boost">ぞろ目×${this.luck}</i>` : '',
+      this.p.boost > 1 ? '<i class="st boost">攻撃UP</i>' : '',
+      this.raging() ? '<i class="st rage">怒り</i>' : '',
       this.streakBonus() > 0 ? `<i class="st boost">リズム+${Math.round(this.streakBonus() * 100)}%</i>` : '',
     ].join('');
     // 変わったときだけ書きかえる (毎フレーム書きかえると重い)
@@ -232,11 +234,11 @@ Screens.battle = {
     }
     const estatus = [
       this.e.burnUntil > this.elapsed ? '<i class="st burn">やけど</i>' : '',
-      this.e.bindUntil > this.elapsed ? '<i class="st bind">しばり</i>' : '',
+      this.e.bindUntil > this.elapsed ? '<i class="st bind">縛り</i>' : '',
       this.e.chillUntil > this.elapsed ? '<i class="st frozen">こごえ</i>' : '',
       this.e.breakUntil > this.elapsed ? '<i class="st break">ブレイク</i>' : '',
-      this.e.poison > 0 ? `<i class="st poison">どく×${this.e.poison}</i>` : '',
-      this.e.weakUntil > this.elapsed ? '<i class="st bind">よわり</i>' : '',
+      this.e.poison > 0 ? `<i class="st poison">毒×${this.e.poison}</i>` : '',
+      this.e.weakUntil > this.elapsed ? '<i class="st bind">弱り</i>' : '',
     ].join('');
     if (estatus !== this._estatus) { this._estatus = estatus; $('#b-estatus').innerHTML = estatus; }
     $('#b-enemy').classList.toggle('bound', this.e.bindUntil > this.elapsed);
@@ -248,8 +250,8 @@ Screens.battle = {
       if (this.elapsed >= this.nextFog) {
         this.fogUntil = this.elapsed + 3500;
         this.nextFog = this.elapsed + 9000 + Math.random() * 3000;
-        const fogMsg = { salamander: 'かげろうで ガイドが ゆらめいた！', demon: 'やみで ガイドを かくした！' }[this.ed.id] || 'きりをだした！';
-        this.log(`${this.ed.name} は ${fogMsg}`, 'enemy');
+        const fogMsg = { salamander: 'かげろうでガイドが揺らめいた！', demon: '闇でガイドを隠した！' }[this.ed.id] || '霧を出した！';
+        this.log(`${this.ed.name}は${fogMsg}`, 'enemy');
         replayAnim($('#b-esprite'), 'cast', 600);
         this.render();
       }
@@ -269,7 +271,7 @@ Screens.battle = {
       this.shellUntil = now + 3000;
       this.nextShell = now + 9000 + Math.random() * 2000;
       SFX.guard();
-      this.log(`${this.ed.name} は みをまもっている！ (3秒間 ダメージ大はばダウン)`, 'enemy');
+      this.log(`${this.ed.name}は身を守っている！（3秒間ダメージ大幅ダウン）`, 'enemy');
       const c = ec(); FX.ring(c.x, c.y, '#74c0fc', 120, 30, 8);
     }
     $('#b-enemy').classList.toggle('shelled', this.shellUntil > now);
@@ -281,7 +283,7 @@ Screens.battle = {
       const c = ec();
       floatText(c.x, c.y - 60, `+${heal}`, 'heal');
       FX.ring(c.x, c.y, '#a5d8ff', 100, 26, 6);
-      this.log(`${this.ed.name} は HP を 回復した！`, 'enemy');
+      this.log(`${this.ed.name}はHPを回復した！`, 'enemy');
       this.updateBars();
     }
     // すみはき
@@ -297,7 +299,7 @@ Screens.battle = {
     if ((this.has('blizzard') || sand) && now >= this.nextBlizz) {
       this.blizzUntil = now + 4000;
       this.nextBlizz = now + (this.ed.boss ? 8000 : 11000) + Math.random() * 2000;
-      this.log(`${sand ? 'すなあらし' : 'ふぶき'}で 漢字と かなが 見えない！ ローマ字を たよりに打とう`, 'enemy');
+      this.log(`${sand ? '砂嵐' : '吹雪'}で漢字とかなが見えない！ ローマ字を頼りに打とう`, 'enemy');
       replayAnim($('#b-esprite'), 'cast', 600);
       SFX.noise(0.8, { vol: 0.1, filter: 2500 });
     }
@@ -310,7 +312,7 @@ Screens.battle = {
     if (this.has('wind') && now >= this.nextWind) {
       this.windUntil = now + 4000;
       this.nextWind = now + 10000 + Math.random() * 2000;
-      this.log('つよい風で 文字が ゆれている！', 'enemy');
+      this.log('強い風で文字が揺れている！', 'enemy');
       SFX.noise(0.6, { vol: 0.06, filter: 900 });
     }
     $('#b-tp').classList.toggle('windy', this.windUntil > now);
@@ -320,7 +322,7 @@ Screens.battle = {
       this.thunderAt = now + 3000;
       this.thunderWords = this.words;
       this.nextThunder = now + (this.ed.boss ? 7000 : 10000) + Math.random() * 2000;
-      this.log('⚡ かみなりが くる！ 3 秒以内に お題を 打ち切れ！', 'enemy');
+      this.log('⚡ 雷が来る！ 3秒以内にお題を打ち切れ！', 'enemy');
       SFX.charge();
     }
     const tw = $('#b-thunder');
@@ -332,7 +334,7 @@ Screens.battle = {
         this.thunderAt = 0;
         tw.className = 'thunder-warn';
         floatText(FX.center($('#b-psprite')).x, FX.center($('#b-psprite')).y - 60, 'かわした！', 'guard');
-        this.log('かみなりを かわした！', 'good');
+        this.log('雷をかわした！', 'good');
       } else if (left <= 0) {
         this.thunderAt = 0;
         tw.className = 'thunder-warn';
@@ -341,13 +343,13 @@ Screens.battle = {
         replayAnim(document.body, 'flash-white', 300);
         SFX.thunder();
         this.damagePlayer(Math.max(1, Math.round(this.p.max * (this.ed.boss ? 0.15 : 0.12))), 'big');
-        this.log('かみなりが おちた！', 'enemy');
+        this.log('雷が落ちた！', 'enemy');
       }
     }
 
     // ためこうげきの予告
     const charging = this.has('charge') && (this.e.attacks + 1) % 3 === 0 && this.e.gauge > 0.55;
-    if (charging && !this.chargeWarned) { this.chargeWarned = true; this.log(`${this.ed.name} は 力を ためている！`, 'enemy'); }
+    if (charging && !this.chargeWarned) { this.chargeWarned = true; this.log(`${this.ed.name}は力をためている！`, 'enemy'); }
     $('#b-enemy').classList.toggle('charging', charging);
     $('#b-tp').classList.toggle('frozen', this.frozenUntil > now);
   },
@@ -359,7 +361,7 @@ Screens.battle = {
       const x = 8 + Math.random() * 84, y = 35 + Math.random() * 55, r = 80 + Math.random() * 70;
       return `<i style="left:${x}%;top:${y}%;width:${r}px;height:${r * (0.7 + Math.random() * 0.4)}px"></i>`;
     }).join('');
-    this.log(`${this.ed.name}が すみを はいた！`, 'enemy');
+    this.log(`${this.ed.name}が墨を吐いた！`, 'enemy');
     SFX.noise(0.3, { vol: 0.12, filter: 600 });
     const c = FX.center($('#b-tp'));
     FX.burst(c.x, c.y, { colors: ['#10002b', '#3c096c'], count: 30, speed: 8, size: 7 });
@@ -435,7 +437,7 @@ Screens.battle = {
     if (e.key === 'Escape') {
       this.state = 'pause';
       cancelAnimationFrame(this.raf);
-      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Space</kbd> で再開　<kbd>Esc</kbd> でにげる</div></div>');
+      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Space</kbd>で再開　<kbd>Esc</kbd>で逃げる</div></div>');
       return;
     }
     if (e.key.length !== 1) return;
@@ -606,7 +608,7 @@ Screens.battle = {
     if (die) {
       const pc = FX.center($('#b-psprite'));
       floatText(pc.x + 50, pc.y - 60, '🎲' + die, die === 6 ? 'crit-label' : die <= 2 ? 'dmg poison' : 'combo-pop');
-      if (die === 6) this.log(`🎲 6 の 目！ ${dmg} ダメージ`, 'good');
+      if (die === 6) this.log(`🎲 6の目！ ${dmg}ダメージ`, 'good');
     }
     if (flare >= 0.3) {
       const pc = FX.center($('#b-psprite'));
@@ -615,11 +617,11 @@ Screens.battle = {
     if (trioHit) {
       const pc = FX.center($('#b-psprite'));
       floatText(pc.x, pc.y - 80, 'トリオボーナス！', 'crit-label');
-      this.log(`3 びきの れんけい！ トリオボーナスで ${dmg} ダメージ`, 'good');
+      this.log(`3匹の連携！ トリオボーナスで${dmg}ダメージ`, 'good');
     }
     // ふわり: ときどき もう 1 回 おいうち
     if (this.ch.id === 'fuwari' && Math.random() < this.ch.trait.double) {
-      this.after(() => { if (this.state === 'run') { this.playerAttackFx(Math.max(1, Math.round(dmg * 0.5)), { crit: false, boosted: false, armorMsg: '', perfect: false, sound: 'swish' }); this.log('おいかぜで おいうち！', 'good'); } }, 180);
+      this.after(() => { if (this.state === 'run') { this.playerAttackFx(Math.max(1, Math.round(dmg * 0.5)), { crit: false, boosted: false, armorMsg: '', perfect: false, sound: 'swish' }); this.log('追い風で追い打ち！', 'good'); } }, 180);
     }
     this.nextWord();
   },
@@ -669,10 +671,10 @@ Screens.battle = {
         if (f) FX.burst(to.x, to.y, { colors: f.colors, shape: f.shape, text: f.text, count: 14, speed: 6, size: f.size, gravity: f.gravity ?? 0.12 });
         this.hitEnemy(dmg, { crit, colors: f ? f.colors : [col.main, col.light, '#fff'], sound });
         if (this.ch.id === 'gorurin') this.healP(dmg * this.ch.trait.drain);
-        if (boosted) this.log('アクアパワーで こうげきが 1.5ばい！', 'good');
-        if (armorMsg === 'block') this.log('いしのよろいで ダメージがへった… (コンボ30で貫通)', 'enemy');
-        if (armorMsg === 'break' && Math.random() < 0.4) this.log('コンボの力で よろいを つらぬいた！', 'good');
-        if (armorMsg === 'shell' && Math.random() < 0.5) this.log('はじかれた！ ガードがとけるまで まとう', 'enemy');
+        if (boosted) this.log('アクアパワーで攻撃が強くなった！', 'good');
+        if (armorMsg === 'block') this.log('石のよろいでダメージが減った…（コンボ30で貫通）', 'enemy');
+        if (armorMsg === 'break' && Math.random() < 0.4) this.log('コンボの力でよろいを貫いた！', 'good');
+        if (armorMsg === 'shell' && Math.random() < 0.5) this.log('はじかれた！ ガードが解けるまで待とう', 'enemy');
       },
     });
   },
@@ -700,7 +702,7 @@ Screens.battle = {
     // ふつうと ちがう 当たり方は 音も かえる (ブレイク中は おもい 音)
     const special = sound || (broken ? 'heavy' : null);
     if (special) SFX.impact(special);
-    if (crit) { floatText(c.x, c.y - 90, 'かいしん！', 'crit-label'); SFX.crit(); shake($('#arena')); }
+    if (crit) { floatText(c.x, c.y - 90, '会心！', 'crit-label'); SFX.crit(); shake($('#arena')); }
     else if (!special) SFX.hit();
     if (broken && !big) shake($('#arena'));
     if (big) shake($('#arena'), true);
@@ -716,8 +718,8 @@ Screens.battle = {
       if (heads > this.e2.heads) {
         this.e2.heads = heads;
         $('#b-enemy').classList.add('angry');
-        this.log(`ヒュドラの 首が ${heads} 本になった！ ${heads} 回 攻撃してくる！`, 'enemy');
-        cutin(`首が ${heads} 本に！`, this.ed.name, '#7b2cbf', enemySVG(this.ed.id));
+        this.log(`ヒュドラの首が${heads}本になった！ ${heads}回攻撃してくる！`, 'enemy');
+        cutin(`首が${heads}本に！`, this.ed.name, '#7b2cbf', enemySVG(this.ed.id));
       }
     }
     // まおう: 3 段階
@@ -726,16 +728,16 @@ Screens.battle = {
         this.demonPhase = 1;
         this.nextFog = this.elapsed + 600;
         $('#arena').classList.add('dark');
-        this.log('まおうが やみの ちからを つかった！', 'enemy');
-        cutin('やみの ちから', this.ed.name, '#7b2cbf', enemySVG(this.ed.id));
+        this.log('魔王が闇の力を使った！', 'enemy');
+        cutin('闇の力', this.ed.name, '#7b2cbf', enemySVG(this.ed.id));
         SFX.thunder();
       }
       if (this.demonPhase === 1 && this.e.hp <= this.e.max / 3) {
         this.demonPhase = 2;
         this.e.angry = true;
         $('#b-enemy').classList.add('angry');
-        this.log('まおうが ほんきを だした！ ひっさつゲージが うばわれる！', 'enemy');
-        cutin('まおう ほんきモード', this.ed.name, '#ff006e', enemySVG(this.ed.id));
+        this.log('魔王が本気を出した！ 必殺ゲージが奪われる！', 'enemy');
+        cutin('魔王 本気モード', this.ed.name, '#ff006e', enemySVG(this.ed.id));
         SFX.thunder();
       }
       return;
@@ -743,21 +745,21 @@ Screens.battle = {
     if (this.has('ink') && !this.e2.double && this.e.hp <= this.e.max / 2) {
       this.e2.double = true;
       $('#b-enemy').classList.add('angry');
-      this.log(`${this.ed.name}が あばれだした！ 2 れんぞくで 攻撃してくる！`, 'enemy');
-      cutin('あばれる', this.ed.name, '#c9184a', enemySVG(this.ed.id));
+      this.log(`${this.ed.name}が暴れ出した！ 2連続で攻撃してくる！`, 'enemy');
+      cutin('暴れる', this.ed.name, '#c9184a', enemySVG(this.ed.id));
     }
     if (this.e.angry || this.e.hp > this.e.max / 2) return;
     if (this.has('rage')) {
       this.e.angry = true;
       $('#b-enemy').classList.add('angry');
-      this.log(`${this.ed.name} はおこりだした！ 攻撃が速くなった！`, 'enemy');
-      cutin('げきど！', this.ed.name, '#e0443e', enemySVG(this.ed.id));
+      this.log(`${this.ed.name}は怒り出した！ 攻撃が速くなった！`, 'enemy');
+      cutin('激怒！', this.ed.name, '#e0443e', enemySVG(this.ed.id));
     }
     if (this.has('dragon')) {
       this.e.angry = true;
       $('#b-enemy').classList.add('angry');
-      this.log(`${this.ed.name}が ほんきを だした！`, 'enemy');
-      cutin('ほんき モード', this.ed.name, '#ff6a00', enemySVG(this.ed.id));
+      this.log(`${this.ed.name}が本気を出した！`, 'enemy');
+      cutin('本気モード', this.ed.name, '#ff6a00', enemySVG(this.ed.id));
       SFX.thunder();
     }
   },
@@ -792,7 +794,7 @@ Screens.battle = {
         }
         floatText(pc.x, pc.y - 60, `+${heal}`, 'heal big');
         replayAnim($('#b-psprite'), 'glow', 900);
-        this.log(`${ch.name} の${sk.name}！ HP が ${heal} 回復した！${sk.barrier ? ' 水のバリアをはった！' : ''}`, 'good');
+        this.log(`${ch.name}の${sk.name}！ HPが${heal}回復した！${sk.barrier ? ' 水のバリアを張った！' : ''}`, 'good');
         this.updateBars();
       }, 700);
     }
@@ -810,8 +812,8 @@ Screens.battle = {
           if (this.state !== 'run') return;
           FX.burst(ec.x, ec.y, { colors: ['#fff27a', '#ffd23f', '#fff'], count: 60, speed: 10, shape: 'star', size: 7 });
           this.hitEnemy(dmg, { big: true, colors: ['#fff27a', '#fff'] });
-          this.log(`${sk.name}！ ${dmg} のダメージ！`, 'good');
-          if (sk.resetGauge) { this.e.gauge = 0; this.log('いかずちで 敵の攻撃を とめた！', 'good'); }
+          this.log(`${sk.name}！ ${dmg}のダメージ！`, 'good');
+          if (sk.resetGauge) { this.e.gauge = 0; this.log('いかずちで敵の攻撃を止めた！', 'good'); }
         }, 250);
       }, 700);
     }
@@ -842,36 +844,36 @@ Screens.battle = {
         this.after(() => {
           if (this.state !== 'run') return;
           this.hitEnemy(dmg, { big: true, colors: fxCol, sound: 'skill-' + ch.id });
-          if (ch.id === 'homura') { this.e.burnUntil = this.elapsed + sk.burn * 1000; this.e.nextBurn = this.elapsed + 1000; this.log(`${sk.name}！ ${dmg} のダメージ！ 敵が やけどした！`, 'good'); }
+          if (ch.id === 'homura') { this.e.burnUntil = this.elapsed + sk.burn * 1000; this.e.nextBurn = this.elapsed + 1000; this.log(`${sk.name}！ ${dmg}のダメージ！ 敵がやけどした！`, 'good'); }
           if (ch.id === 'moririn') {
             const h = Math.round(this.p.max * sk.heal);
             this.p.hp = Math.min(this.p.max, this.p.hp + h); this.p.poisonUntil = 0;
             floatText(pc.x, pc.y - 60, `+${h}`, 'heal big');
             SFX.heal();
-            this.log(`${sk.name}！ ${dmg} ダメージ、HP が ${h} 回復した！`, 'good');
+            this.log(`${sk.name}！ ${dmg}ダメージ、HPが${h}回復した！`, 'good');
             this.updateBars();
           }
-          if (ch.id === 'ryumaru') this.log(`${sk.name}！ ${dmg} のダメージ！`, 'good');
-          if (ch.id === 'koorin') { this.e.chillUntil = this.elapsed + sk.chill * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.chill} 秒 こごえさせた！`, 'good'); }
-          if (ch.id === 'fuwari') { this.p.evade = sk.evade; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの 攻撃を ${sk.evade} 回 かわす！`, 'good'); }
-          if (ch.id === 'dororin') { this.e.poison = Math.min(this.ch.trait.poisonMax + sk.addPoison, this.e.poison + sk.addPoison); this.e.nextPoison = this.elapsed + 1000; this.e.weakUntil = this.elapsed + sk.weaken * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、どく×${this.e.poison}、敵の 攻撃が よわく なった！`, 'good'); }
-          if (ch.id === 'gorurin') { this.healP(dmg * sk.skillDrain); this.log(`${sk.name}！ ${dmg} ダメージ、元気を すいとった！`, 'good'); }
-          if (ch.id === 'yukidarun') this.log(`${sk.name}！ ゆきだま ${this.snow} こ で ${dmg} ダメージ！`, 'good');
-          if (ch.id === 'yuusharin') { this.healP(this.p.max * sk.heal); this.e.gauge = 0; this.log(`${sk.name}！ ${dmg} ダメージ、HP 回復・敵の 攻撃を とめた！`, 'good'); }
-          if (ch.id === 'saikoro') { this.luck = sk.luck; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの ${sk.luck} かいは 4 いじょうの 目！`, 'good'); }
-          if (ch.id === 'imomushi') this.log(`${sk.name}！ 体 ${this.seg} つぶんで ${dmg} ダメージ！`, 'good');
-          if (ch.id === 'chochin') { this.p.barrier = Math.max(this.p.barrier, sk.guard); $('#b-player').classList.add('bubbled'); this.log(`${sk.name}！ ${dmg} ダメージ、ひとだまが ${sk.guard} かい まもる！`, 'good'); }
-          if (ch.id === 'torio') this.log(`${sk.name}！ 3 びきの 3 れんげきで ${dmg} ダメージ！`, 'good');
-          if (ch.id === 'yurarin') { this.forgiveUntil = this.elapsed + sk.forgiveSecs * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、${sk.forgiveSecs} 秒間 ミスが なかったことに なる！`, 'good'); }
-          if (ch.id === 'fuerin') this.log(`${sk.name}！ ${this.combo} コンボの ぶんしんで ${dmg} ダメージ！`, 'good');
-          if (ch.id === 'onpuru') { this.tempo = sk.tempo; this.tempoMult = sk.tempoMult; this.log(`${sk.name}！ ${dmg} ダメージ、つぎの ${sk.tempo} お題が ${sk.tempoMult} 倍！`, 'good'); }
-          if (ch.id === 'pitarin') { this.p.reflect = sk.reflect; this.log(`${sk.name}！ ${dmg} ダメージ、敵の 攻撃を ${sk.reflect} 回 はね返す！`, 'good'); }
-          if (ch.id === 'metarun') { this.e.breakUntil = this.elapsed + sk.brk * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.brk} 秒 ブレイク！`, 'good'); }
+          if (ch.id === 'ryumaru') this.log(`${sk.name}！ ${dmg}のダメージ！`, 'good');
+          if (ch.id === 'koorin') { this.e.chillUntil = this.elapsed + sk.chill * 1000; this.log(`${sk.name}！ ${dmg}ダメージ、敵を${sk.chill}秒こごえさせた！`, 'good'); }
+          if (ch.id === 'fuwari') { this.p.evade = sk.evade; this.log(`${sk.name}！ ${dmg}ダメージ、次の攻撃を${sk.evade}回かわす！`, 'good'); }
+          if (ch.id === 'dororin') { this.e.poison = Math.min(this.ch.trait.poisonMax + sk.addPoison, this.e.poison + sk.addPoison); this.e.nextPoison = this.elapsed + 1000; this.e.weakUntil = this.elapsed + sk.weaken * 1000; this.log(`${sk.name}！ ${dmg}ダメージ、毒×${this.e.poison}、敵の攻撃が弱くなった！`, 'good'); }
+          if (ch.id === 'gorurin') { this.healP(dmg * sk.skillDrain); this.log(`${sk.name}！ ${dmg}ダメージ、元気を吸い取った！`, 'good'); }
+          if (ch.id === 'yukidarun') this.log(`${sk.name}！ 雪玉${this.snow}個で${dmg}ダメージ！`, 'good');
+          if (ch.id === 'yuusharin') { this.healP(this.p.max * sk.heal); this.e.gauge = 0; this.log(`${sk.name}！ ${dmg}ダメージ、HP回復・敵の攻撃を止めた！`, 'good'); }
+          if (ch.id === 'saikoro') { this.luck = sk.luck; this.log(`${sk.name}！ ${dmg}ダメージ、次の${sk.luck}回は4以上の目！`, 'good'); }
+          if (ch.id === 'imomushi') this.log(`${sk.name}！ 体${this.seg}つ分で${dmg}ダメージ！`, 'good');
+          if (ch.id === 'chochin') { this.p.barrier = Math.max(this.p.barrier, sk.guard); $('#b-player').classList.add('bubbled'); this.log(`${sk.name}！ ${dmg}ダメージ、人魂が${sk.guard}回守る！`, 'good'); }
+          if (ch.id === 'torio') this.log(`${sk.name}！ 3匹の3連撃で${dmg}ダメージ！`, 'good');
+          if (ch.id === 'yurarin') { this.forgiveUntil = this.elapsed + sk.forgiveSecs * 1000; this.log(`${sk.name}！ ${dmg}ダメージ、${sk.forgiveSecs}秒間ミスがなかったことになる！`, 'good'); }
+          if (ch.id === 'fuerin') this.log(`${sk.name}！ ${this.combo}コンボの分身で${dmg}ダメージ！`, 'good');
+          if (ch.id === 'onpuru') { this.tempo = sk.tempo; this.tempoMult = sk.tempoMult; this.log(`${sk.name}！ ${dmg}ダメージ、次の${sk.tempo}お題が${sk.tempoMult}倍！`, 'good'); }
+          if (ch.id === 'pitarin') { this.p.reflect = sk.reflect; this.log(`${sk.name}！ ${dmg}ダメージ、敵の攻撃を${sk.reflect}回はね返す！`, 'good'); }
+          if (ch.id === 'metarun') { this.e.breakUntil = this.elapsed + sk.brk * 1000; this.log(`${sk.name}！ ${dmg}ダメージ、敵を${sk.brk}秒ブレイク！`, 'good'); }
           if (ch.id === 'kirari') {
             if (sk.barrier) { this.p.barrier = Math.max(this.p.barrier, sk.barrier); $('#b-player').classList.add('bubbled'); }
-            this.log(`${sk.name}！ ${dmg} のダメージ！${sk.barrier ? ' ひかりのかべを はった！' : ''}`, 'good');
+            this.log(`${sk.name}！ ${dmg}のダメージ！${sk.barrier ? ' 光の壁を張った！' : ''}`, 'good');
           }
-          if (ch.id === 'kagemaru') { this.e.bindUntil = this.elapsed + sk.bind * 1000; this.log(`${sk.name}！ ${dmg} ダメージ、敵を ${sk.bind} 秒 しばった！`, 'good'); }
+          if (ch.id === 'kagemaru') { this.e.bindUntil = this.elapsed + sk.bind * 1000; this.log(`${sk.name}！ ${dmg}ダメージ、敵を${sk.bind}秒縛った！`, 'good'); }
         }, 420);
       }, 700);
     }
@@ -883,7 +885,7 @@ Screens.battle = {
         $('#b-player').classList.add('shielded');
         FX.burst(pc.x, pc.y, { colors: [col.dark, col.main, col.accent], count: 30, speed: 6, shape: 'rect', size: 8 });
         FX.ring(pc.x, pc.y, col.accent, 100, 30, 8);
-        this.log(`${ch.name} の${sk.name}！ ${sk.guards} 回 ふせぐ！`, 'good');
+        this.log(`${ch.name}の${sk.name}！ ${sk.guards}回防ぐ！`, 'good');
       }, 700);
     }
     this.updateBars();
@@ -953,7 +955,7 @@ Screens.battle = {
     }
 
     if (breath) {
-      this.log('ドラゴンの ほのおのブレス！', 'enemy');
+      this.log('ドラゴンの炎のブレス！', 'enemy');
       for (let i = 0; i < 26; i++) {
         this.after(() => this.proj({ x: from.x - 60, y: from.y - 30 }, { x: to.x + (Math.random() - .5) * 60, y: to.y + (Math.random() - .5) * 60 },
           { color: i % 3 ? '#ff7a1a' : '#ffd23f', size: 6 + Math.random() * 8, frames: 16, arc: (Math.random() - .5) * 40, trail: false }), i * 18);
@@ -962,7 +964,7 @@ Screens.battle = {
       return;
     }
     if (charged) {
-      this.log(`${this.ed.name} の ためこうげき！`, 'enemy');
+      this.log(`${this.ed.name}のため攻撃！`, 'enemy');
       this.proj({ x: from.x - 30, y: from.y }, to, { ...s, size: s.size * 1.8, onHit: () => this.resolveEnemyHit(dmg, true) });
       return;
     }
@@ -994,7 +996,7 @@ Screens.battle = {
       this.p.reflect--;
       floatText(pc.x, pc.y - 50, 'はね返した！', 'guard');
       const ec = FX.center($('#b-esprite'));
-      this.proj(pc, ec, { color: '#ffe066', size: 12, frames: 14, arc: -30, onHit: () => { if (this.state === 'run') { this.hitEnemy(dmg, { colors: ['#ffe066', '#91a7ff', '#fff'], sound: 'reflect' }); this.log(`はね返して ${dmg} ダメージ！`, 'good'); } } });
+      this.proj(pc, ec, { color: '#ffe066', size: 12, frames: 14, arc: -30, onHit: () => { if (this.state === 'run') { this.hitEnemy(dmg, { colors: ['#ffe066', '#91a7ff', '#fff'], sound: 'reflect' }); this.log(`はね返して${dmg}ダメージ！`, 'good'); } } });
       return;
     }
     // ふわり: ひっさつで 攻撃を かわす
@@ -1030,7 +1032,7 @@ Screens.battle = {
       const ec = FX.center($('#b-esprite'));
       this.proj(pc, ec, {
         color: this.ch.def.colors.dark, size: 14, frames: 18, arc: -60,
-        onHit: () => { if (this.state === 'run') { this.hitEnemy(back, { colors: ['#b08a64', '#9be7a0', '#fff'], sound: 'rock' }); this.log(`はんげき！ ${back} ダメージ！`, 'good'); } },
+        onHit: () => { if (this.state === 'run') { this.hitEnemy(back, { colors: ['#b08a64', '#9be7a0', '#fff'], sound: 'rock' }); this.log(`反撃！ ${back}ダメージ！`, 'good'); } },
       });
       return;
     }
@@ -1042,7 +1044,7 @@ Screens.battle = {
       this.e.gauge = Math.max(0, this.e.gauge - this.ch.trait.pushback);
       const ec = FX.center($('#b-esprite'));
       FX.burst(ec.x, ec.y, { colors: ['#d0ebff', '#fff', '#74c0fc'], count: 18, speed: 5, shape: 'snow', size: 6 });
-      this.log('ひんやり やりかえした！ 敵の 攻撃が おくれる', 'good');
+      this.log('ひんやりやり返した！ 敵の攻撃が遅れる', 'good');
       SFX.impact('ice');
     }
     // 状態異常への強さ (進化で手に入る)
@@ -1051,26 +1053,26 @@ Screens.battle = {
     if (this.has('poison') && this.p.poisonUntil <= this.elapsed && statusCut < 1 && !burnSafe) {
       this.p.poisonUntil = this.elapsed + 5000 * (1 - statusCut);
       this.p.nextPoison = this.elapsed + 1000;
-      this.log(`${this.ed.statusName || 'どく'}を うけてしまった！`, 'enemy');
+      this.log(`${this.ed.statusName || '毒'}を受けてしまった！`, 'enemy');
     }
     // ぬかるみ
     if (this.has('mud')) {
       this.fogUntil = this.elapsed + 2500;
       this.p.skill = Math.max(0, this.p.skill - 10);
-      this.log('どろを かけられた！ ガイドが 見えにくい', 'enemy');
+      this.log('泥をかけられた！ ガイドが見えにくい', 'enemy');
       this.updateBars();
     }
     // こおりのいき / ふぶき: しばらく こごえて 攻撃が 弱くなる
     if ((this.has('freeze') || this.has('blizzard')) && !this.ch.trait.freezeImmune && statusCut < 1) {
       this.frozenUntil = this.elapsed + (this.has('freeze') ? 4000 : 3000);
-      this.log(`こごえてしまった！ ${this.has('freeze') ? 4 : 3} 秒間 攻撃が 弱くなる`, 'enemy');
+      this.log(`こごえてしまった！ ${this.has('freeze') ? 4 : 3}秒間攻撃が弱くなる`, 'enemy');
       FX.burst(pc.x, pc.y, { colors: ['#d0ebff', '#fff', '#74c0fc'], count: 24, speed: 6, shape: 'star', size: 6 });
       SFX.tone(1800, 0.3, { type: 'sine', vol: 0.05, slide: 600 });
     }
     // まおう (ほんき): ひっさつゲージを うばう
     if (this.has('demon') && this.demonPhase >= 2 && this.p.skill > 0) {
       this.p.skill = Math.max(0, this.p.skill - 10);
-      this.log('ひっさつゲージを うばわれた！', 'enemy');
+      this.log('必殺ゲージを奪われた！', 'enemy');
       this.updateBars();
     }
   },
@@ -1137,7 +1139,7 @@ Screens.battle = {
     const hdef = this.ed.hidden ? hiddenOf(this.idx) : null;
     const hiddenReward = won && hdef && hdef.reward && !hiddenCleared(hdef) ? hdef.reward : null;
     if (won && this.ed.hidden) (Save.data.hiddenClear = Save.data.hiddenClear || {})[this.ed.id] = Date.now();
-    if (hiddenReward) { gachaData().shards += hiddenReward.shards; setTimeout(() => toast(`🎁 かくしステージの ごほうび: 🪙 ${hiddenReward.coins}・💎 ${hiddenReward.shards}`, 3200), 1200); }
+    if (hiddenReward) { gachaData().shards += hiddenReward.shards; setTimeout(() => toast(`🎁 隠しステージのごほうび: 🪙 ${hiddenReward.coins}・💎 ${hiddenReward.shards}`, 3200), 1200); }
     if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); } // ずかん: たおした
     Save.data.totals.keys += this.correct;
     const expRes = grantExp(this.ch.id, typing + bonus);
@@ -1153,9 +1155,9 @@ Screens.battle = {
       correct: this.correct, miss: this.miss, acc,
       kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs), kps: this.correct / secs, bestKps: this.bestKps,
       maxCombo: this.maxCombo, words: this.words, missMap: this.missMap, expRes,
-      bdiff: this.dk, coins, coinNote: `${won ? `勝利 ${winCoins}` : `打鍵 ${winCoins}`}${rw > 1 ? ` (${this.bd.name} ×${rw})` : ''}${firstCoins ? ` + ${hiddenReward ? 'かくしステージの ごほうび' : 'はじめて たおした'} ${firstCoins}` : ''}${gap < 1 ? '・格下なので へった' : ''}`,
-      expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus} (Lv.${this.ed.lv} から つぎの ステージの レベルまでの 6 わり)` : '勝利ボーナスなし',
-        `レベル差の補正 ×${gap.toFixed(2)} (敵 Lv.${this.ed.lv} / 自分 Lv.${this.ch.L}${gap < 1 ? '・格下なので へった' : gap > 1 ? '・格上なので ふえた' : ''})`],
+      bdiff: this.dk, coins, coinNote: `${won ? `勝利 ${winCoins}` : `打鍵 ${winCoins}`}${rw > 1 ? ` (${this.bd.name} ×${rw})` : ''}${firstCoins ? ` + ${hiddenReward ? '隠しステージのごほうび' : '初めて倒した'} ${firstCoins}` : ''}${gap < 1 ? '・格下なので減った' : ''}`,
+      expBreakdown: [`タイピング ${typing}`, won ? `勝利ボーナス ${bonus}（Lv.${this.ed.lv}から次のステージのレベルまでの6割）` : '勝利ボーナスなし',
+        `レベル差の補正 ×${gap.toFixed(2)}（敵Lv.${this.ed.lv} / 自分Lv.${this.ch.L}${gap < 1 ? '・格下なので減った' : gap > 1 ? '・格上なので増えた' : ''}）`],
     });
   },
 };

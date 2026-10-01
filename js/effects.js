@@ -194,7 +194,7 @@ function cutin(title, sub, color, svgHtml, rank) {
   const el = document.createElement('div');
   el.className = 'cutin' + (rank ? ' cutin-rank cutin-' + rank : '');
   el.style.setProperty('--cut', color);
-  const label = rank === 'ssr' ? '<div class="cutin-label">✦ SSR ✦</div>' : rank === 'special' ? '<div class="cutin-label">★ とくべつ ★</div>' : '';
+  const label = rank === 'ssr' ? '<div class="cutin-label">✦ SSR ✦</div>' : rank === 'special' ? '<div class="cutin-label">★ 特別 ★</div>' : '';
   el.innerHTML = `<div class="cutin-band">${rank ? '<div class="cutin-lines"></div>' : ''}<div class="cutin-sprite">${svgHtml || ''}</div>
     <div class="cutin-text">${label}<div class="cutin-sub">${sub}</div><div class="cutin-title">${title}</div></div></div>`;
   document.body.appendChild(el);

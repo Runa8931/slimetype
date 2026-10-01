@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260930k">
+  <link rel="stylesheet" href="css/style.css?v=20261001b">
 </head>
 <body>
   <div class="meadow" id="meadow"></div>
@@ -18,19 +18,19 @@
   <section class="screen" id="scr-title">
     <div class="title-wrap">
       <div class="title-slimes" id="title-slimes"></div>
-      <h1 class="logo"><span class="logo-sub">うって そだてて たたかう</span><span id="logo-text">スライム<br>タイピング</span></h1>
-      <button class="btn big pulse" id="btn-start">はじめる <kbd>Space</kbd></button>
+      <h1 class="logo"><span class="logo-sub">打って 育てて 戦う</span><span id="logo-text">スライム<br>タイピング</span></h1>
+      <button class="btn big pulse" id="btn-start">始める <kbd>Space</kbd></button>
       <p class="note">※ 入力は「半角英数」モードで行ってください</p>
     </div>
   </section>
 
   <!-- キャラクター選択 -->
   <section class="screen" id="scr-select">
-    <h2 class="screen-title">いっしょに冒険するスライムをえらぼう</h2>
+    <h2 class="screen-title">一緒に冒険するスライムを選ぼう</h2>
     <p class="screen-desc">スライムごとにレベルは別々に記録されます。あとから何度でも変えられます。</p>
-    <details class="base-rules select-rules"><summary>ふつうの キャラの 基本 (くらべる ための 数字)</summary><ul id="base-rules"></ul></details>
+    <details class="base-rules select-rules"><summary>普通のキャラの基本（比べるための数字）</summary><ul id="base-rules"></ul></details>
     <div class="select-grid" id="select-grid"></div>
-    <div class="bottom-bar"><button class="btn ghost" id="btn-select-back">もどる <kbd>Esc</kbd></button></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-select-back">戻る <kbd>Esc</kbd></button></div>
   </section>
 
   <!-- ホーム -->
@@ -43,7 +43,7 @@
         </div>
         <button class="icon-btn" id="set-sound" title="効果音"></button>
         <label class="vol" title="効果音の大きさ">🔊 <input type="range" id="set-vol" min="0" max="100" step="5"><span id="set-vol-num"></span></label>
-        <button class="icon-btn" id="set-lite" title="パソコンが熱くなるときは ひかえめ にしてください"></button>
+        <button class="icon-btn" id="set-lite" title="パソコンが熱くなるときは控えめにしてください"></button>
       </div>
     </header>
     <div class="home-grid">
@@ -51,23 +51,23 @@
       <div class="home-menu">
         <button class="menu-card practice" id="go-practice">
           <span class="mc-key">1</span>
-          <span class="mc-title">れんしゅう</span>
+          <span class="mc-title">練習</span>
           <span class="mc-desc">タイピングして経験値をためよう</span>
         </button>
         <button class="menu-card battle" id="go-battle">
           <span class="mc-key">2</span>
           <span class="mc-title">バトル</span>
-          <span class="mc-desc">マップを走って、ステージの敵とタイピングでたたかう</span>
+          <span class="mc-desc">マップを走って、ステージの敵とタイピングで戦う</span>
         </button>
         <button class="menu-card survival" id="go-survival">
           <span class="mc-key">3</span>
           <span class="mc-title">サバイバル</span>
-          <span class="mc-desc">WASD で動いて、せまる敵の大群を 3 分しのげ！</span>
+          <span class="mc-desc">WASDで動いて、迫る敵の大群を3分しのげ！</span>
         </button>
         <button class="menu-card change" id="go-select">
           <span class="mc-key">4</span>
-          <span class="mc-title">スライムをかえる</span>
-          <span class="mc-desc">ほかのスライムも育ててみよう</span>
+          <span class="mc-title">スライムを変える</span>
+          <span class="mc-desc">他のスライムも育ててみよう</span>
         </button>
         <div class="menu-row">
           <button class="menu-card gacha" id="go-gacha">
@@ -77,14 +77,14 @@
           </button>
           <button class="menu-card wardrobe" id="go-wardrobe">
             <span class="mc-key">8</span>
-            <span class="mc-title">👕 きせかえ</span>
-            <span class="mc-desc">いろ・ぼうし・エフェクト</span>
+            <span class="mc-title">👕 着せ替え</span>
+            <span class="mc-desc">色・帽子・エフェクト</span>
           </button>
         </div>
         <div class="sub-menu">
-          <button class="sub-card" id="go-dex"><span class="mc-key">5</span>📖 モンスターずかん <small id="dex-count"></small></button>
-          <button class="sub-card" id="go-ach"><span class="mc-key">6</span>🏅 しょうごう <small id="ach-count"></small></button>
-          <button class="sub-card doors" id="go-doors"><span class="mc-key">9</span>🚪 ぼうけんのとびら <small id="doors-count"></small></button>
+          <button class="sub-card" id="go-dex"><span class="mc-key">5</span>📖 モンスター図鑑 <small id="dex-count"></small></button>
+          <button class="sub-card" id="go-ach"><span class="mc-key">6</span>🏅 称号 <small id="ach-count"></small></button>
+          <button class="sub-card doors" id="go-doors"><span class="mc-key">9</span>🚪 冒険の扉 <small id="doors-count"></small></button>
         </div>
         <div class="panel records" id="home-records"></div>
       </div>
@@ -93,7 +93,7 @@
 
   <!-- れんしゅう設定 -->
   <section class="screen" id="scr-psetup">
-    <h2 class="screen-title">れんしゅうモード</h2>
+    <h2 class="screen-title">練習モード</h2>
     <p class="screen-desc">制限時間内にたくさん正しく打つほど、経験値がもらえます。</p>
     <div class="diff-grid" id="diff-grid"></div>
     <div class="time-row">
@@ -101,7 +101,7 @@
       <div class="seg" id="time-seg"><button data-v="30">30秒</button><button data-v="60">60秒</button><button data-v="90">90秒</button></div>
     </div>
     <div class="bottom-bar">
-      <button class="btn ghost" id="btn-psetup-back">もどる <kbd>Esc</kbd></button>
+      <button class="btn ghost" id="btn-psetup-back">戻る <kbd>Esc</kbd></button>
       <button class="btn big" id="btn-psetup-start">スタート <kbd>Space</kbd></button>
     </div>
   </section>
@@ -110,7 +110,7 @@
   <section class="screen" id="scr-practice">
     <div class="timebar"><div class="timebar-fill" id="p-timebar"></div></div>
     <div class="hud">
-      <div class="hud-item"><span>のこり</span><b id="p-time">60</b></div>
+      <div class="hud-item"><span>残り</span><b id="p-time">60</b></div>
       <div class="hud-item"><span>打鍵/分</span><b id="p-kpm">0</b></div>
       <div class="hud-item"><span>正確率</span><b id="p-acc">100%</b></div>
       <div class="hud-item"><span>コンボ</span><b id="p-combo">0</b></div>
@@ -123,7 +123,7 @@
       </div>
     </div>
     <div class="kb" id="p-kb"></div>
-    <div class="hint">Esc でやめる</div>
+    <div class="hint">Escでやめる</div>
     <div class="overlay" id="p-overlay"></div>
   </section>
 
@@ -142,9 +142,9 @@
       </div>
       <div class="map-fade" id="map-fade"></div>
     </div>
-    <div class="map-help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> いどう　<kbd>Space</kbd> たたかう　<kbd>Tab</kbd> ステージいちらん (ワープ)　<kbd>Esc</kbd> ホーム</div>
+    <div class="map-help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動　<kbd>Space</kbd> 戦う　<kbd>Tab</kbd> ステージ一覧（ワープ）　<kbd>Esc</kbd> ホーム</div>
     <aside class="drawer" id="drawer">
-      <div class="drawer-head">ステージいちらん <small><kbd>W</kbd><kbd>S</kbd> えらぶ　<kbd>A</kbd><kbd>D</kbd> ワールド　<kbd>Space</kbd> ワープ　<kbd>Enter</kbd> たたかう　<kbd>Tab</kbd> とじる</small></div>
+      <div class="drawer-head">ステージ一覧 <small><kbd>W</kbd><kbd>S</kbd> 選ぶ　<kbd>A</kbd><kbd>D</kbd> ワールド　<kbd>Space</kbd> ワープ　<kbd>Enter</kbd> 戦う　<kbd>Tab</kbd> 閉じる</small></div>
       <div class="stage-list" id="stage-list"></div>
     </aside>
   </section>
@@ -163,12 +163,12 @@
         <div class="sv-timebar"><div class="sv-timefill" id="sv-timefill"></div><div class="sv-bossmark" title="ボス"></div></div>
       </div>
       <div class="sv-right">
-        <div>たおした <b id="sv-kills">0</b></div>
+        <div>倒した <b id="sv-kills">0</b></div>
         <div>ジェム <b id="sv-gems">0</b></div>
       </div>
     </div>
     <div class="sv-boss" id="sv-boss"><span>ドラゴン</span><div class="hpbar"><div class="hp-fill enemy-hp" id="sv-bosshp"></div></div></div>
-    <div class="hint">WASD: いどう　Esc: ポーズ</div>
+    <div class="hint">WASD: 移動　Esc: ポーズ</div>
     <div class="overlay" id="sv-overlay"></div>
   </section>
 
@@ -188,7 +188,7 @@
         <div class="f-info">
           <div class="f-name"><span id="b-ename"></span><small id="b-elv"></small><span class="status" id="b-estatus"></span></div>
           <div class="hpbar"><div class="hp-lag" id="b-ehp-lag"></div><div class="hp-fill enemy-hp" id="b-ehp"></div></div>
-          <div class="atk-gauge"><span>こうげき</span><div class="atk-bar"><div class="atk-fill" id="b-atk"></div></div></div>
+          <div class="atk-gauge"><span>攻撃</span><div class="atk-bar"><div class="atk-fill" id="b-atk"></div></div></div>
         </div>
         <div class="sprite" id="b-esprite"></div>
       </div>
@@ -207,35 +207,35 @@
         <div class="skill-hint" id="b-skillhint">ためています…</div>
       </div>
     </div>
-    <div class="hint">ゲージ満タンで ひっさつわざ自動発動　Esc: ポーズ</div>
+    <div class="hint">ゲージ満タンで必殺技が自動発動　Esc: ポーズ</div>
     <div class="overlay" id="b-overlay"></div>
   </section>
 
   <!-- モンスターずかん -->
   <section class="screen" id="scr-dex">
-    <h2 class="screen-title">モンスターずかん</h2>
+    <h2 class="screen-title">モンスター図鑑</h2>
     <p class="screen-desc" id="dex-desc"></p>
     <div class="dex-wrap">
       <div class="dex-list" id="dex-list"></div>
       <div class="dex-detail panel" id="dex-detail"></div>
     </div>
-    <div class="bottom-bar"><button class="btn ghost" id="btn-dex-back">もどる <kbd>Esc</kbd></button></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-dex-back">戻る <kbd>Esc</kbd></button></div>
   </section>
 
   <!-- しょうごう -->
   <section class="screen" id="scr-ach">
-    <h2 class="screen-title">しょうごう</h2>
+    <h2 class="screen-title">称号</h2>
     <p class="screen-desc" id="ach-desc"></p>
     <div class="ach-list" id="ach-list"></div>
-    <div class="bottom-bar"><button class="btn ghost" id="btn-ach-back">もどる <kbd>Esc</kbd></button></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-ach-back">戻る <kbd>Esc</kbd></button></div>
   </section>
 
   <!-- ぼうけんのとびら -->
   <section class="screen" id="scr-doors">
-    <h2 class="screen-title">ぼうけんのとびら</h2>
+    <h2 class="screen-title">冒険の扉</h2>
     <p class="screen-desc" id="doors-desc"></p>
     <div class="doors-list" id="doors-list"></div>
-    <div class="bottom-bar"><button class="btn ghost" id="btn-doors-back">もどる <kbd>Esc</kbd></button></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-doors-back">戻る <kbd>Esc</kbd></button></div>
   </section>
 
   <!-- ガチャ -->
@@ -244,10 +244,10 @@
     <div class="gc-top">
       <span>🪙 コイン <b id="gc-coins">0</b></span>
       <span>💎 かけら <b id="gc-shards">0</b></span>
-      <span>📦 あつめた <b id="gc-collect">0</b></span>
+      <span>📦 集めた <b id="gc-collect">0</b></span>
     </div>
     <div class="seg gc-tabs" id="gc-tabs">
-      <button data-v="result"><kbd>3</kbd> 🎰 ガチャ</button><button data-v="shop"><kbd>4</kbd> 💎 こうかんじょ</button><button data-v="list"><kbd>5</kbd> 📦 ラインナップ</button>
+      <button data-v="result"><kbd>3</kbd> 🎰 ガチャ</button><button data-v="shop"><kbd>4</kbd> 💎 交換所</button><button data-v="list"><kbd>5</kbd> 📦 ラインナップ</button>
     </div>
     <div class="gc-main" id="gc-main">
       <div class="gc-spot">
@@ -264,34 +264,34 @@
         </div>
       </div>
       <div class="gc-btns">
-        <button class="btn gc-btn" id="gc-one"><span class="mc-key">1</span>1 かい 引く<small>🪙 100</small></button>
-        <button class="btn big gc-btn" id="gc-ten"><span class="mc-key">2</span>10 かい 引く<small>🪙 1000・SR以上 1つ かくてい</small></button>
+        <button class="btn gc-btn" id="gc-one"><span class="mc-key">1</span>1回引く<small>🪙 100</small></button>
+        <button class="btn big gc-btn" id="gc-ten"><span class="mc-key">2</span>10回引く<small>🪙 1000・SR以上1つ確定</small></button>
       </div>
-      <button class="btn gc-daily" id="gc-daily"><span class="mc-key">6</span>⌨️ まいにち タイピングガチャ <small>1 日 1 回</small><small id="gc-daily-sub"></small></button>
-      <button class="icon-btn gc-rates-btn" id="gc-rates-btn">📊 はいしゅつ かくりつを 見る <kbd>5</kbd></button>
+      <button class="btn gc-daily" id="gc-daily"><span class="mc-key">6</span>⌨️ 毎日タイピングガチャ <small>1日1回</small><small id="gc-daily-sub"></small></button>
+      <button class="icon-btn gc-rates-btn" id="gc-rates-btn">📊 排出確率を見る <kbd>5</kbd></button>
       <div class="gc-last" id="gc-last"></div>
     </div>
     <div class="gc-panel panel" id="gc-panel"></div>
-    <div class="bottom-bar"><button class="btn ghost" id="btn-gacha-back">もどる <kbd>Esc</kbd></button></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-gacha-back">戻る <kbd>Esc</kbd></button></div>
     <div class="gc-stage" id="gc-stage"></div>
   </section>
 
   <!-- きせかえ -->
   <section class="screen" id="scr-wardrobe">
-    <h2 class="screen-title">きせかえ</h2>
+    <h2 class="screen-title">着せ替え</h2>
     <div class="wd-chars" id="wd-chars"></div>
     <div class="wd-wrap">
       <div class="wd-preview panel" id="wd-preview"></div>
       <div class="wd-side">
         <div class="wd-head">
-          <div class="seg" id="wd-tabs"><button data-v="color"><kbd>1</kbd> いろ</button><button data-v="hat"><kbd>2</kbd> ぼうし</button><button data-v="fx"><kbd>3</kbd> エフェクト</button><button data-v="pet"><kbd>4</kbd> おとも</button></div>
+          <div class="seg" id="wd-tabs"><button data-v="color"><kbd>1</kbd> 色</button><button data-v="hat"><kbd>2</kbd> 帽子</button><button data-v="fx"><kbd>3</kbd> エフェクト</button><button data-v="pet"><kbd>4</kbd> お供</button></div>
           <small id="wd-count"></small>
-          <button class="icon-btn" id="wd-try">✨ ためす</button>
+          <button class="icon-btn" id="wd-try">✨ 試す</button>
         </div>
         <div class="wd-items panel" id="wd-items"></div>
       </div>
     </div>
-    <div class="bottom-bar"><button class="btn ghost" id="btn-wd-back">もどる <kbd>Esc</kbd></button></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-wd-back">戻る <kbd>Esc</kbd></button></div>
   </section>
 
   <!-- 結果 -->
@@ -299,26 +299,26 @@
     <div class="result-wrap" id="result-wrap"></div>
   </section>
 
-  <script src="js/romaji.js?v=20260930k"></script>
-  <script src="js/data.js?v=20260930k"></script>
-  <script src="js/describe.js?v=20260930k"></script>
-  <script src="js/words.js?v=20260930k"></script>
-  <script src="js/words2.js?v=20260930k"></script>
-  <script src="js/sprites.js?v=20260930k"></script>
-  <script src="js/enemies2.js?v=20260930k"></script>
-  <script src="js/effects.js?v=20260930k"></script>
-  <script src="js/audio.js?v=20260930k"></script>
-  <script src="js/main.js?v=20260930k"></script>
-  <script src="js/meadow.js?v=20260930k"></script>
-  <script src="js/playtime.js?v=20260930k"></script>
-  <script src="js/practice.js?v=20260930k"></script>
-  <script src="js/map.js?v=20260930k"></script>
-  <script src="js/battle.js?v=20260930k"></script>
-  <script src="js/survival.js?v=20260930k"></script>
-  <script src="js/collection.js?v=20260930k"></script>
-  <script src="js/gacha.js?v=20260930k"></script>
-  <script src="js/doors.js?v=20260930k"></script>
-  <script src="js/result.js?v=20260930k"></script>
+  <script src="js/romaji.js?v=20261001b"></script>
+  <script src="js/data.js?v=20261001b"></script>
+  <script src="js/describe.js?v=20261001b"></script>
+  <script src="js/words.js?v=20261001b"></script>
+  <script src="js/words2.js?v=20261001b"></script>
+  <script src="js/sprites.js?v=20261001b"></script>
+  <script src="js/enemies2.js?v=20261001b"></script>
+  <script src="js/effects.js?v=20261001b"></script>
+  <script src="js/audio.js?v=20261001b"></script>
+  <script src="js/main.js?v=20261001b"></script>
+  <script src="js/meadow.js?v=20261001b"></script>
+  <script src="js/playtime.js?v=20261001b"></script>
+  <script src="js/practice.js?v=20261001b"></script>
+  <script src="js/map.js?v=20261001b"></script>
+  <script src="js/battle.js?v=20261001b"></script>
+  <script src="js/survival.js?v=20261001b"></script>
+  <script src="js/collection.js?v=20261001b"></script>
+  <script src="js/gacha.js?v=20261001b"></script>
+  <script src="js/doors.js?v=20261001b"></script>
+  <script src="js/result.js?v=20261001b"></script>
   <script>App.boot();</script>
 </body>
 </html>
