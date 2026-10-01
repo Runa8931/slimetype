@@ -1542,17 +1542,15 @@ Screens.survival = {
       if (e.key === ' ' || e.key === 'Enter') this.choose(this.sel);
       return;
     }
-    if (this.state === 'pause') {
-      if (e.key.toLowerCase() === 's') { Settings.open(); return; }
-      if (e.key === 'Escape' || e.key === ' ') { this.state = 'run'; this.overlay(''); this.last = performance.now(); }
-      if (e.key === 'Enter') App.show('home');
-      return;
-    }
+    if (this.state === 'pause') return; // ポーズ中は 設定画面が キーを うけとる
     if (this.state !== 'run') return;
     if (e.key === 'Escape') {
+      // ポーズして 設定を 開く (閉じると 再開・Enter で ホームへ)
       this.state = 'pause';
       this.held.clear();
-      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Esc</kbd>で再開　<kbd>S</kbd>で設定　<kbd>Enter</kbd>でホームへ（記録なし）</div></div>');
+      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div></div>');
+      Settings.open({ title: 'ポーズ中', quit: { label: 'ホームへ（記録なし）', fn: () => App.show('home') },
+        onClose: () => { if (this.state === 'pause') { this.state = 'run'; this.overlay(''); this.last = performance.now(); } } });
       return;
     }
     if (KEY_DIR[k]) { this.held.add(k); e.preventDefault(); }

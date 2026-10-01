@@ -368,47 +368,14 @@ Screens.home = {
     // これまでの記録で とれる しょうごうが あれば 知らせる
     announceDoors(checkDoors(), 300);
     checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 400 + i * 2800));
-    document.querySelectorAll('#set-lang button').forEach(b => {
-      b.onclick = () => { Save.data.settings.lang = b.dataset.v; Save.save(); SFX.select(); this.render(); };
-    });
-    // 音量つまみ (動かすと ためしに音が鳴る)
-    const vol = $('#set-vol');
-    vol.value = Math.round(Save.data.settings.volume * 100);
-    $('#set-vol-num').textContent = vol.value + '%';
-    vol.oninput = () => {
-      Save.data.settings.volume = vol.value / 100;
-      SFX.setVolume(Save.data.settings.volume);
-    // 動作確認用: アドレスに ?mute=1 を付けたときは音を出さない (設定は保存しない)
-    if (new URLSearchParams(location.search).has('mute')) SFX.enabled = false;
-      $('#set-vol-num').textContent = vol.value + '%';
-      clearTimeout(this._volT);
-      this._volT = setTimeout(() => { Save.save(); SFX.select(); }, 120);
-    };
-
-    // エフェクトの量 (ひかえめ = パソコンへの負担を減らす)
-    $('#set-lite').onclick = () => {
-      Save.data.settings.lite = !Save.data.settings.lite;
-      document.body.classList.toggle('lite', Save.data.settings.lite);
-      FX.resize();
-      Save.save(); SFX.select(); this.render();
-      toast(Save.data.settings.lite ? 'エフェクトを控えめにしました（パソコンが熱くなりにくい）' : 'エフェクトを普通に戻しました');
-    };
+    // 音量・エフェクト・言語などは 設定画面 (settings.js) で 変える
     $('#go-settings').onclick = () => Settings.open();
-    $('#set-sound').onclick = () => {
-      Save.data.settings.sound = !Save.data.settings.sound;
-      applySettings();
-      Save.save(); SFX.select(); this.render();
-    };
   },
 
   render() {
     const c = charInfo(Save.data.active);
     const d = c.def;
     const s = Save.data.settings;
-    document.querySelectorAll('#set-lang button').forEach(b => b.classList.toggle('on', b.dataset.v === s.lang));
-    $('#set-sound').textContent = s.sound ? '♪ 効果音 ON' : '♪ 効果音 OFF';
-    $('#set-lite').textContent = s.lite ? '✨ エフェクト 控えめ' : '✨ エフェクト 普通';
-    $('#set-lite').classList.toggle('on', !!s.lite);
 
     const expPct = c.nextLvExp ? (c.exp - c.curLvExp) / (c.nextLvExp - c.curLvExp) * 100 : 100;
     const nextEvo = c.stage < EVO_LEVELS.length ? `Lv.${EVO_LEVELS[c.stage]}で${c.stage === EVO_LEVELS.length - 1 ? '最終' : ''}進化！` : '最後の姿';

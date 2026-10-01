@@ -428,17 +428,14 @@ Screens.battle = {
       if (e.key === 'Escape') App.show('stages');
       return;
     }
-    if (this.state === 'pause') {
-      if (e.key.toLowerCase() === 's') { Settings.open(); return; }
-      if (e.key === ' ') { this.state = 'run'; this.overlay(''); this.last = performance.now(); this.raf = requestAnimationFrame(t => this.tick(t)); }
-      if (e.key === 'Escape') App.show('stages');
-      return;
-    }
+    if (this.state === 'pause') return; // ポーズ中は 設定画面が キーを うけとる
     if (this.state !== 'run') return;
     if (e.key === 'Escape') {
+      // ポーズして 設定を 開く (閉じると 再開・Enter で 逃げる)
       this.state = 'pause';
       cancelAnimationFrame(this.raf);
-      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div><div class="ov-key"><kbd>Space</kbd>で再開　<kbd>S</kbd>で設定　<kbd>Esc</kbd>で逃げる</div></div>');
+      this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div></div>');
+      Settings.open({ title: 'ポーズ中', quit: { label: '逃げる（マップへ）', fn: () => App.show('stages') }, onClose: () => this.resume() });
       return;
     }
     if (e.key.length !== 1) return;
@@ -506,6 +503,15 @@ Screens.battle = {
     SFX.tone(700, 0.12, { type: 'sine', vol: 0.04, slide: 1100 });
     replayAnim($('#b-tp'), 'word-in', 200);
     return true;
+  },
+
+  // ポーズから 再開
+  resume() {
+    if (this.state !== 'pause') return;
+    this.state = 'run';
+    this.overlay('');
+    this.last = performance.now();
+    this.raf = requestAnimationFrame(t => this.tick(t));
   },
 
   // ---------------- プレイヤーの攻撃 ----------------

@@ -1,7 +1,8 @@
 // ============================================================
 //  設定画面 (どの画面からでも 開ける 小さな 窓)
-//  開き方: 0 キー (タイトル・ホーム・マップ など) / ポーズ中の S キー (バトル・サバイバル) / ホームの ⚙️ ボタン
-//  W/S で 項目を えらび、A/D で 変える。Esc で 閉じる
+//  開き方: 0 キー (タイトル・ホーム・マップ など) / ホームの ⚙️ ボタン /
+//         バトル・サバイバル・練習の 最中は Esc (ゲームが 止まり、下に「再開」「やめる」が 出る)
+//  W/S で 項目を えらび、A/D で 変える。Esc で 閉じる (ポーズ中なら 再開)
 // ============================================================
 
 // 0 キーで 開ける 画面 (タイピング中の 画面は のぞく。そこでは ポーズ中に S)
@@ -23,9 +24,11 @@ const Settings = {
   isOpen: false,
   sel: 0,
 
-  open() {
+  // opts.title: 上の 見出し / opts.quit: { label, fn } やめる ボタン / opts.onClose: 閉じたあと (再開など)
+  open(opts = {}) {
     if (this.isOpen) return;
     this.isOpen = true;
+    this.opts = opts;
     this.sel = 0;
     let el = $('#settings');
     if (!el) {
@@ -45,10 +48,10 @@ const Settings = {
     this.isOpen = false;
     $('#settings').classList.remove('show');
     SFX.select();
-    // ホームの 上の 部分 (言語・音量つまみ・ボタン) も そろえる
-    const vol = $('#set-vol');
-    if (vol) { vol.value = Math.round((Save.data.settings.volume ?? 0.8) * 100); $('#set-vol-num').textContent = vol.value + '%'; }
-    if (App.current === 'home' && Screens.home.render) Screens.home.render();
+    const after = this.opts && this.opts.onClose;
+    this.opts = null;
+    if (after) after();
+    if (App.current === 'home' && Screens.home.render) Screens.home.render(); // 言語の きろく 表示など
   },
 
   // 設定を 変えて すぐ 反映する
@@ -94,12 +97,16 @@ const Settings = {
         <div class="st-ctrl">${ctrl}</div></div>`;
     }).join('');
     const el = $('#settings');
+    const o = this.opts || {};
     el.innerHTML = `<div class="st-box">
-      <div class="st-title">⚙️ 設定</div>
+      <div class="st-title">${o.title ? `⏸️ ${o.title}` : '⚙️ 設定'}</div>
       <div class="st-rows">${rows}</div>
-      <div class="st-help"><kbd>W</kbd><kbd>S</kbd> 選ぶ　<kbd>A</kbd><kbd>D</kbd> 変える　<kbd>Esc</kbd> 閉じる</div>
-      <button class="btn ghost st-close">閉じる <kbd>Esc</kbd></button></div>`;
+      <div class="st-help"><kbd>W</kbd><kbd>S</kbd> 選ぶ　<kbd>A</kbd><kbd>D</kbd> 変える　<kbd>Esc</kbd> ${o.onClose ? '再開' : '閉じる'}${o.quit ? `　<kbd>Enter</kbd> ${o.quit.label}` : ''}</div>
+      <div class="set-actions">
+        <button class="btn ${o.onClose ? 'big' : 'ghost'} st-close">${o.onClose ? '▶ 再開' : '閉じる'} <kbd>Esc</kbd></button>
+        ${o.quit ? `<button class="btn ghost st-quit">${o.quit.label} <kbd>Enter</kbd></button>` : ''}</div></div>`;
     el.querySelector('.st-close').onclick = () => this.close();
+    if (o.quit) el.querySelector('.st-quit').onclick = () => this.quit();
     el.querySelectorAll('.st-row').forEach(r => { r.onmouseenter = () => { this.sel = +r.dataset.i; el.querySelectorAll('.st-row').forEach(x => x.classList.toggle('sel', x === r)); }; });
     el.querySelectorAll('.st-btn').forEach(b => { b.onclick = () => this.step(SETTING_ROWS[+b.dataset.i], +b.dataset.d); });
     el.querySelectorAll('.st-range').forEach(r => {
@@ -119,17 +126,28 @@ const Settings = {
   onKey(e) {
     const k = e.key.toLowerCase();
     e.preventDefault();
-    if (e.key === 'Escape' || e.key === '0') { this.close(); return; }
+    if (e.key === 'Escape' || (e.key === '0' && !(this.opts && this.opts.onClose))) { this.close(); return; }
+    if (e.key === 'Enter' && this.opts && this.opts.quit) { this.quit(); return; }
     if (k === 'w') { this.sel = (this.sel + SETTING_ROWS.length - 1) % SETTING_ROWS.length; SFX.select(); this.render(); }
     if (k === 's') { this.sel = (this.sel + 1) % SETTING_ROWS.length; SFX.select(); this.render(); }
     if (k === 'a') this.step(SETTING_ROWS[this.sel], -1);
     if (k === 'd') this.step(SETTING_ROWS[this.sel], 1);
-    if (e.key === ' ' || e.key === 'Enter') {
+    if (e.key === ' ' || (e.key === 'Enter' && !(this.opts && this.opts.quit))) {
       const row = SETTING_ROWS[this.sel];
       if (row.kind === 'bool') { this.set(row.id, !rowValue(row)); SFX.select(); this.render(); }
       else this.step(row, 1);
     }
   },
+};
+
+// ポーズ中の「やめる」 (再開は しない)
+Settings.quit = function () {
+  const q = this.opts && this.opts.quit;
+  this.opts = null; // onClose (再開) は よばない
+  this.isOpen = false;
+  $('#settings').classList.remove('show');
+  SFX.select();
+  if (q) q.fn();
 };
 
 // 「あり / なし」の いまの 値 (まだ 保存されて いない ものは あり あつかい。控えめ と 音は 保存された 値)

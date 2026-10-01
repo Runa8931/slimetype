@@ -1534,3 +1534,10 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .st-close { justify-self: center; }
 /* 練習の キーボードを かくす */
 body.no-kb #p-kb { display: none; }
+.set-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+/* 画面が 低くても 「再開」などの ボタンが はみ出さない ように: 項目の 部分だけ スクロール */
+.st-box { display: flex; flex-direction: column; gap: 8px; padding: 14px 20px; }
+.st-rows { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+.st-row { padding: 5px 12px; }
+.st-title { font-size: 22px; }
+.set-actions .btn.big { font-size: 18px; padding: 10px 22px; }

@@ -135,6 +135,16 @@ Screens.practice = {
     this.raf = requestAnimationFrame(t => this.tick(t));
   },
 
+  // ポーズから 再開 (止まっていた 時間は 数えない)
+  resume() {
+    if (this.state !== 'pause') return;
+    const d = performance.now() - this.pausedAt;
+    this.startAt += d;
+    if (this.wordStart) this.wordStart += d;
+    this.state = 'run';
+    this.raf = requestAnimationFrame(t => this.tick(t));
+  },
+
   tick(now) {
     if (this.state !== 'run') return;
     const el = (now - this.startAt) / 1000;
@@ -175,7 +185,16 @@ Screens.practice = {
 
   onKey(e) {
     // まいにちガチャは とちゅうで やめても それまでの ぶんは 回せる
-    if (e.key === 'Escape') { App.show(this.daily ? 'gacha' : 'psetup', this.daily ? { daily: this.words * DAILY_PER_WORD } : undefined); return; }
+    const quit = () => App.show(this.daily ? 'gacha' : 'psetup', this.daily ? { daily: this.words * DAILY_PER_WORD } : undefined);
+    if (e.key === 'Escape') {
+      if (this.state !== 'run') { quit(); return; }
+      // 打っている とちゅう: ポーズして 設定を 開く (閉じると 再開・Enter で やめる)
+      this.state = 'pause';
+      this.pausedAt = performance.now();
+      cancelAnimationFrame(this.raf);
+      Settings.open({ title: 'ポーズ中', quit: { label: this.daily ? 'やめてガチャへ' : 'やめる', fn: quit }, onClose: () => this.resume() });
+      return;
+    }
     if (this.state === 'ready') { if (e.key === ' ') this.countdown(); return; }
     if (this.state !== 'run' || e.key.length !== 1) return;
 
