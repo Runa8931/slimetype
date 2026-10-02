@@ -117,8 +117,11 @@ function saveSummary(raw) {
     let best = null, bestExp = -1;
     for (const [id, c] of Object.entries(d.chars || {})) if (CHARACTERS[id] && (c.exp || 0) > bestExp) { bestExp = c.exp || 0; best = id; }
     const grown = Object.entries(d.chars || {}).filter(([id, c]) => CHARACTERS[id] && (c.exp || 0) > 0).length;
+    // 解放した キャラ (hasChar と 同じ 決まり: ぷるん・ガチャで 出た・扉が 開いた)
+    const gc = (d.gacha && d.gacha.chars) || {}, dr = d.doors || {};
+    const owned = Object.keys(CHARACTERS).filter(id => !!gc[id] || (!CHARACTERS[id].gacha && (id === 'purun' || !!dr['ch_' + id]))).length;
     const pt = d.playtime ? Math.round((d.playtime.play || 0) + (d.playtime.est || 0)) : 0;
-    return { lv: best ? levelFromExp(bestExp) : 1, ch: best ? CHARACTERS[best].names[0] : '', cleared: d.cleared || 0, coins: d.coins || 0, grown, pt, ach: Object.keys(d.ach || {}).length };
+    return { lv: best ? levelFromExp(bestExp) : 1, ch: best ? CHARACTERS[best].names[0] : '', cleared: d.cleared || 0, coins: d.coins || 0, grown, owned, pt, ach: Object.keys(d.ach || {}).length };
   } catch (e) { return null; }
 }
 

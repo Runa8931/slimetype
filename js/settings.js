@@ -93,11 +93,11 @@ const Settings = {
     el.innerHTML = `<div class="st-box">
       <div class="st-title">🕘 前のセーブに戻す</div>
       <p class="bk-help">スライムタイピングを起動するたびに、その時のセーブを自動で控えています（1日1つと、新しい版にしたとき。最大6つ）。戻すと今のセーブは上書きされます（今のセーブも控えに残ります）。</p>
-      <div class="bk-now">${(() => { const m = saveSummary(JSON.stringify(Save.data)); return m ? `今のセーブ: 育てたキャラ <b>${m.grown}体</b>・ステージ ${m.cleared}/${MAIN_STAGES}・称号 ${m.ach}個・🪙 ${m.coins}` : ''; })()}</div>
+      <div class="bk-now">${(() => { const m = saveSummary(JSON.stringify(Save.data)); return m ? `今のセーブ: 解放したキャラ <b>${m.owned}体</b>・育てたキャラ ${m.grown}体・ステージ ${m.cleared}/${MAIN_STAGES}・称号 ${m.ach}個・🪙 ${m.coins}` : ''; })()}</div>
       <div class="bk-list">${list.length ? list.map((b, i) => {
         const m = saveSummary(b.raw); // 前の 版の 控えにも 新しい 項目を 出す
         return `<button class="bk-row" data-i="${i}"><kbd>${i + 1}</kbd><span class="bk-when">${new Date(b.at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}<small>${b.ver}${b.note ? '・' + b.note : ''}</small></span>
-          <span class="bk-sum">${m ? `育てたキャラ <b>${m.grown}体</b>（いちばん高い ${m.ch} Lv.${m.lv}）・ステージ ${m.cleared}/${MAIN_STAGES}・称号 ${m.ach}個・🪙 ${m.coins}${m.pt ? `・プレイ時間 ${fmtHMS(m.pt)}` : ''}` : '中身を読めない控え'}</span></button>`;
+          <span class="bk-sum">${m ? `解放したキャラ <b>${m.owned}体</b>・育てたキャラ ${m.grown}体（いちばん高い ${m.ch} Lv.${m.lv}）・ステージ ${m.cleared}/${MAIN_STAGES}・称号 ${m.ach}個・🪙 ${m.coins}${m.pt ? `・プレイ時間 ${fmtHMS(m.pt)}` : ''}` : '中身を読めない控え'}</span></button>`;
       }).join('') : '<div class="bk-empty">まだ控えがありません（次に起動したときから作られます）</div>'}</div>
       <div class="set-actions"><button class="btn ghost st-close">設定に戻る <kbd>Esc</kbd></button></div></div>`;
     el.querySelector('.st-close').onclick = () => { this.view = null; SFX.select(); this.render(); };
