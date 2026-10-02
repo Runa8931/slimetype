@@ -1616,3 +1616,6 @@ body.no-kb #p-kb { display: none; }
 .bk-when small { color: var(--sub); font-weight: 600; font-size: 11px; }
 .bk-sum { font-size: 14px; }
 .bk-empty { color: var(--sub); text-align: center; padding: 16px; }
+.bk-now { font-size: 13px; padding: 6px 10px; border-radius: 8px; background: rgba(77,171,247,.14); border: 1px solid rgba(77,171,247,.5); }
+.bk-sum b, .bk-now b { color: var(--gold); }
+.bk-when small { color: #ffd23f; }

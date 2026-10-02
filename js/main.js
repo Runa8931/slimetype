@@ -116,7 +116,9 @@ function saveSummary(raw) {
     const d = JSON.parse(raw);
     let best = null, bestExp = -1;
     for (const [id, c] of Object.entries(d.chars || {})) if (CHARACTERS[id] && (c.exp || 0) > bestExp) { bestExp = c.exp || 0; best = id; }
-    return { lv: best ? levelFromExp(bestExp) : 1, ch: best ? CHARACTERS[best].names[0] : '', cleared: d.cleared || 0, coins: d.coins || 0 };
+    const grown = Object.entries(d.chars || {}).filter(([id, c]) => CHARACTERS[id] && (c.exp || 0) > 0).length;
+    const pt = d.playtime ? Math.round((d.playtime.play || 0) + (d.playtime.est || 0)) : 0;
+    return { lv: best ? levelFromExp(bestExp) : 1, ch: best ? CHARACTERS[best].names[0] : '', cleared: d.cleared || 0, coins: d.coins || 0, grown, pt, ach: Object.keys(d.ach || {}).length };
   } catch (e) { return null; }
 }
 
