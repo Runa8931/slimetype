@@ -17,7 +17,7 @@ function starsFor(dk, acc, hpLeft) {
 function stageStars(i) { return (Save.data.stars || {})[i] || 0; }
 function starTotal() { let n = 0; for (let i = 0; i < MAIN_STAGES; i++) n += stageStars(i); return n; }
 function star3Count() { let n = 0; for (let i = 0; i < MAIN_STAGES; i++) if (stageStars(i) >= 3) n++; return n; }
-function starText(n) { return '★'.repeat(n) + '☆'.repeat(3 - n); }
+function stageStarText(n) { return '★'.repeat(n) + '☆'.repeat(3 - n); }
 
 // ---------------- ボスラッシュ ----------------
 const RUSH_LIST = WORLDS.map((w, i) => worldStages(i).slice(-1)[0]);
@@ -83,7 +83,7 @@ Screens.challenge = {
         <div class="ch-icon">⭐</div>
         <div class="ch-body">
           <div class="ch-name">ステージの★評価 <small>${starTotal()} / ${MAIN_STAGES * 3}</small></div>
-          <div class="ch-text">${STAR_RULES.map((t, i) => `${starText(i + 1)} ${t}`).join('<br>')}</div>
+          <div class="ch-text">${STAR_RULES.map((t, i) => `${stageStarText(i + 1)} ${t}`).join('<br>')}</div>
           <div class="ch-rec">★3のステージ: <b>${star3Count()} / ${MAIN_STAGES}</b>　・　マップのステージ情報に★が出る</div>
         </div>
       </div>`;

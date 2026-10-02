@@ -59,7 +59,7 @@ function diffBadges(i) {
   const b = stageBest(i);
   const st = i < MAIN_STAGES ? stageStars(i) : 0;
   return BATTLE_DIFF_KEYS.map((k, j) => `<span class="dmark ${b > j ? 'on' : ''}" style="--dc:${BATTLE_DIFFS[k].color}" title="${BATTLE_DIFFS[k].name}">${BATTLE_DIFFS[k].name[0]}</span>`).join('')
-    + (st ? `<span class="smark" title="★評価">${starText(st)}</span>` : '');
+    + (st ? `<span class="smark" title="★評価">${stageStarText(st)}</span>` : '');
 }
 
 // ガチャ限定キャラは ガチャで 出るまで つかえない
