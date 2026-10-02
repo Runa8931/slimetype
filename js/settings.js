@@ -21,6 +21,7 @@ const SETTING_ROWS = [
   // セーブの 書き出し・読み込み (ポーズ中は 出さない)
   { id: 'export', label: '💾 セーブを保存', kind: 'action', btn: 'ファイルに保存', note: 'パソコンを変える前や、新しい版にする前に', noPause: true, fn: () => exportSave() },
   { id: 'import', label: '📂 セーブを読み込む', kind: 'action', btn: 'ファイルを選ぶ', note: '保存したファイルから続きを遊ぶ（今のセーブは上書き）', noPause: true, fn: () => importSave() },
+  { id: 'restore', label: '🕘 前のセーブに戻す', kind: 'action', btn: '控えを見る', note: '起動したときの自動の控え（最大6つ）から戻す', noPause: true, fn: () => Settings.showBackups() },
 ];
 
 const Settings = {
@@ -52,6 +53,7 @@ const Settings = {
   close() {
     if (!this.isOpen) return;
     this.isOpen = false;
+    this.view = null;
     $('#settings').classList.remove('show');
     SFX.select();
     const after = this.opts && this.opts.onClose;
@@ -83,7 +85,38 @@ const Settings = {
     this.render();
   },
 
+  // 自動の 控えの 一覧 (数字キーで 戻す・Esc で 設定に 戻る)
+  showBackups() { this.view = 'backups'; SFX.select(); this.render(); },
+  renderBackups() {
+    const list = Save.backups().slice().reverse();
+    const el = $('#settings');
+    el.innerHTML = `<div class="st-box">
+      <div class="st-title">🕘 前のセーブに戻す</div>
+      <p class="bk-help">スライムタイピングを起動するたびに、その時のセーブを自動で控えています（1日1つと、新しい版にしたとき。最大6つ）。戻すと今のセーブは上書きされます（今のセーブも控えに残ります）。</p>
+      <div class="bk-list">${list.length ? list.map((b, i) => {
+        const m = b.sum;
+        return `<button class="bk-row" data-i="${i}"><kbd>${i + 1}</kbd><span class="bk-when">${new Date(b.at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}<small>${b.ver}${b.note ? '・' + b.note : ''}</small></span>
+          <span class="bk-sum">${m ? `${m.ch} Lv.${m.lv}・ステージ ${m.cleared}/${MAIN_STAGES}・🪙 ${m.coins}` : '中身を読めない控え'}</span></button>`;
+      }).join('') : '<div class="bk-empty">まだ控えがありません（次に起動したときから作られます）</div>'}</div>
+      <div class="set-actions"><button class="btn ghost st-close">設定に戻る <kbd>Esc</kbd></button></div></div>`;
+    el.querySelector('.st-close').onclick = () => { this.view = null; SFX.select(); this.render(); };
+    el.querySelectorAll('.bk-row').forEach(b => { b.onclick = () => this.restoreBackup(list[+b.dataset.i]); });
+  },
+  restoreBackup(b) {
+    if (!b) return;
+    if (!confirm(`${new Date(b.at).toLocaleString('ja-JP')} の控えに戻します。\n今のセーブは上書きされます（今のセーブも控えに残ります）。よろしいですか？`)) return;
+    try {
+      Save.keepBackup(localStorage.getItem(Save.KEY) || '', '戻す前のセーブ');
+      // 書いた 回数は 今より 大きく して、ほかの タブに 古い データだと 思われないように する
+      const d = JSON.parse(b.raw); d._rev = Math.max(Save.rev, readRev(localStorage.getItem(Save.KEY))) + 1;
+      localStorage.setItem(Save.KEY, JSON.stringify(d));
+    } catch (e) { settingsToast('戻せませんでした'); return; }
+    Save.locked = true;
+    location.reload();
+  },
+
   render() {
+    if (this.view === 'backups') { this.renderBackups(); return; }
     const s = Save.data.settings;
     const list = this.rows();
     const rows = list.map((row, i) => {
@@ -138,6 +171,12 @@ const Settings = {
   onKey(e) {
     const k = e.key.toLowerCase();
     e.preventDefault();
+    if (this.view === 'backups') {
+      if (e.key === 'Escape') { this.view = null; SFX.select(); this.render(); return; }
+      const n = parseInt(e.key, 10);
+      if (n >= 1) this.restoreBackup(Save.backups().slice().reverse()[n - 1]);
+      return;
+    }
     if (e.key === 'Escape' || (e.key === '0' && !(this.opts && this.opts.onClose))) { this.close(); return; }
     if (e.key === 'Enter' && this.opts && this.opts.quit) { this.quit(); return; }
     const list = this.rows();
@@ -214,7 +253,11 @@ function importSave() {
       if (!data || typeof data !== 'object' || !data.chars || !data.settings) { settingsToast('このファイルはスライムタイピングのセーブではありません'); return; }
       const when = obj.at ? `（${new Date(obj.at).toLocaleString('ja-JP')} に保存）` : '';
       if (!confirm(`セーブを読み込みます${when}。\n今のセーブは上書きされます。よろしいですか？`)) return;
-      try { localStorage.setItem(Save.KEY, JSON.stringify(data)); } catch (e) { settingsToast('読み込めませんでした'); return; }
+      try {
+        Save.keepBackup(localStorage.getItem(Save.KEY) || '', '読み込む前のセーブ');
+        data._rev = Math.max(Save.rev, readRev(localStorage.getItem(Save.KEY))) + 1;
+        localStorage.setItem(Save.KEY, JSON.stringify(data));
+      } catch (e) { settingsToast('読み込めませんでした'); return; }
       Save.locked = true;
       location.reload();
     };

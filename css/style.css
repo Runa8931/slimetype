@@ -1602,3 +1602,17 @@ body.no-kb #p-kb { display: none; }
 .gr-stats, .gr-panel, .ch-list { width: 100%; }
 /* 練習の 難易度は 6 つ (3 つずつ 2 だん。W/S で 上下に 動く) */
 .diff-grid { grid-template-columns: repeat(3, 240px); }
+
+/* ---------- v5.16 セーブの 守り (ほかの タブ・控え) ---------- */
+.stale-modal { position: fixed; inset: 0; z-index: 9999; background: rgba(8,10,30,.82); display: grid; place-items: center; }
+.stale-box { width: min(560px, 92vw); background: linear-gradient(180deg, #2b2e5c, #1b1d42); border: 2px solid var(--gold); border-radius: 18px; padding: 22px 26px; text-align: center; line-height: 1.7; }
+.stale-title { font-size: 22px; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+.stale-sub { color: var(--sub); font-size: 14px; }
+.bk-help { color: var(--sub); font-size: 13px; margin: 0; line-height: 1.6; }
+.bk-list { display: grid; gap: 6px; overflow-y: auto; max-height: 52vh; }
+.bk-row { display: flex; gap: 12px; align-items: center; text-align: left; border: 1px solid var(--panel-bd); background: rgba(255,255,255,.06); border-radius: 10px; padding: 8px 12px; color: var(--text); }
+.bk-row:hover { border-color: #fff; }
+.bk-when { display: flex; flex-direction: column; min-width: 120px; font-weight: 800; }
+.bk-when small { color: var(--sub); font-weight: 600; font-size: 11px; }
+.bk-sum { font-size: 14px; }
+.bk-empty { color: var(--sub); text-align: center; padding: 16px; }

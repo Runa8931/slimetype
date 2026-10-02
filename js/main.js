@@ -28,8 +28,13 @@ const Save = {
   },
 
   load() {
-    let d = null;
-    try { d = JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { /* 読めなければ新規 */ }
+    let raw = null, d = null;
+    try { raw = localStorage.getItem(this.KEY); } catch (e) { /* 読めない 環境 */ }
+    try { d = JSON.parse(raw); } catch (e) { d = null; }
+    // 起動する たびに 今の セーブを 控えに 残す (1 日 1 つ・版が 変わったとき)。壊れて 読めない ときも 控えに 逃がす
+    if (raw) this.keepBackup(raw, d ? '' : '読めなかったセーブ');
+    this.rev = (d && d._rev) || 0;
+    this.noSave = !raw; // セーブが 見つからなかった (タイトルで 控えからの 復元を 案内する)
     // ぼうけんのとびら より 前の セーブ: つかったことの ある ものは ひらいた ことに する
     this.needDoorMigrate = !!d && !d.doors;
     // プレイ時間を 記録する 前の セーブ (打った キーの 数から 推定する)
@@ -42,13 +47,78 @@ const Save = {
       totals: { ...f.totals, ...(d.totals || {}) },
       gacha: { ...f.gacha, ...(d.gacha || {}) },
     } : f;
+    // ほかの タブが セーブを 書いたら しらべる (古い タブが 新しい データを 上書きしないように)
+    addEventListener('storage', e => { if (e.key === this.KEY) this.onOtherWrite(e.newValue); });
   },
 
+  // 書いた 回数 (_rev) を セーブに 入れて おき、書く 前に「自分が 読んだ あとに ほかの タブが 書いていないか」を しらべる
   save() {
-    if (this.locked) return; // セーブの 読み込み中 (ページを 読みなおす 前に 古い データで 上書きしない)
-    try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) { /* 保存できない環境でも遊べる */ }
+    if (this.locked || this.stale) return; // 読み込み中・ほかの タブの ほうが 新しい ときは 書かない
+    try {
+      const cur = readRev(localStorage.getItem(this.KEY));
+      if (cur > this.rev) { this.markStale(); return; } // ほかの タブが 先に 進んでいる
+      this.rev = Math.max(this.rev, cur) + 1;
+      this.data._rev = this.rev;
+      localStorage.setItem(this.KEY, JSON.stringify(this.data));
+    } catch (e) { /* 保存できない環境でも遊べる */ }
+  },
+
+  // ほかの タブが セーブを 書いた
+  onOtherWrite(val) {
+    if (this.locked || this.stale) return;
+    const r = readRev(val);
+    if (r > this.rev) { this.markStale(); return; } // むこうの ほうが 新しい → この タブは 書くのを やめる
+    // むこうが 古い (前の 版の タブなど) → この タブの データで すぐ 書きもどす
+    try { this.data._rev = this.rev = Math.max(this.rev, r) + 1; localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) { /* */ }
+    if (typeof toast === 'function') toast('ほかのタブで古いスライムタイピングが開いています。データが消えないよう、そのタブは閉じてください', 5000);
+  },
+
+  // この タブでは もう 書かない (再読み込みで 新しい データを 読む)
+  markStale() {
+    if (this.stale) return;
+    this.stale = true;
+    const el = document.createElement('div');
+    el.className = 'stale-modal';
+    el.innerHTML = `<div class="stale-box"><div class="stale-title">⚠️ ほかのタブでも遊んでいます</div>
+      <p>スライムタイピングが別のタブ（ウィンドウ）でも開かれていて、そちらのほうが新しいデータです。<br>データが消えないように、このタブでは保存を止めました。</p>
+      <p class="stale-sub">続けるときは、どちらか 1 つのタブだけで遊んでください。</p>
+      <button class="btn big stale-reload">このタブを最新のデータで開きなおす</button></div>`;
+    document.body.appendChild(el);
+    el.querySelector('.stale-reload').onclick = () => location.reload();
+  },
+
+  // ---- 控え (自動バックアップ) ----
+  BACKUP_KEY: 'slime-typing-save-v1-backups',
+  BACKUP_MAX: 6,
+  backups() { try { return JSON.parse(localStorage.getItem(this.BACKUP_KEY)) || []; } catch (e) { return []; } },
+  keepBackup(raw, note = '') {
+    if (!raw) return;
+    const list = this.backups();
+    const day = new Date().toLocaleDateString('ja-JP');
+    const last = list[list.length - 1];
+    if (!note && last && last.day === day && last.ver === GAME_VERSION) return; // 今日 この 版の 控えは もう ある
+    if (last && last.raw === raw) return;
+    list.push({ at: Date.now(), day, ver: GAME_VERSION, note, sum: saveSummary(raw), raw });
+    while (list.length > this.BACKUP_MAX) list.shift();
+    // 入りきらない ときは 古い 控えから 消す
+    for (;;) {
+      try { localStorage.setItem(this.BACKUP_KEY, JSON.stringify(list)); return; } catch (e) { if (list.length <= 1) return; list.shift(); }
+    }
   },
 };
+
+const GAME_VERSION = 'v5.16';
+// セーブの 文字から 書いた 回数を 取り出す (全部 読まなくて よいように 文字で さがす)
+function readRev(raw) { const m = raw && /"_rev":(\d+)/.exec(raw); return m ? +m[1] : 0; }
+// 控えの 説明 (いちばん レベルの 高い キャラ・ステージ・コイン)
+function saveSummary(raw) {
+  try {
+    const d = JSON.parse(raw);
+    let best = null, bestExp = -1;
+    for (const [id, c] of Object.entries(d.chars || {})) if (CHARACTERS[id] && (c.exp || 0) > bestExp) { bestExp = c.exp || 0; best = id; }
+    return { lv: best ? levelFromExp(bestExp) : 1, ch: best ? CHARACTERS[best].names[0] : '', cleared: d.cleared || 0, coins: d.coins || 0 };
+  } catch (e) { return null; }
+}
 
 // いま えらんでいる バトルの 難易度
 function battleDiffKey() { const k = Save.data.settings.bdiff; return BATTLE_DIFFS[k] ? k : 'beg'; }
@@ -255,6 +325,8 @@ const App = {
     if (Save.needDoorMigrate) migrateDoors();
     PlayTime.init(Save.needPtEstimate);
     applySettings(); // 音量・エフェクトなど (settings.js)
+    // セーブが 見つからないのに 控えが ある: 消えた ときの 戻し方を 知らせる
+    if (Save.noSave && Save.backups().length) setTimeout(() => toast('セーブが見つかりませんでした。設定（0キー）の「🕘 前のセーブに戻す」から前のデータに戻せます', 8000), 1200);
     FX.init();
 
     document.addEventListener('keydown', e => {
