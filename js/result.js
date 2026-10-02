@@ -33,6 +33,7 @@ Screens.result = {
       head = `<div class="res-head ${r.won ? 'won' : 'lost'}">
         <div class="res-title">${r.won ? `${e.name}を倒した！` : `${ch.name}は倒れてしまった…`}</div>
         ${r.bdiff ? `<div class="res-diff" style="color:${BATTLE_DIFFS[r.bdiff].color}">難易度: ${BATTLE_DIFFS[r.bdiff].name}</div>` : ''}
+        ${r.won && r.stars ? `<div class="res-stars" title="${STAR_RULES.join(' / ')}">${starText(r.stars)}${r.stars > r.prevStars ? ' <small>記録更新！</small>' : ''}${r.stars < 3 ? `<small>次の★: ${STAR_RULES[r.stars]}</small>` : ''}</div>` : ''}
         <div class="res-enemy ${r.won ? '' : 'gray'}">${enemySVG(e.id)}</div>
         ${e.hidden && r.won ? `<div class="unlock">隠しステージ「${e.name}」を倒した！</div>` : ''}
         ${r.firstClear && r.enemyIdx + 1 < MAIN_STAGES ? (ENEMIES[r.enemyIdx + 1].world !== e.world

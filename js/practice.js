@@ -6,6 +6,8 @@ const DIFFS = {
   easy: { name: '簡単', mult: 1.0, desc: '短い単語', ex: { ja: 'ねこ / 電車 / 学校', en: 'cat / slime / magic' } },
   normal: { name: '普通', mult: 1.2, desc: '少し長い言葉', ex: { ja: '新幹線 / 必殺技', en: 'keyboard / adventure' } },
   hard: { name: '難しい', mult: 1.5, desc: 'ことわざ・文章', ex: { ja: '急がば回れ', en: 'practice makes perfect' } },
+  long: { name: '長文', mult: 1.6, desc: '「、」「。」の入った長い文', ex: { ja: '雨が上がると、空に大きな虹がかかった。', en: 'accuracy first, then speed will follow.' } },
+  symbol: { name: '記号・数字', mult: 1.4, desc: '数字や記号の混じったお題', ex: { ja: '3時15分に集合！', en: "it's 3:15 pm." } },
   weak: { name: '苦手キー特訓', mult: 1.2, desc: '苦手なキーをたくさん使うお題', ex: { ja: '', en: '' } },
 };
 
@@ -213,6 +215,7 @@ Screens.practice = {
     } else {
       const prev = this.combo;
       this.correct++; this.combo += comboStep(this, this.char.trait); // ふえりんは 1 回で 2 ふえる ことも ある
+      recordHit(key);
       this.maxCombo = Math.max(this.maxCombo, this.combo);
       SFX.key();
       pressKey($('#p-kb'), key, false);
@@ -286,6 +289,10 @@ Screens.practice = {
     Save.data.totals.keys += correct;
     Save.data.totals.plays++;
     if (this.diff === 'weak') Save.data.totals.weakPlays = (Save.data.totals.weakPlays || 0) + 1;
+    // 成長記録: 練習 1 回ごとの 速さと 正確さ (古い ものから 消して 500 回分まで)
+    const hist = Save.data.history = Save.data.history || [];
+    hist.push({ t: Date.now(), kpm, acc: Math.round(acc * 1000) / 1000, diff: this.diff, lang, secs });
+    if (hist.length > 500) hist.splice(0, hist.length - 500);
     const expRes = grantExp(this.char.id, exp);
     const coins = grantCoins(correct / 8 * acc * acc * DIFFS[this.diff].mult);
 

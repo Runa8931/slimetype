@@ -105,6 +105,7 @@ function sim(cid, L, e, kpm, acc) {
         wmiss = true; if (!(cGuardU > t)) combo = cid === 'gotsun' ? Math.floor(combo * tr.comboKeep) : 0; cacc = 0; en.g = Math.min(0.99, en.g + 0.04); p.skill = Math.max(0, p.skill - 3);
         if (has('shock') && !(cid === 'piriri' && tr.shockImmune)) p.hp -= Math.max(1, Math.round(p.max * 0.03));
         if (has('sweet')) en.hp = Math.min(en.max, en.hp + en.max * 0.015);
+        if (e.missDmg) p.hp -= Math.max(1, Math.round(p.max * e.missDmg)); // 上級者: ミスで ダメージ
         continue;
       }
       typed++;
@@ -200,8 +201,8 @@ const HP0 = D.ENEMY_HP_SCALE;
 function diffEnemy(e0, g, bd) {
   const k = bd.k * (bd.ramp ? bd.ramp + (1 - bd.ramp) * g / (D.MAIN_STAGES - 1) : 1);
   D.ENEMY_HP_SCALE = HP0 * Math.pow(k, 0.7);
-  return { ...e0, power: e0.power * k, interval: e0.interval / Math.pow(k, 0.25) };
+  return { ...e0, power: e0.power * k, interval: e0.interval / Math.pow(k, 0.25), missDmg: global.MISSDMG ?? (bd.missDmg || 0) };
 }
-const DIFFS = { beg: { k: 0.5, kpm: 100 }, mid: { k: 0.9, kpm: 200 }, adv: { k: 1.65, ramp: 0.8, kpm: 350 } };
+const DIFFS = { beg: { k: 0.5, kpm: 100 }, mid: { k: 0.9, kpm: 200 }, adv: { k: 1.65, ramp: 0.8, kpm: 350, missDmg: 0.01 } };
 
 module.exports = { sim, rate, diffEnemy, DIFFS };

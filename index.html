@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261001j">
+  <link rel="stylesheet" href="css/style.css?v=20261002a">
 </head>
 <body>
   <div class="meadow" id="meadow"></div>
@@ -80,6 +80,8 @@
           <button class="sub-card" id="go-dex"><span class="mc-key">5</span>📖 モンスター図鑑 <small id="dex-count"></small></button>
           <button class="sub-card" id="go-ach"><span class="mc-key">6</span>🏅 称号 <small id="ach-count"></small></button>
           <button class="sub-card doors" id="go-doors"><span class="mc-key">9</span>🚪 冒険の扉 <small id="doors-count"></small></button>
+          <button class="sub-card growth" id="go-growth"><span class="mc-key">R</span>📈 成長記録</button>
+          <button class="sub-card challenge" id="go-challenge"><span class="mc-key">C</span>🏆 チャレンジ <small id="ch-count"></small></button>
         </div>
         <div class="panel records" id="home-records"></div>
       </div>
@@ -233,6 +235,24 @@
     <div class="bottom-bar"><button class="btn ghost" id="btn-doors-back">戻る <kbd>Esc</kbd></button></div>
   </section>
 
+  <!-- 成長記録 -->
+  <section class="screen" id="scr-growth">
+    <h2 class="screen-title">成長記録</h2>
+    <p class="screen-desc" id="growth-desc"></p>
+    <div class="gr-stats" id="growth-stats"></div>
+    <div class="panel gr-panel"><div class="gr-head">打鍵/分と正確率の推移</div><div id="growth-chart"></div></div>
+    <div class="panel gr-panel"><div class="gr-head">キーごとのミスの割合</div><div id="growth-kb"></div></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-growth-back">戻る <kbd>Esc</kbd></button></div>
+  </section>
+
+  <!-- チャレンジ -->
+  <section class="screen" id="scr-challenge">
+    <h2 class="screen-title">チャレンジ</h2>
+    <p class="screen-desc" id="ch-desc"></p>
+    <div class="ch-list" id="ch-list"></div>
+    <div class="bottom-bar"><button class="btn ghost" id="btn-ch-back">戻る <kbd>Esc</kbd></button></div>
+  </section>
+
   <!-- ガチャ -->
   <section class="screen" id="scr-gacha">
     <h2 class="screen-title">ガチャ</h2>
@@ -294,27 +314,30 @@
     <div class="result-wrap" id="result-wrap"></div>
   </section>
 
-  <script src="js/romaji.js?v=20261001j"></script>
-  <script src="js/data.js?v=20261001j"></script>
-  <script src="js/describe.js?v=20261001j"></script>
-  <script src="js/words.js?v=20261001j"></script>
-  <script src="js/words2.js?v=20261001j"></script>
-  <script src="js/sprites.js?v=20261001j"></script>
-  <script src="js/enemies2.js?v=20261001j"></script>
-  <script src="js/effects.js?v=20261001j"></script>
-  <script src="js/audio.js?v=20261001j"></script>
-  <script src="js/main.js?v=20261001j"></script>
-  <script src="js/settings.js?v=20261001j"></script>
-  <script src="js/meadow.js?v=20261001j"></script>
-  <script src="js/playtime.js?v=20261001j"></script>
-  <script src="js/practice.js?v=20261001j"></script>
-  <script src="js/map.js?v=20261001j"></script>
-  <script src="js/battle.js?v=20261001j"></script>
-  <script src="js/survival.js?v=20261001j"></script>
-  <script src="js/collection.js?v=20261001j"></script>
-  <script src="js/gacha.js?v=20261001j"></script>
-  <script src="js/doors.js?v=20261001j"></script>
-  <script src="js/result.js?v=20261001j"></script>
+  <script src="js/romaji.js?v=20261002a"></script>
+  <script src="js/data.js?v=20261002a"></script>
+  <script src="js/describe.js?v=20261002a"></script>
+  <script src="js/words.js?v=20261002a"></script>
+  <script src="js/words2.js?v=20261002a"></script>
+  <script src="js/words3.js?v=20261002a"></script>
+  <script src="js/sprites.js?v=20261002a"></script>
+  <script src="js/enemies2.js?v=20261002a"></script>
+  <script src="js/effects.js?v=20261002a"></script>
+  <script src="js/audio.js?v=20261002a"></script>
+  <script src="js/main.js?v=20261002a"></script>
+  <script src="js/settings.js?v=20261002a"></script>
+  <script src="js/meadow.js?v=20261002a"></script>
+  <script src="js/playtime.js?v=20261002a"></script>
+  <script src="js/practice.js?v=20261002a"></script>
+  <script src="js/map.js?v=20261002a"></script>
+  <script src="js/battle.js?v=20261002a"></script>
+  <script src="js/survival.js?v=20261002a"></script>
+  <script src="js/collection.js?v=20261002a"></script>
+  <script src="js/gacha.js?v=20261002a"></script>
+  <script src="js/doors.js?v=20261002a"></script>
+  <script src="js/growth.js?v=20261002a"></script>
+  <script src="js/challenge.js?v=20261002a"></script>
+  <script src="js/result.js?v=20261002a"></script>
   <script>App.boot();</script>
 </body>
 </html>

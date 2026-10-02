@@ -139,6 +139,12 @@ const ACHIEVEMENTS = [
   { id: 'gacha_friend', name: '新しい仲間', desc: 'ガチャ限定のキャラを仲間にする', check: () => Object.keys(CHARACTERS).some(id => CHARACTERS[id].gacha && hasChar(id)) },
   { id: 'gacha_half', name: 'おしゃれさん', desc: 'ガチャの中身を半分集める', check: () => collectCount().have * 2 >= collectCount().total },
   { id: 'gacha_all', name: 'コレクター', desc: 'ガチャの中身を全部集める', check: () => collectCount().have >= collectCount().total },
+  // チャレンジ (★評価・ボスラッシュ・今週の チャレンジ)
+  { id: 'star3_10', name: '星集め', desc: '★3のステージを10個にする', check: () => star3Count() >= 10 },
+  { id: 'star3_all', name: '満天の星', desc: '全部のステージを★3にする', hard: true, check: () => star3Count() >= MAIN_STAGES },
+  { id: 'rush_all', name: 'ボスハンター', desc: 'ボスラッシュで全部のボスを倒す', check: () => Object.values(Save.data.rush || {}).some(r => r.n >= RUSH_LIST.length) },
+  { id: 'rush_adv', name: '覇者', desc: '上級者のボスラッシュで全部のボスを倒す', hard: true, check: () => ((Save.data.rush || {}).adv || {}).n >= RUSH_LIST.length },
+  { id: 'weekly3', name: '週ごとの挑戦者', desc: '今週のチャレンジを3週クリアする', check: () => (Save.data.weeklyClears || 0) >= 3 },
   // せんざいかくせい ★4 (キャラごと)
   ...Object.keys(CHARACTERS).map(id => ({
     id: 'aw4_' + id, name: `${CHARACTERS[id].names[0]}の親友`, desc: `${CHARACTERS[id].names[0]}を覚醒★4にする`, check: () => awakenOf(id) >= AWAKEN_MAX,

@@ -1542,3 +1542,63 @@ body.no-kb #p-kb { display: none; }
 .st-row { padding: 5px 12px; }
 .st-title { font-size: 22px; }
 .set-actions .btn.big { font-size: 18px; padding: 10px 22px; }
+.st-toast { margin-top: 10px; padding: 8px 12px; border-radius: 8px; background: rgba(77,171,247,.18); border: 1px solid #4dabf7; font-size: 13px; text-align: center; }
+
+/* ---------- v5.15 ★評価・チャレンジ・成長記録 ---------- */
+.smark { margin-left: 6px; color: var(--gold); font-size: 13px; letter-spacing: 1px; vertical-align: middle; }
+.res-stars { color: var(--gold); font-size: 26px; letter-spacing: 3px; margin: 4px 0; }
+.res-stars small { display: block; font-size: 12px; letter-spacing: 0; color: var(--sub); }
+.ov-challenge { display: inline-block; margin-bottom: 8px; padding: 4px 12px; border-radius: 999px; background: rgba(255,210,63,.18); border: 1px solid var(--gold); color: var(--gold); font-weight: 800; font-size: 14px; }
+.ch-new { color: var(--gold); }
+#b-tp.noguide .tp-roma { visibility: hidden; }
+.sub-card.growth { background: linear-gradient(120deg, rgba(79,179,255,.28), rgba(79,179,255,.06)); }
+.sub-card.challenge { background: linear-gradient(120deg, rgba(255,210,63,.28), rgba(255,93,93,.08)); }
+
+.ch-diff { display: inline-flex; gap: 6px; align-items: center; margin-left: 4px; }
+.ch-diff button { border: 1.5px solid var(--dc); background: transparent; color: var(--text); border-radius: 999px; padding: 2px 10px; font-weight: 700; }
+.ch-diff button.on { background: var(--dc); color: #1a1a2e; }
+.ch-list { display: grid; gap: 12px; max-width: 860px; margin: 0 auto; overflow-y: auto; max-height: calc(100vh - 230px); }
+.ch-card { display: flex; gap: 14px; align-items: center; border-radius: 16px; padding: 14px; border: 2px solid var(--panel-bd); background: var(--panel); cursor: pointer; text-align: left; }
+.ch-card:hover { border-color: #fff; }
+.ch-card.stars { cursor: default; }
+.ch-card.stars:hover { border-color: var(--panel-bd); }
+.ch-card.locked { opacity: .55; }
+.ch-icon { font-size: 40px; width: 56px; text-align: center; flex: none; }
+.ch-name { font-weight: 800; font-size: 18px; }
+.ch-name small { color: var(--sub); font-weight: 600; margin-left: 6px; font-size: 13px; }
+.ch-text { color: var(--sub); margin: 4px 0; font-size: 14px; line-height: 1.6; }
+.ch-rec { font-size: 14px; }
+.ch-rec b { color: var(--gold); }
+.ch-card.rush { background: linear-gradient(120deg, rgba(255,210,63,.16), var(--panel)); }
+.ch-card.weekly { background: linear-gradient(120deg, rgba(177,151,252,.2), var(--panel)); }
+
+#scr-growth { overflow-y: auto; }
+.gr-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 860px; margin: 0 auto 12px; }
+.gr-stat { background: var(--panel); border: 1px solid var(--panel-bd); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; }
+.gr-stat span { color: var(--sub); font-size: 12px; }
+.gr-stat b { font-size: 24px; font-family: var(--pixel); color: var(--gold); }
+.gr-stat small { color: var(--sub); font-size: 12px; }
+.gr-panel { max-width: 860px; margin: 0 auto 12px; padding: 12px 14px; }
+.gr-head { font-weight: 800; margin-bottom: 6px; }
+.gr-empty { color: var(--sub); padding: 30px 0; text-align: center; }
+.gr-svg { width: 100%; height: auto; display: block; }
+.gr-grid { stroke: rgba(255,255,255,.1); stroke-width: 1; }
+.gr-axis { fill: var(--sub); font-size: 11px; }
+.gr-axis.acc { fill: var(--gold); }
+.gr-line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.gr-line.kpm { stroke: var(--blue); }
+.gr-line.acc { stroke: var(--gold); opacity: .8; stroke-dasharray: 5 4; }
+.gr-dot { fill: var(--blue); stroke: var(--bg1); stroke-width: 1.5; }
+.gr-legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--sub); margin-top: 6px; }
+.gr-legend .kpm { color: var(--blue); }
+.gr-legend .acc { color: var(--gold); }
+.gr-legend small { margin-left: auto; }
+.gr-krow { display: flex; gap: 5px; margin-bottom: 5px; }
+.gr-key { width: 52px; height: 46px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--panel-bd);
+  background: color-mix(in srgb, #ff5d5d calc(var(--f) * 85%), rgba(255,255,255,.06)); }
+.gr-key b { font-size: 15px; }
+.gr-key small { font-size: 10px; color: rgba(255,255,255,.8); }
+.gr-key.none { opacity: .45; }
+.gr-stats, .gr-panel, .ch-list { width: 100%; }
+/* 練習の 難易度は 6 つ (3 つずつ 2 だん。W/S で 上下に 動く) */
+.diff-grid { grid-template-columns: repeat(3, 240px); }

@@ -19,7 +19,11 @@ Screens.battle = {
   // この敵が その特殊能力を もっているか
   has(a) { return this.ed.abilities.includes(a); },
 
-  enter(idx) {
+  // arg: ステージ番号、または { idx, rush (ボスラッシュの 途中経過), rule (今週の チャレンジの ルール) }
+  enter(arg) {
+    const opt = arg && typeof arg === 'object' ? arg : { idx: arg };
+    const idx = opt.idx;
+    this.arg = opt; this.rush = opt.rush || null; this.rule = opt.rule || null;
     this.bid++;
     this.idx = idx;
     this.dk = battleDiffKey();
@@ -34,6 +38,9 @@ Screens.battle = {
     const es = calcStats({ ...this.ed.base, spd: 50 }, this.ed.lv);
 
     this.p = { hp: ch.stats.hp * BATTLE_HP_SCALE, max: ch.stats.hp * BATTLE_HP_SCALE, skill: 0, shield: 0, barrier: 0, evade: 0, reflect: 0, boost: 1, poisonUntil: 0, nextPoison: 0 };
+    // ボスラッシュ: 前の 戦いの HP を 持ちこす (間に 少し 回復) / 今週の チャレンジ「HP半分」
+    if (this.rush && this.rush.hpFrac != null) this.p.hp = Math.round(this.p.max * Math.min(1, this.rush.hpFrac + RUSH_HEAL));
+    if (this.rule === 'glass') this.p.hp = Math.round(this.p.max / 2);
     const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.k, 0.7) * (this.ed.hpMult || 1)); // 難易度で HP が かわる (こうてつマイマイは とても 多い)
     this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0, poison: 0, nextPoison: 0, weakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
@@ -53,7 +60,7 @@ Screens.battle = {
     this.elapsed = 0;
     this.pending = 0; // 飛んでいる途中の攻撃
 
-    this.deck = new WordDeck(Save.data.settings.lang, DIFF_POOLS[this.ed.diff], this.ed.bg);
+    this.deck = new WordDeck(Save.data.settings.lang, this.rule === 'long' || this.rule === 'symbol' ? [this.rule] : DIFF_POOLS[this.ed.diff], this.ed.bg);
     dexSeen(this.ed.id); // ずかん: であった
 
     const arena = $('#arena');
@@ -71,6 +78,7 @@ Screens.battle = {
     $('#b-log').innerHTML = '';
     $('#b-tp .tp-roma').classList.remove('hidden-guide');
     $('#b-tp').classList.remove('fog', 'inked', 'blizzard', 'frozen', 'windy');
+    $('#b-tp').classList.toggle('noguide', this.rule === 'noguide');
     $('#b-thunder').className = 'thunder-warn';
     $('#b-ink').innerHTML = '';
     this._fog = false;
@@ -80,6 +88,7 @@ Screens.battle = {
     this.updateCombo();
     this.overlay(`<div class="ov-box vs">
       <div class="vs-row"><div class="sprite">${slimeSVG(ch.id, ch.stage)}</div><div class="vs-text">VS</div><div class="sprite enemy-mini">${enemySVG(this.ed.id)}</div></div>
+      ${this.challengeBanner()}
       <div class="ov-title">${this.ed.name}が現れた！</div>
       <div class="ov-sub">${this.ed.abilityDesc}</div>
       <div class="ov-diff" id="b-diff"></div>
@@ -97,9 +106,18 @@ Screens.battle = {
   },
   pickDiff(k) {
     if (this.state !== 'ready' || k === this.dk) return;
+    if (this.rush && this.rush.i > 0) { SFX.miss(); return; } // ボスラッシュの 途中では 変えられない
     setBattleDiff(k);
-    this.enter(this.idx); // 敵の HP を 作りなおす
+    this.enter(this.arg); // 敵の HP を 作りなおす
   },
+
+  // バトル前の 画面に 出す チャレンジの 見出し
+  challengeBanner() {
+    if (this.rush) return `<div class="ov-challenge">👑 ボスラッシュ ${this.rush.i + 1} / ${RUSH_LIST.length}${this.rush.hpFrac != null ? `　HP ${Math.round(this.p.hp / this.p.max * 100)}%で続ける` : ''}</div>`;
+    const r = this.rule && WEEKLY_RULES.find(x => x.id === this.rule);
+    return r ? `<div class="ov-challenge">${r.icon} 今週のチャレンジ「${r.name}」: ${r.desc}</div>` : '';
+  },
+  backScreen() { return this.rush || this.rule ? 'challenge' : 'stages'; },
 
   leave() { this.state = 'off'; this.bid++; cancelAnimationFrame(this.raf); },
 
@@ -428,7 +446,14 @@ Screens.battle = {
       const dk = { a: -1, w: -1, d: 1, s: 1 }[e.key.toLowerCase()];
       if (dk) { const i = BATTLE_DIFF_KEYS.indexOf(this.dk) + dk; if (i >= 0 && i < BATTLE_DIFF_KEYS.length) this.pickDiff(BATTLE_DIFF_KEYS[i]); return; }
       if (e.key === ' ') this.countdown();
-      if (e.key === 'Escape') App.show('stages');
+      if (e.key === 'Escape') App.show(this.backScreen());
+      return;
+    }
+    // ボスラッシュの 戦いの 間 / チャレンジの 結果
+    if (this.state === 'between') { if (e.key === ' ') this.betweenNext(); return; }
+    if (this.state === 'chend') {
+      if (e.key === ' ' || e.key === 'Escape') App.show('challenge');
+      if (e.key.toLowerCase() === 'r' && this.rule) App.show('battle', { ...this.arg });
       return;
     }
     if (this.state === 'pause') return; // ポーズ中は 設定画面が キーを うけとる
@@ -438,7 +463,7 @@ Screens.battle = {
       this.state = 'pause';
       cancelAnimationFrame(this.raf);
       this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div></div>');
-      Settings.open({ title: 'ポーズ中', quit: { label: '逃げる（マップへ）', fn: () => App.show('stages') }, onClose: () => this.resume() });
+      Settings.open({ title: 'ポーズ中', quit: { label: this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', fn: () => this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
       return;
     }
     if (e.key.length !== 1) return;
@@ -475,8 +500,13 @@ Screens.battle = {
         FX.bolt(pc.x - 20, pc.y - 90, pc.x, pc.y, '#e0aaff', 10);
         this.damagePlayer(Math.max(1, Math.round(this.p.max * 0.03)), 'shock');
       }
+      // 今週の チャレンジ「ノーミス勝負」: ミスしたら 負け
+      if (this.rule === 'nomiss' && this.state === 'run') { this.log('ミスしてしまった！', 'enemy'); this.p.hp = 0; this.updateBars(); this.lose(); return; }
+      // 上級者: ミスすると 自分に 少し ダメージ (速さだけで なく 正確さも 求める)
+      if (this.bd.missDmg && this.state === 'run' && this.p.hp > 0) this.damagePlayer(Math.max(1, Math.round(this.p.max * this.bd.missDmg)), 'miss');
     } else {
       this.correct++;
+      recordHit(key);
       this.combo += comboStep(this, this.ch.trait);
       this.maxCombo = Math.max(this.maxCombo, this.combo);
       const before = this.p.skill;
@@ -1159,8 +1189,8 @@ Screens.battle = {
   damagePlayer(dmg, kind) {
     const pc = FX.center($('#b-psprite'));
     this.p.hp -= dmg;
-    if (kind === 'poison' || kind === 'shock') {
-      floatText(pc.x + 20, pc.y - 30, dmg, kind === 'shock' ? 'dmg shock' : 'dmg poison');
+    if (kind === 'poison' || kind === 'shock' || kind === 'miss') {
+      floatText(pc.x + 20, pc.y - 30, dmg, kind === 'poison' ? 'dmg poison' : 'dmg shock');
       replayAnim($('#b-psprite'), 'poisoned', 400);
     } else {
       SFX.hurt();
@@ -1199,16 +1229,90 @@ Screens.battle = {
     this.after(() => this.finish(false), 1900);
   },
 
+  // ボスラッシュ・今週の チャレンジの 終わり (ふつうの 結果画面は つかわず、この 画面の 上に 出す)
+  challengeFinish(won) {
+    this.leave(); this.state = 'chend';
+    const secs = Math.max(1, this.elapsed / 1000);
+    const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
+    // 経験値は タイピングの ぶんだけ (勝利ボーナスなし)
+    const exp = Math.round(typingExp(this.correct, this.miss, secs, 0.3, this.ch.L));
+    grantExp(this.ch.id, exp);
+    Save.data.totals.keys += this.correct;
+    if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); }
+    const bd = this.bd;
+    let html;
+    if (this.rush) {
+      const r = { ...this.rush, n: this.rush.n + (won ? 1 : 0), secs: this.rush.secs + secs, correct: this.rush.correct + this.correct, miss: this.rush.miss + this.miss, exp: (this.rush.exp || 0) + exp };
+      if (won && r.i + 1 < RUSH_LIST.length) {
+        // 次の ボスへ (HP を 持ちこす)
+        r.i++; r.hpFrac = Math.max(0, this.p.hp / this.p.max);
+        this.nextRush = r;
+        this.state = 'between';
+        const ne = ENEMIES[RUSH_LIST[r.i]];
+        Save.save();
+        this.overlay(`<div class="ov-box"><div class="ov-challenge">👑 ボスラッシュ ${r.n} / ${RUSH_LIST.length}体</div>
+          <div class="ov-title">${this.ed.name}を倒した！</div>
+          <div class="ov-sub">次の相手: <b>${ne.name}</b>（Lv.${ne.lv}）　HP ${Math.round(r.hpFrac * 100)}% → ${Math.round(Math.min(1, r.hpFrac + RUSH_HEAL) * 100)}%</div>
+          <div class="ov-key"><kbd>Space</kbd>で次へ</div></div>`);
+        return;
+      }
+      // おわり: 倒した ボスの 数で コイン、記録を 残す
+      const all = r.n >= RUSH_LIST.length;
+      const coins = grantCoins(Math.round(RUSH_LIST.slice(0, r.n).reduce((t, i, j) => t + 80 + j * 25, 0) * bd.reward));
+      const rec = Save.data.rush = Save.data.rush || {};
+      const prev = rec[this.dk];
+      const better = !prev || r.n > prev.n || (r.n === prev.n && all && r.secs < prev.secs);
+      if (better) rec[this.dk] = { n: r.n, secs: Math.round(r.secs), at: Date.now() };
+      const racc = r.correct + r.miss ? r.correct / (r.correct + r.miss) : 0;
+      html = `<div class="ov-box"><div class="ov-challenge">👑 ボスラッシュ（${bd.name}）</div>
+        <div class="ov-title">${all ? '全部のボスを倒した！' : `${r.n}体のボスを倒した`}</div>
+        <div class="ov-sub">${all ? `タイム ${fmtHMS(Math.round(r.secs))}・` : ''}正確率 ${(racc * 100).toFixed(1)}%　🪙 +${coins}　EXP +${r.exp}${better ? '<br><b class="ch-new">最高記録！</b>' : ''}</div>
+        <div class="ov-key"><kbd>Space</kbd>でチャレンジへ</div></div>`;
+    } else {
+      const wk = weeklyInfo();
+      const rule = WEEKLY_RULES.find(x => x.id === this.rule);
+      const first = won && this.arg.week === wk.week && !wk.cleared;
+      let rw = '';
+      if (won) {
+        const rec = Save.data.weekly = Save.data.weekly && Save.data.weekly.week === this.arg.week ? Save.data.weekly : { week: this.arg.week };
+        if (!rec.cleared) { rec.cleared = true; Save.data.weeklyClears = (Save.data.weeklyClears || 0) + 1; }
+      }
+      if (first) { grantCoins(WEEKLY_REWARD.coins); gachaData().shards += WEEKLY_REWARD.shards; rw = `<br>🎁 今週のごほうび: 🪙 ${WEEKLY_REWARD.coins}・💎 ${WEEKLY_REWARD.shards}`; }
+      html = `<div class="ov-box"><div class="ov-challenge">${rule.icon} 今週のチャレンジ「${rule.name}」</div>
+        <div class="ov-title">${won ? `${this.ed.name}を倒した！` : `${this.ch.name}は倒れてしまった…`}</div>
+        <div class="ov-sub">正確率 ${(acc * 100).toFixed(1)}%・${Math.round(this.correct / (secs / 60))}打鍵/分　EXP +${exp}${rw}</div>
+        <div class="ov-key"><kbd>R</kbd>でもう一度　<kbd>Space</kbd>でチャレンジへ</div></div>`;
+    }
+    Save.save();
+    this.overlay(html);
+  },
+  betweenNext() {
+    const r = this.nextRush;
+    if (!r) return;
+    this.nextRush = null;
+    SFX.select();
+    this.enter({ idx: RUSH_LIST[r.i], rush: r });
+  },
+
   finish(won) {
+    if (this.rush || this.rule) { this.challengeFinish(won); return; }
     const secs = Math.max(1, this.elapsed / 1000);
     // 格下をたおしたときは 経験値がへる (レベル差の補正)
     const gap = levelGapMult(this.ed.lv, this.ch.L);
     const rw = this.bd.reward; // 難易度が 高いほど コインが ふえる (経験値は どの 難易度でも おなじ)
     const typing = Math.round(typingExp(this.correct, this.miss, secs, 0.3, this.ch.L) * gap);
     const bonus = won ? Math.floor(stageExp(this.idx) * gap) : 0;
+    const acc0 = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
+    const hpLeft0 = Math.max(0, this.p.hp / this.p.max);
+    let stars = 0, prevStars = 0;
     if (won) {
       Save.data.bbest = Save.data.bbest || {};
       Save.data.bbest[this.idx] = Math.max(stageBest(this.idx), BATTLE_DIFF_KEYS.indexOf(this.dk) + 1);
+      // ★評価 (メインの ステージだけ)
+      if (!this.ed.hidden) {
+        stars = starsFor(this.dk, acc0, hpLeft0); prevStars = stageStars(this.idx);
+        if (stars > prevStars) (Save.data.stars = Save.data.stars || {})[this.idx] = stars;
+      }
     }
     const firstClear = won && !this.ed.hidden && this.idx === Save.data.cleared;
     if (firstClear) Save.data.cleared = Math.min(MAIN_STAGES, this.idx + 1);
@@ -1229,7 +1333,7 @@ Screens.battle = {
     const coins = grantCoins(winCoins + firstCoins);
     const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
     App.show('result', {
-      mode: 'battle', won, enemyIdx: this.idx, firstClear,
+      mode: 'battle', won, enemyIdx: this.idx, firstClear, stars, prevStars,
       hpLeft: Math.max(0, this.p.hp / this.p.max), playerLv: this.ch.L, enemyLv: this.ed.lv,
       correct: this.correct, miss: this.miss, acc,
       kpm: Math.round(this.correct / (secs / 60)), secs: Math.round(secs), kps: this.correct / secs, bestKps: this.bestKps,

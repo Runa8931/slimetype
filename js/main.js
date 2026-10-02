@@ -45,6 +45,7 @@ const Save = {
   },
 
   save() {
+    if (this.locked) return; // セーブの 読み込み中 (ページを 読みなおす 前に 古い データで 上書きしない)
     try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) { /* 保存できない環境でも遊べる */ }
   },
 };
@@ -56,7 +57,9 @@ function setBattleDiff(k) { if (BATTLE_DIFFS[k]) { Save.data.settings.bdiff = k;
 function stageBest(i) { return (Save.data.bbest || {})[i] || 0; }
 function diffBadges(i) {
   const b = stageBest(i);
-  return BATTLE_DIFF_KEYS.map((k, j) => `<span class="dmark ${b > j ? 'on' : ''}" style="--dc:${BATTLE_DIFFS[k].color}" title="${BATTLE_DIFFS[k].name}">${BATTLE_DIFFS[k].name[0]}</span>`).join('');
+  const st = i < MAIN_STAGES ? stageStars(i) : 0;
+  return BATTLE_DIFF_KEYS.map((k, j) => `<span class="dmark ${b > j ? 'on' : ''}" style="--dc:${BATTLE_DIFFS[k].color}" title="${BATTLE_DIFFS[k].name}">${BATTLE_DIFFS[k].name[0]}</span>`).join('')
+    + (st ? `<span class="smark" title="★評価">${starText(st)}</span>` : '');
 }
 
 // ガチャ限定キャラは ガチャで 出るまで つかえない
@@ -152,6 +155,16 @@ function showKps(root, kps, extra = '', hot = false) {
 function recordMiss(key) {
   if (!key || key === ' ') return;
   Save.data.missKeys[key] = (Save.data.missKeys[key] || 0) + 1;
+  // 成長記録用 (hitKeys と 同じ 時から 数える)
+  const m = Save.data.keyMiss = Save.data.keyMiss || {};
+  m[key] = (m[key] || 0) + 1;
+}
+
+// 正しく 打った キーの 数 (成長記録の キーボードで、ミスの わりあいを 出す)
+function recordHit(key) {
+  if (!key || key === ' ') return;
+  const h = Save.data.hitKeys = Save.data.hitKeys || {};
+  h[key] = (h[key] || 0) + 1;
 }
 
 function weakKeys(n = 5) {
@@ -365,6 +378,8 @@ Screens.home = {
     $('#go-gacha').onclick = gate('gacha', () => App.show('gacha'));
     $('#go-wardrobe').onclick = gate('gacha', () => App.show('wardrobe'));
     $('#go-doors').onclick = () => { SFX.select(); App.show('doors'); };
+    $('#go-growth').onclick = () => { SFX.select(); App.show('growth'); };
+    $('#go-challenge').onclick = () => { SFX.select(); App.show('challenge'); };
     // これまでの記録で とれる しょうごうが あれば 知らせる
     announceDoors(checkDoors(), 300);
     checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 400 + i * 2800));
@@ -407,6 +422,7 @@ Screens.home = {
     $('#ach-count').textContent = `${achCount()}/${ACHIEVEMENTS.length}`;
     $('#home-coins').textContent = Save.data.coins || 0;
     $('#doors-count').textContent = `${doorCount()}/${DOORS.length}`;
+    $('#ch-count').textContent = `★${starTotal()}`;
     // ひらいていない モードの カード
     for (const [el, door] of [['#go-survival', 'survival'], ['#go-gacha', 'gacha'], ['#go-wardrobe', 'gacha']]) {
       const card = $(el), open = doorOpen(door);
@@ -444,6 +460,8 @@ Screens.home = {
     if (e.key === '7') $('#go-gacha').click();
     if (e.key === '8') $('#go-wardrobe').click();
     if (e.key === '9') $('#go-doors').click();
+    if (e.key.toLowerCase() === 'r') $('#go-growth').click();
+    if (e.key.toLowerCase() === 'c') $('#go-challenge').click();
     // 0 は 設定 (App の キー処理で 開く)
     if (e.key === 'Escape') App.show('title');
   },
