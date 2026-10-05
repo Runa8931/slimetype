@@ -317,8 +317,9 @@ function slimeSVG(id, stage = 0, look) {
     const top = (HEAD_TOP[id] || [30, 28])[Math.min(stage, 1)];
     if (h.eyes) {
       // 目に かける もの: キャラごとの 目の 位置と 大きさに 合わせる。形の 違う キャラは 目と 同じ 部品の 中に 入れて、体と 一緒に 動かす
-      const [ex, ey, es] = eyeFit(id, stage);
-      eyewear = `<g transform="translate(${ex},${ey - 1}) scale(${es})">${h.draw(c)}</g>`;
+      const [ex, ey, es, mono] = eyeFit(id, stage);
+      const draw = mono && EYEWEAR_MONO[look.hat] ? EYEWEAR_MONO[look.hat] : h.draw;
+      eyewear = `<g transform="translate(${ex},${ey - 1}) scale(${es})">${draw(c)}</g>`;
       if (!CUSTOM_BODY[id]) { front += eyewear; eyewear = ''; }
     } else front += `<g transform="translate(60,${top + 5})">${h.draw(c)}</g>`;
   }
@@ -379,11 +380,17 @@ function eyeFit(id, stage) {
     yurarin: [60, 50, 1],
     saikoro: [51, 74, 0.75],
     imomushi: stage >= 3 ? [60, 50, 0.5] : [36, 84, 0.65],
-    chochin: [60 + 15 * 1.1, 53, 1.1], // 一つ目: 左の レンズが 目に かかるように 右へ ずらす
+    chochin: [60, 53.5, 1.18, 'mono'], // 一つ目: レンズ 1 まいの サングラス (EYEWEAR_MONO)
     torio: [60, 76 - 40 * g * 0.42 + 3.5, 0.55], // うえの リーダーの 顔
   }[id];
   return fit || [60, 72, 1];
 }
+// 目が 1 つの キャラ用 (ちょうちんりん)。目の まんなかが (0,0)、目の 大きさは 半径 13 くらい
+const EYEWEAR_MONO = {
+  // 横に 1 まいで つながった レンズ (スポーツ用の サングラス)。ふつうの サングラスと 同じ 角ばった 形と 光
+  shades: () => `<path d="M-27,-10 L27,-10 L25,1 C22,10 6,11 0,7 C-6,11 -22,10 -25,1 Z" fill="#111" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M-21,-6 L-13,-6" stroke="#fff" stroke-width="2" opacity=".7" stroke-linecap="round"/><path d="M9,-6 L17,-6" stroke="#fff" stroke-width="2" opacity=".7" stroke-linecap="round"/>`,
+};
 // 形の 違う キャラの 体に、目に かける ものを 入れる (目の すぐ あと = 同じ 動く 部品の 中)
 function withEyewear(body, eyewear) {
   if (!eyewear) return body.replace('<!--eyewear-->', '');
