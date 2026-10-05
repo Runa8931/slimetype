@@ -1131,7 +1131,7 @@ body.lite .sky { display: none; }
 .gc-stage.ssr { background: radial-gradient(circle at 50% 38%, rgb(120,70,0), rgb(12,6,0)); }
 .gc-stage.ssr .gs-rays { opacity: 1; animation: gs-spin 6s linear infinite; }
 @keyframes gs-spin { to { transform: rotate(360deg); } }
-.gs-cap.center.ssr { animation: gs-ssr .6s cubic-bezier(.3,1.6,.5,1) forwards; filter: drop-shadow(0 0 40px #ffd43b); }
+.gs-cap.center.ssr { animation: gs-ssr .6s cubic-bezier(.3,1.6,.5,1) forwards; filter: drop-shadow(0 0 30px #ff6bff) drop-shadow(0 0 50px #4dabf7); }
 @keyframes gs-ssr { from { transform: scale(1.4); } to { transform: scale(2); } }
 .gs-cap.ssr .gs-top { background: linear-gradient(120deg, #ff6b6b, #ffd43b, #69db7c, #4dabf7, #cc5de8); }
 /* ひらく */
@@ -1418,12 +1418,15 @@ body.scene-meadow .note { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 
 /* ---------- ガチャの SSR 演出 ---------- */
 /* かくてい: カプセルが 出る まえに ガチャ機が 金色に ひかって ゆれる */
-.gc-stage.omen .gs-machine { opacity: 1; filter: drop-shadow(0 0 30px #ffd43b) brightness(1.4); animation: gs-rattle .1s linear infinite; }
+.gc-stage.omen .gs-machine { opacity: 1; filter: drop-shadow(0 0 30px #ff6bff) brightness(1.4); animation: gs-rattle .1s linear infinite, gs-rainbow-glow 1.2s linear infinite; }
 .gc-stage.omen .gs-rays { opacity: .5; animation: gs-spin 3s linear infinite; }
-.gc-stage.omen { background: radial-gradient(circle at 50% 30%, rgb(60,40,0), rgb(8,8,24)); }
-.gs-cap.gold { filter: drop-shadow(0 0 30px #ffd43b) drop-shadow(0 0 60px rgba(255,212,59,.6)); }
-/* かくていの 金色は SSR に きまるまで (きまったら ほかと おなじ 虹色) */
-.gs-cap.gold:not(.ssr) .gs-top { background: linear-gradient(120deg, #fff9db, #ffd43b 40%, #f59f00); }
+.gc-stage.omen { background: radial-gradient(circle at 50% 30%, rgb(50,20,60), rgb(8,8,24)); }
+/* かくてい: カプセルは 出てきた ときから 虹色 (SSR と おなじ 色)。光も 虹色に 変わりつづける */
+.gs-cap.gold .gs-top { background: linear-gradient(120deg, #ff6b6b, #ffa94d, #ffe066, #69db7c, #4dabf7, #9775fa, #f783ac); background-size: 200% 200%; animation: gs-rainbow-move 1.6s linear infinite; }
+.gs-cap.gold .gs-shine { background: conic-gradient(from 0deg, rgba(255,107,107,.7), rgba(255,224,102,.7), rgba(105,219,124,.7), rgba(77,171,247,.7), rgba(151,117,250,.7), rgba(247,131,172,.7), rgba(255,107,107,.7)); -webkit-mask: radial-gradient(circle, #000 20%, transparent 65%); mask: radial-gradient(circle, #000 20%, transparent 65%); opacity: .9; }
+.gs-cap.gold .gs-top, .gs-cap.gold .gs-bottom { filter: drop-shadow(0 0 18px #ff6bff) drop-shadow(0 0 30px #4dabf7); }
+@keyframes gs-rainbow-move { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
+@keyframes gs-rainbow-glow { from { filter: drop-shadow(0 0 30px #ff6bff) brightness(1.4) hue-rotate(0deg); } to { filter: drop-shadow(0 0 30px #ff6bff) brightness(1.4) hue-rotate(360deg); } }
 /* SSR が きまった: 下から 光の 柱が のぼる */
 .gc-stage.ssr::after {
   content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;

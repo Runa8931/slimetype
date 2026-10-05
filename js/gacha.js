@@ -614,9 +614,9 @@ Screens.gacha = {
 
   // カプセル 1 こぶん: ころがり出る → (SSR だけ 当たりの 演出) → ひらく → 下に ならぶ
   // SSR の 出かた:
-  //   はじめから 金色の カプセルが 出る「かくてい」 (1/4)
-  //   N・R・SR の 色で 出てきて、1 だんずつ 色が 上がって 金色に なる (3/8)
-  //   N・R・SR の 色で 出てきて、ためてから いっきに 金色に なる (3/8。むかしからの 出かた)
+  //   はじめから 虹色の カプセルが 出る「かくてい」 (1/4)
+  //   N・R・SR の 色で 出てきて、1 だんずつ 色が 上がって 虹色に なる (3/8)
+  //   N・R・SR の 色で 出てきて、ためてから いっきに 虹色に なる (3/8。むかしからの 出かた)
   async capsule(stage, r, i, ten) {
     const rar = r.it.rarity;
     const ssr = rar === 'SSR' && !this.skip;
@@ -629,7 +629,7 @@ Screens.gacha = {
     const slot = stage.querySelector('.gs-cap-slot');
     const base = stage.className.replace(/ (dark|ssr|omen)/g, '');
 
-    // かくてい: カプセルが 出る まえに ガチャ機が 金色に ひかる
+    // かくてい: カプセルが 出る まえに ガチャ機が 虹色に ひかる
     if (direct) {
       stage.className = base + ' omen';
       SFX.rankCut(); SFX.tone(220, 0.9, { type: 'sine', vol: 0.05, slide: 880 });
@@ -637,7 +637,7 @@ Screens.gacha = {
     }
     slot.innerHTML = `<div class="gs-cap" style="--cap:${RARITY[first].color}"><div class="gs-top"></div><div class="gs-bottom"></div><div class="gs-shine"></div></div>`;
     const cap = slot.firstChild;
-    const gold = direct ? ' gold' : '';
+    const gold = direct ? ' gold' : ''; // 'gold' は かくていの 印 (見た目は 虹色)
     const set = c => { cap.className = 'gs-cap ' + c + gold; };
 
     if (!this.skip) SFX.tone(500, 0.12, { type: 'triangle', vol: 0.05, slide: 200 });
@@ -647,7 +647,7 @@ Screens.gacha = {
     await this.wait(ten ? 420 : 650);
 
     if (direct) {
-      // かくてい: 金色の まま ぶるぶる → 「かくてい！」
+      // かくてい: 虹色の まま ぶるぶる → 「かくてい！」
       set('center hold');
       this.stamp(stage, '確定！', 'small');
       SFX.tone(160, 1.1, { type: 'sawtooth', vol: 0.035, slide: 520 });

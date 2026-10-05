@@ -311,10 +311,16 @@ function slimeSVG(id, stage = 0, look) {
   }
 
   // ---- きせかえ: ぼうし ----
+  let eyewear = '';
   if (look.hat && HAT_SVG[look.hat]) {
     const h = HAT_SVG[look.hat];
     const top = (HEAD_TOP[id] || [30, 28])[Math.min(stage, 1)];
-    front += h.eyes ? `<g transform="translate(60,71)">${h.draw(c)}</g>` : `<g transform="translate(60,${top + 5})">${h.draw(c)}</g>`;
+    if (h.eyes) {
+      // 目に かける もの: キャラごとの 目の 位置と 大きさに 合わせる。形の 違う キャラは 目と 同じ 部品の 中に 入れて、体と 一緒に 動かす
+      const [ex, ey, es] = eyeFit(id, stage);
+      eyewear = `<g transform="translate(${ex},${ey - 1}) scale(${es})">${h.draw(c)}</g>`;
+      if (!CUSTOM_BODY[id]) { front += eyewear; eyewear = ''; }
+    } else front += `<g transform="translate(60,${top + 5})">${h.draw(c)}</g>`;
   }
 
   // ---- せんざいかくせい: ★ の数だけ 足もとが かがやく ----
@@ -349,7 +355,7 @@ function slimeSVG(id, stage = 0, look) {
     <ellipse cx="60" cy="109" rx="46" ry="7" fill="#000" opacity=".25"/>
     <g class="body">
       ${behind}
-      ${CUSTOM_BODY[id] ? CUSTOM_BODY[id](c, u, stage, look) : `<path d="${bodies[id][Math.min(stage, 2)]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+      ${CUSTOM_BODY[id] ? withEyewear(CUSTOM_BODY[id](c, u, stage, look), eyewear) : `<path d="${bodies[id][Math.min(stage, 2)]}" fill="url(#${u}-g)" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
       <ellipse cx="40" cy="56" rx="9" ry="5" fill="#fff" opacity=".7" transform="rotate(-30 40 56)"/>
       <circle cx="30" cy="66" r="3" fill="#fff" opacity=".6"/>
       ${mid}
@@ -362,6 +368,30 @@ function slimeSVG(id, stage = 0, look) {
     </g>
     ${look.pet && PET_SVG[look.pet] ? `<g class="pet" transform="translate(114,111) scale(1.5)">${PET_SVG[look.pet]()}</g>` : ''}
   </svg>`;
+}
+
+// ---------------- 目に かける きせかえ (サングラスなど) の 位置 ----------------
+// [目の まんなかの x, y, 大きさ]。ふつうの スライムは (60, 72) で 目の はばが 40
+function eyeFit(id, stage) {
+  const g = stage >= 1 ? 1.08 : 1;
+  const fit = {
+    yukidarun: [60, 58, 0.93],
+    yurarin: [60, 50, 1],
+    saikoro: [51, 74, 0.75],
+    imomushi: stage >= 3 ? [60, 50, 0.5] : [36, 84, 0.65],
+    chochin: [60 + 15 * 1.1, 53, 1.1], // 一つ目: 左の レンズが 目に かかるように 右へ ずらす
+    torio: [60, 76 - 40 * g * 0.42 + 3.5, 0.55], // うえの リーダーの 顔
+  }[id];
+  return fit || [60, 72, 1];
+}
+// 形の 違う キャラの 体に、目に かける ものを 入れる (目の すぐ あと = 同じ 動く 部品の 中)
+function withEyewear(body, eyewear) {
+  if (!eyewear) return body.replace('<!--eyewear-->', '');
+  if (body.includes('<!--eyewear-->')) return body.replace('<!--eyewear-->', eyewear);
+  const i = body.indexOf('<g class="eyes">');
+  if (i < 0) return body + eyewear;
+  const j = body.indexOf('</g>', i) + 4;
+  return body.slice(0, j) + eyewear + body.slice(j);
 }
 
 // ---------------- スライムの かたちに とらわれない キャラの 体 ----------------
@@ -395,7 +425,7 @@ const CUSTOM_BODY = {
     return `<defs><radialGradient id="${u}-tshade" cx="38%" cy="30%" r="80%"><stop offset="0%" stop-color="#fff" stop-opacity=".45"/><stop offset="55%" stop-color="#fff" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".22"/></radialGradient></defs>
       <g class="trio-l">${one(1, 35, 106, 46 * g, 40 * g, happy)}</g>
       <g class="trio-r">${one(2, 85, 106, 46 * g, 40 * g, wink)}</g>
-      <g class="trio-t">${one(0, 60, 76, 44 * g, 40 * g, leader)}${stage >= 1 ? `<path d="M60,${76 - 40 * g - 12} L62.5,${76 - 40 * g - 5} L60,${76 - 40 * g - 2} L57.5,${76 - 40 * g - 5} Z" fill="${c.accent}" stroke="${tri[0][1]}" stroke-width="1.5"/>` : ''}</g>`;
+      <g class="trio-t">${one(0, 60, 76, 44 * g, 40 * g, leader)}<!--eyewear-->${stage >= 1 ? `<path d="M60,${76 - 40 * g - 12} L62.5,${76 - 40 * g - 5} L60,${76 - 40 * g - 2} L57.5,${76 - 40 * g - 5} Z" fill="${c.accent}" stroke="${tri[0][1]}" stroke-width="1.5"/>` : ''}</g>`;
   },
   // ゆらりん: すきとおった かさ・ほしの ような もよう・ゆれる しょくしゅ
   yurarin(c, u, stage) {
