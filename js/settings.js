@@ -31,12 +31,13 @@ const Settings = {
   // 今 出す 項目 (ポーズ中は セーブの 項目を のぞく)
   rows() { return SETTING_ROWS.filter(r => !(r.noPause && this.opts && this.opts.onClose)); },
 
-  // opts.title: 上の 見出し / opts.quit: { label, fn } やめる ボタン / opts.onClose: 閉じたあと (再開など)
+  // opts.title: 上の 見出し / opts.quit: { label, fn, warn } やめる ボタン (2 回 押すと やめる。warn は 確認の ときの 説明) / opts.onClose: 閉じたあと (再開など)
   open(opts = {}) {
     if (this.isOpen) return;
     this.isOpen = true;
     this.opts = opts;
     this.sel = 0;
+    this.quitArmed = false; // やめる ボタンを 1 回 押した (もう 1 回で やめる)
     let el = $('#settings');
     if (!el) {
       el = document.createElement('div');
@@ -147,7 +148,8 @@ const Settings = {
       <div class="st-help"><kbd>W</kbd><kbd>S</kbd> 選ぶ　<kbd>A</kbd><kbd>D</kbd> 変える　<kbd>Esc</kbd> ${o.onClose ? '再開' : '閉じる'}${o.quit ? `　<kbd>Enter</kbd> ${o.quit.label}` : ''}</div>
       <div class="set-actions">
         <button class="btn ${o.onClose ? 'big' : 'ghost'} st-close">${o.onClose ? '▶ 再開' : '閉じる'} <kbd>Esc</kbd></button>
-        ${o.quit ? `<button class="btn ghost st-quit">${o.quit.label} <kbd>Enter</kbd></button>` : ''}</div></div>`;
+        ${o.quit ? `<button class="btn ghost st-quit ${this.quitArmed ? 'armed' : ''}">${this.quitArmed ? `⚠️ 本当に${o.quit.label}？ もう一度` : o.quit.label} <kbd>Enter</kbd></button>` : ''}</div>
+      ${o.quit && this.quitArmed ? `<div class="st-quit-warn">${o.quit.warn || 'ここでやめると、今の進み具合は残りません'}<br><kbd>Enter</kbd> もう一度押すとやめる　<kbd>Esc</kbd> やめずに再開</div>` : ''}</div>`;
     const selRow = el.querySelector('.st-row.sel');
     if (selRow) selRow.scrollIntoView({ block: 'nearest' }); // 下の 項目を えらんだら 見える ところまで 動かす
     el.querySelector('.st-close').onclick = () => this.close();
@@ -180,6 +182,7 @@ const Settings = {
     }
     if (e.key === 'Escape' || (e.key === '0' && !(this.opts && this.opts.onClose))) { this.close(); return; }
     if (e.key === 'Enter' && this.opts && this.opts.quit) { this.quit(); return; }
+    if (this.quitArmed) { this.quitArmed = false; this.render(); } // ほかの キーを 押したら 確認を 取り消す
     const list = this.rows();
     if (k === 'w') { this.sel = (this.sel + list.length - 1) % list.length; SFX.select(); this.render(); }
     if (k === 's') { this.sel = (this.sel + 1) % list.length; SFX.select(); this.render(); }
@@ -197,6 +200,9 @@ const Settings = {
 // ポーズ中の「やめる」 (再開は しない)
 Settings.quit = function () {
   const q = this.opts && this.opts.quit;
+  // 1 回目は 確認だけ (まちがえて やめないように)
+  if (q && !this.quitArmed) { this.quitArmed = true; SFX.miss(); this.render(); return; }
+  this.quitArmed = false;
   this.opts = null; // onClose (再開) は よばない
   this.isOpen = false;
   $('#settings').classList.remove('show');

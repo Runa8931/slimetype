@@ -1549,7 +1549,7 @@ Screens.survival = {
       this.state = 'pause';
       this.held.clear();
       this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div></div>');
-      Settings.open({ title: 'ポーズ中', quit: { label: 'ホームへ（記録なし）', fn: () => App.show('home') },
+      Settings.open({ title: 'ポーズ中', quit: { label: 'ホームへ（記録なし）', warn: 'このサバイバルはここで終わり。記録と経験値は残らない', fn: () => App.show('home') },
         onClose: () => { if (this.state === 'pause') { this.state = 'run'; this.overlay(''); this.last = performance.now(); } } });
       return;
     }

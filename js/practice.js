@@ -193,12 +193,13 @@ Screens.practice = {
     // 始める 前に もどった ときは 今日の 分を 使わない
     const quit = () => App.show(this.daily ? 'gacha' : 'psetup', this.daily && this.started ? { daily: this.words * DAILY_PER_WORD } : undefined);
     if (e.key === 'Escape') {
+      if (this.state === 'count' && this.daily) return; // 3・2・1 の あいだは もどらない (今日の 分を 使った あと)
       if (this.state !== 'run') { quit(); return; }
       // 打っている とちゅう: ポーズして 設定を 開く (閉じると 再開・Enter で やめる)
       this.state = 'pause';
       this.pausedAt = performance.now();
       cancelAnimationFrame(this.raf);
-      Settings.open({ title: 'ポーズ中', quit: { label: this.daily ? 'やめてガチャへ' : 'やめる', fn: quit }, onClose: () => this.resume() });
+      Settings.open({ title: 'ポーズ中', quit: { label: this.daily ? 'やめてガチャへ' : 'やめる', warn: this.daily ? '今日の毎日ガチャはここで終わり。打ち切ったお題の分だけ回せる（今日はもう遊べない）' : 'この練習はここで終わり。経験値とコインはもらえない', fn: quit }, onClose: () => this.resume() });
       return;
     }
     if (this.state === 'ready') {

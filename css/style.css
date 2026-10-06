@@ -1622,3 +1622,7 @@ body.no-kb #p-kb { display: none; }
 .bk-now { font-size: 13px; padding: 6px 10px; border-radius: 8px; background: rgba(77,171,247,.14); border: 1px solid rgba(77,171,247,.5); }
 .bk-sum b, .bk-now b { color: var(--gold); }
 .bk-when small { color: #ffd23f; }
+/* やめる ボタンの 確認 (1 回目) */
+.st-quit.armed { border-color: #ff6b6b; color: #fff; background: rgba(255,107,107,.25); animation: st-armed .5s ease-in-out infinite alternate; }
+@keyframes st-armed { from { box-shadow: 0 0 0 rgba(255,107,107,0); } to { box-shadow: 0 0 14px rgba(255,107,107,.7); } }
+.st-quit-warn { margin-top: 8px; padding: 8px 12px; border-radius: 10px; border: 1px solid #ff6b6b; background: rgba(255,107,107,.12); font-size: 13px; text-align: center; line-height: 1.7; }

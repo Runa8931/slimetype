@@ -463,7 +463,7 @@ Screens.battle = {
       this.state = 'pause';
       cancelAnimationFrame(this.raf);
       this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div></div>');
-      Settings.open({ title: 'ポーズ中', quit: { label: this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', fn: () => this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
+      Settings.open({ title: 'ポーズ中', quit: { label: this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', warn: this.rush ? 'ボスラッシュはここで終わり（倒したボスの分のコインはもらえる）' : this.rule ? '今週のチャレンジのこの挑戦はここで終わり（ごほうびはもらえない）' : 'このバトルはここで終わり。経験値とコインはもらえない', fn: () => this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
       return;
     }
     if (e.key.length !== 1) return;
