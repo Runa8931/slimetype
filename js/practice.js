@@ -302,9 +302,7 @@ Screens.practice = {
     Save.data.totals.plays++;
     if (this.diff === 'weak') Save.data.totals.weakPlays = (Save.data.totals.weakPlays || 0) + 1;
     // 成長記録: 練習 1 回ごとの 速さと 正確さ (古い ものから 消して 500 回分まで)
-    const hist = Save.data.history = Save.data.history || [];
-    hist.push({ t: Date.now(), kpm, acc: Math.round(acc * 1000) / 1000, diff: this.diff, lang, secs });
-    if (hist.length > 500) hist.splice(0, hist.length - 500);
+    recordHistory({ mode: 'practice', kpm, acc, diff: this.diff, lang, secs });
     const expRes = grantExp(this.char.id, exp);
     const coins = grantCoins(correct / 8 * acc * acc * DIFFS[this.diff].mult);
 

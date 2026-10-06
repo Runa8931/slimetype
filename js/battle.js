@@ -1241,6 +1241,7 @@ Screens.battle = {
     grantExp(this.ch.id, exp);
     Save.data.totals.keys += this.correct;
     if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); }
+    this.recordGrowth(won, secs, acc);
     const bd = this.bd;
     let html;
     if (this.rush) {
@@ -1288,6 +1289,12 @@ Screens.battle = {
     Save.save();
     this.overlay(html);
   },
+  // 成長記録に 1 回分 足す (すぐ 終わった バトルは のせない)
+  recordGrowth(won, secs, acc) {
+    if (secs < 10 || this.correct < 20) return;
+    recordHistory({ mode: 'battle', kpm: Math.round(this.correct / (secs / 60)), acc, secs: Math.round(secs), won: !!won, enemy: this.ed.name, bdiff: this.dk,
+      ch: this.rush ? 'rush' : this.rule ? 'weekly' : undefined });
+  },
   betweenNext() {
     const r = this.nextRush;
     if (!r) return;
@@ -1334,6 +1341,7 @@ Screens.battle = {
     const firstCoins = firstClear ? (this.ed.boss ? 200 : 50) : hiddenReward ? hiddenReward.coins : 0;
     const coins = grantCoins(winCoins + firstCoins);
     const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
+    this.recordGrowth(won, secs, acc);
     App.show('result', {
       mode: 'battle', won, enemyIdx: this.idx, firstClear, stars, prevStars,
       hpLeft: Math.max(0, this.p.hp / this.p.max), playerLv: this.ch.L, enemyLv: this.ed.lv,
