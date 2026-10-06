@@ -107,7 +107,7 @@ const Save = {
   },
 };
 
-const GAME_VERSION = 'v5.16';
+const GAME_VERSION = 'v5.16.3';
 // セーブの 文字から 書いた 回数を 取り出す (全部 読まなくて よいように 文字で さがす)
 function readRev(raw) { const m = raw && /"_rev":(\d+)/.exec(raw); return m ? +m[1] : 0; }
 // 控えの 説明 (いちばん レベルの 高い キャラ・ステージ・コイン)
@@ -328,6 +328,7 @@ const App = {
   boot() {
     Save.load();
     if (Save.needDoorMigrate) migrateDoors();
+    if (refundDailyOnce()) setTimeout(() => toast('🎁 毎日タイピングガチャの今日の分をもう一度遊べるようにしました（ガチャ画面から）', 6000), 1500);
     PlayTime.init(Save.needPtEstimate);
     applySettings(); // 音量・エフェクトなど (settings.js)
     // セーブが 見つからないのに 控えが ある: 消えた ときの 戻し方を 知らせる

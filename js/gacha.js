@@ -234,6 +234,17 @@ const DAILY_SECS = 30, DAILY_PER_WORD = 3;
 function todayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
 // 今日の 分を 使ったか (タイピングを 始めた ときに 記録する。前の 版の daily は ボタンを 押した だけで 記録して いたので 見ない)
 function dailyDone() { return gachaData().dailyPlayed === todayKey(); }
+// 毎日ガチャが 始められなかった 不具合の おわび: この 版で はじめて 開いた ときに 1 回だけ 今日の 分を もどす
+const DAILY_REFUND = 'v5.16.3';
+function refundDailyOnce() {
+  const g = gachaData();
+  if (g.dailyRefund === DAILY_REFUND) return false;
+  g.dailyRefund = DAILY_REFUND;
+  const had = g.dailyPlayed === todayKey();
+  delete g.dailyPlayed;
+  Save.save();
+  return had;
+}
 function pullFree(times) {
   const g = gachaData();
   const list = [];
