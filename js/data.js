@@ -1126,8 +1126,8 @@ const HIDDEN_DEFS = [
     reveal: { text: 'サバイバル「難しい」をクリアする', check: () => svCleared('hard'), progress: () => 'まだ' } },
   // ダイヤマイマイ: 終盤の こうてつマイマイ。いどんだ キャラの レベル +3 に あわせて つよく なる (matchLv) ので、
   // Lv100 を こえた キャラでも ながい たたかいに なり 300 コンボを ねらえる
-  { host: 12, from: 3, e: E('h_diamondsnail', 'ダイヤマイマイ', 'tank', 7000, ['armor'], 'ダイヤの殻: コンボ30未満だとダメージ半減。相手のレベルに合わせて強くなり、HPがとても多い（攻撃は弱い）',
-      '星の果てで光るダイヤモンドのカタツムリ。挑んだ者と同じだけ強くなる。', { sprite: 'snail', filter: 'hue-rotate(170deg) saturate(1.8) brightness(1.35)', lv: 110, matchLv: 3, bg: 'void', hpMult: 3.4, power: 30 }),
+  { host: 12, from: 3, e: E('h_diamondsnail', 'ダイヤマイマイ', 'tank', 7000, ['armor'], 'ダイヤの殻: いつもダメージ-40%、コンボ50未満だとさらに半減。相手のレベルに合わせて強くなり、HPがとても多い（攻撃は弱い）',
+      '星の果てで光るダイヤモンドのカタツムリ。挑んだ者と同じだけ強くなる。', { sprite: 'snail', filter: 'hue-rotate(170deg) saturate(1.8) brightness(1.35)', lv: 110, matchLv: 3, bg: 'void', hpMult: 4, armorCombo: 50, hardCut: 0.4, power: 30 }),
     reward: { coins: 3000, shards: 60 },
     reveal: { text: '星の果てのステージを1つクリアする', check: () => Save.data.cleared > worldStages(12)[0], progress: () => 'まだ' } },
 ];

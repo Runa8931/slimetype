@@ -638,8 +638,10 @@ Screens.battle = {
     let armorMsg = '';
     const pierceAll = this.ch.skill.breakPierce && this.e.breakUntil > this.elapsed;
     if (this.has('armor') && !pierceAll) {
-      if (this.combo < 30) { dmg *= this.ch.trait.pierce ? 0.75 : 0.5; armorMsg = 'block'; } else armorMsg = 'break';
+      if (this.combo < (this.ed.armorCombo || 30)) { dmg *= this.ch.trait.pierce ? 0.75 : 0.5; armorMsg = 'block'; } else armorMsg = 'break';
     }
+    // ダイヤマイマイ: 殻が かたく、いつも ダメージが へる (よろいを つらぬく キャラは 少し ましに)
+    if (this.ed.hardCut && !pierceAll) dmg *= 1 - this.ed.hardCut * (this.ch.trait.pierce ? 0.5 : 1);
     if (this.shellUntil > this.elapsed && !pierceAll) { dmg *= this.ch.trait.pierce ? 0.6 : 0.3; armorMsg = 'shell'; }
     dmg = Math.max(1, Math.round(dmg * (0.9 + Math.random() * 0.1)));
 
@@ -732,7 +734,7 @@ Screens.battle = {
         this.hitEnemy(dmg, { crit, colors: f ? f.colors : [col.main, col.light, '#fff'], sound });
         if (this.ch.id === 'gorurin') this.healP(dmg * this.ch.trait.drain * (this.drainUntil > this.elapsed ? 2 : 1));
         if (boosted) this.log('アクアパワーで攻撃が強くなった！', 'good');
-        if (armorMsg === 'block') this.log('石のよろいでダメージが減った…（コンボ30で貫通）', 'enemy');
+        if (armorMsg === 'block') this.log(`${this.ed.hardCut ? 'ダイヤの殻' : '石のよろい'}でダメージが減った…（コンボ${this.ed.armorCombo || 30}で貫通）`, 'enemy');
         if (armorMsg === 'break' && Math.random() < 0.4) this.log('コンボの力でよろいを貫いた！', 'good');
         if (armorMsg === 'shell' && Math.random() < 0.5) this.log('はじかれた！ ガードが解けるまで待とう', 'enemy');
       },

@@ -169,7 +169,8 @@ function sim(cid, L, e, kpm, acc) {
           const k = [0, 1, 2].filter(() => Math.random() < cr).length; dmg *= (3 - k + k * cm) / 3;
         } else if (Math.random() < cr) dmg *= cm;
         const pAll = sk.breakPierce && breakUntil > t;
-        if (has('armor') && combo < 30 && !pAll) dmg *= tr.pierce ? 0.75 : 0.5;
+        if (has('armor') && combo < (e.armorCombo || 30) && !pAll) dmg *= tr.pierce ? 0.75 : 0.5;
+        if (e.hardCut && !pAll) dmg *= 1 - e.hardCut * (tr.pierce ? 0.5 : 1); // ダイヤマイマイ
         if (shell > t && !pAll) dmg *= tr.pierce ? 0.6 : 0.3;
         if (sk.bindBoost && bindUntil > t) dmg *= 1 + sk.bindBoost;
         if (sk.burnBoost && burnUntil > t) dmg *= 1 + sk.burnBoost;
