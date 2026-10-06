@@ -232,7 +232,8 @@ function pullGacha(times) {
 // 1 日 1 回。30 秒 タイピングして、打ち切った お題 1 つ につき 3 回 ただで 回せる
 const DAILY_SECS = 30, DAILY_PER_WORD = 3;
 function todayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
-function dailyDone() { return gachaData().daily === todayKey(); }
+// 今日の 分を 使ったか (タイピングを 始めた ときに 記録する。前の 版の daily は ボタンを 押した だけで 記録して いたので 見ない)
+function dailyDone() { return gachaData().dailyPlayed === todayKey(); }
 function pullFree(times) {
   const g = gachaData();
   const list = [];
@@ -397,12 +398,10 @@ Screens.gacha = {
     }
   },
 
-  // まいにち タイピングガチャを はじめる (はじめた 時点で きょうの 1 回を つかう)
+  // まいにち タイピングガチャを はじめる (今日の 1 回を 使うのは Space で タイピングを 始めた とき。practice.js)
   startDaily() {
     if (this.busy) return;
     if (dailyDone()) { SFX.miss(); toast('今日の毎日タイピングガチャは終わり。また明日！', 2400); return; }
-    gachaData().daily = todayKey();
-    Save.save();
     SFX.select();
     App.show('practice', { daily: true });
   },

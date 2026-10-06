@@ -89,8 +89,10 @@ Screens.practice = {
     this.diff = this.daily ? 'normal' : s.diff;
     this.duration = this.daily ? DAILY_SECS : s.time;
     this.weak = !this.daily && s.diff === 'weak' ? practiceWeakKeys() : null;
-    this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, [s.diff]);
+    // 毎日ガチャは いつも「普通」の お題 (練習で 選んで いる 難易度は 使わない。苦手キー特訓だと 止まって いた)
+    this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, [this.diff]);
     this.state = 'ready';
+    this.started = false;
     this.correct = 0; this.miss = 0; this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.words = 0; this.bestKps = 0;
     this.wordMiss = false;
     this.missMap = {};
@@ -188,7 +190,8 @@ Screens.practice = {
 
   onKey(e) {
     // まいにちガチャは とちゅうで やめても それまでの ぶんは 回せる
-    const quit = () => App.show(this.daily ? 'gacha' : 'psetup', this.daily ? { daily: this.words * DAILY_PER_WORD } : undefined);
+    // 始める 前に もどった ときは 今日の 分を 使わない
+    const quit = () => App.show(this.daily ? 'gacha' : 'psetup', this.daily && this.started ? { daily: this.words * DAILY_PER_WORD } : undefined);
     if (e.key === 'Escape') {
       if (this.state !== 'run') { quit(); return; }
       // 打っている とちゅう: ポーズして 設定を 開く (閉じると 再開・Enter で やめる)
@@ -198,7 +201,15 @@ Screens.practice = {
       Settings.open({ title: 'ポーズ中', quit: { label: this.daily ? 'やめてガチャへ' : 'やめる', fn: quit }, onClose: () => this.resume() });
       return;
     }
-    if (this.state === 'ready') { if (e.key === ' ') this.countdown(); return; }
+    if (this.state === 'ready') {
+      if (e.key === ' ') {
+        // 毎日ガチャ: ここで 今日の 1 回を 使う
+        if (this.daily) { gachaData().dailyPlayed = todayKey(); Save.save(); }
+        this.started = true;
+        this.countdown();
+      }
+      return;
+    }
     if (this.state !== 'run' || e.key.length !== 1) return;
 
     const key = e.key.toLowerCase();
