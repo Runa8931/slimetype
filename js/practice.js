@@ -85,12 +85,15 @@ Screens.practice = {
   enter(arg) {
     const s = Save.data.settings;
     this.daily = !!(arg && arg.daily);
+    // 段位認定の 試験 (dan.js)。60 秒・段位ごとの お題
+    this.exam = arg && arg.exam != null ? DAN_RANKS[arg.exam] : null;
     this.char = charInfo(Save.data.active);
     this.diff = this.daily ? 'normal' : s.diff;
-    this.duration = this.daily ? DAILY_SECS : s.time;
-    this.weak = !this.daily && s.diff === 'weak' ? practiceWeakKeys() : null;
+    this.duration = this.daily ? DAILY_SECS : this.exam ? DAN_SECS : s.time;
+    if (this.exam) this.diff = 'normal';
+    this.weak = !this.daily && !this.exam && s.diff === 'weak' ? practiceWeakKeys() : null;
     // 毎日ガチャは いつも「普通」の お題 (練習で 選んで いる 難易度は 使わない。苦手キー特訓だと 止まって いた)
-    this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, [this.diff]);
+    this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, this.exam ? this.exam.pools : [this.diff]);
     this.state = 'ready';
     this.started = false;
     this.correct = 0; this.miss = 0; this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.words = 0; this.bestKps = 0;
@@ -107,7 +110,10 @@ Screens.practice = {
     this.updateHud();
     $('#p-timebar').style.width = '100%';
     $('#p-exp').previousElementSibling.textContent = this.daily ? 'ガチャ' : '獲得EXP';
-    this.overlay(this.daily
+    this.overlay(this.exam
+      ? `<div class="ov-box"><div class="ov-title">📜 段位認定「${this.exam.name}」・${this.duration}秒</div>
+        <div class="ov-sub">合格の条件: 打鍵/分 ${this.exam.kpm} 以上・正確率 ${(this.exam.acc * 100).toFixed(1)}% 以上</div><div class="ov-key"><kbd>Space</kbd>でスタート</div></div>`
+      : this.daily
       ? `<div class="ov-box"><div class="ov-title">⌨️ 毎日タイピングガチャ・${this.duration}秒</div>
         <div class="ov-sub">打ち切ったお題1つにつきガチャ${DAILY_PER_WORD}回！（お題は普通）</div><div class="ov-key"><kbd>Space</kbd>でスタート</div></div>`
       : `<div class="ov-box"><div class="ov-title">${DIFFS[this.diff].name}・${this.duration}秒</div>
@@ -191,7 +197,7 @@ Screens.practice = {
   onKey(e) {
     // まいにちガチャは とちゅうで やめても それまでの ぶんは 回せる
     // 始める 前に もどった ときは 今日の 分を 使わない
-    const quit = () => App.show(this.daily ? 'gacha' : 'psetup', this.daily && this.started ? { daily: this.words * DAILY_PER_WORD } : undefined);
+    const quit = () => App.show(this.daily ? 'gacha' : this.exam ? 'dan' : 'psetup', this.daily && this.started ? { daily: this.words * DAILY_PER_WORD } : undefined);
     if (e.key === 'Escape') {
       if (this.state === 'count' && this.daily) return; // 3・2・1 の あいだは もどらない (今日の 分を 使った あと)
       if (this.state !== 'run') { quit(); return; }
@@ -199,7 +205,7 @@ Screens.practice = {
       this.state = 'pause';
       this.pausedAt = performance.now();
       cancelAnimationFrame(this.raf);
-      Settings.open({ title: 'ポーズ中', quit: { label: this.daily ? 'やめてガチャへ' : 'やめる', warn: this.daily ? '今日の毎日ガチャはここで終わり。打ち切ったお題の分だけ回せる（今日はもう遊べない）' : 'この練習はここで終わり。経験値とコインはもらえない', fn: quit }, onClose: () => this.resume() });
+      Settings.open({ title: 'ポーズ中', quit: { label: this.daily ? 'やめてガチャへ' : 'やめる', warn: this.daily ? '今日の毎日ガチャはここで終わり。打ち切ったお題の分だけ回せる（今日はもう遊べない）' : this.exam ? 'この試験はここで終わり（不合格にはならない。また受けられる）' : 'この練習はここで終わり。経験値とコインはもらえない', fn: quit }, onClose: () => this.resume() });
       return;
     }
     if (this.state === 'ready') {
@@ -276,6 +282,7 @@ Screens.practice = {
   finish() {
     this.state = 'done';
     cancelAnimationFrame(this.raf);
+    masteryCheck(this.char.id); // 熟練度が 上がって いたら 知らせる
     if (this.daily) {
       // まいにちガチャ: 経験値・きろくの かわりに ガチャへ
       Save.data.totals.keys += this.correct;
@@ -290,6 +297,17 @@ Screens.practice = {
     const correct = this.correct, miss = this.miss;
     const acc = correct + miss ? correct / (correct + miss) : 0;
     const kpm = Math.round(correct / (secs / 60));
+    if (this.exam) {
+      // 段位認定: 経験値は 練習と 同じだけ もらえて、結果は 段位の 画面で 見せる
+      Save.data.totals.keys += correct;
+      grantExp(this.char.id, typingExp(correct, miss, secs, DIFFS.normal.mult, this.char.L));
+      recordHistory({ mode: 'practice', kpm, acc, diff: 'exam', exam: this.exam.name, lang: Save.data.settings.lang, secs });
+      const result = danResult(this.exam.i, kpm, acc);
+      this.overlay(`<div class="count go">${result.pass ? '合格！' : 'FINISH!'}</div>`);
+      SFX.win();
+      setTimeout(() => App.show('dan', { result }), 1100);
+      return;
+    }
     const score = Math.round(kpm * acc ** 3);
     const exp = typingExp(correct, miss, secs, DIFFS[this.diff].mult, this.char.L);
 

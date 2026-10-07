@@ -353,6 +353,7 @@ function slimeSVG(id, stage = 0, look) {
     </defs>
     ${awaken}
     ${aura}
+    ${look.master ? masterAuraSVG(c) : ''}
     <ellipse cx="60" cy="109" rx="46" ry="7" fill="#000" opacity=".25"/>
     <g class="body">
       ${behind}
@@ -369,6 +370,18 @@ function slimeSVG(id, stage = 0, look) {
     </g>
     ${look.pet && PET_SVG[look.pet] ? `<g class="pet" transform="translate(114,111) scale(1.5)">${PET_SVG[look.pet]()}</g>` : ''}
   </svg>`;
+}
+
+// ---------------- 熟練度が 極みの キャラの オーラ (mastery.js) ----------------
+// 体の まわりを まわる ひし形の 光と、足もとの 光の 輪。キャラの 色で 光る
+function masterAuraSVG(c) {
+  const gems = [0, 45, 90, 135, 180, 225, 270, 315].map((a, i) => {
+    const r = a * Math.PI / 180, x = 60 + Math.cos(r) * 60, y = 64 + Math.sin(r) * 48;
+    return `<path d="M${x.toFixed(1)},${(y - 8).toFixed(1)} L${(x + 5).toFixed(1)},${y.toFixed(1)} L${x.toFixed(1)},${(y + 8).toFixed(1)} L${(x - 5).toFixed(1)},${y.toFixed(1)} Z" fill="${i % 2 ? c.accent : '#fff'}" stroke="${c.main}" stroke-width="1"/>`;
+  }).join('');
+  return `<ellipse cx="60" cy="66" rx="62" ry="52" fill="${c.accent}" opacity=".16" class="spark-soft"/>
+    <g class="master-aura"><ellipse cx="60" cy="64" rx="60" ry="48" fill="none" stroke="${c.accent}" stroke-width="2.5" stroke-dasharray="4 6" opacity=".9"/>${gems}</g>
+    <ellipse cx="60" cy="108" rx="56" ry="11" fill="none" stroke="${c.accent}" stroke-width="3.5" opacity=".8" class="spark-soft"/>`;
 }
 
 // ---------------- 目に かける きせかえ (サングラスなど) の 位置 ----------------

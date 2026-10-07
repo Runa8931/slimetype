@@ -158,6 +158,7 @@ function slimeLook(id) {
     hat: w.hat && hasItem(w.hat) ? w.hat.slice(2) : null,
     pet: w.pet && hasItem(w.pet) ? w.pet.slice(2) : null,
     stars: awakenOf(id),
+    master: typeof masteryLv === 'function' && masteryLv(id) >= MASTERY_MAX, // 熟練度が 極み
   };
 }
 

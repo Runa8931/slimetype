@@ -107,7 +107,7 @@ const Save = {
   },
 };
 
-const GAME_VERSION = 'v5.16.3';
+const GAME_VERSION = 'v5.17';
 // セーブの 文字から 書いた 回数を 取り出す (全部 読まなくて よいように 文字で さがす)
 function readRev(raw) { const m = raw && /"_rev":(\d+)/.exec(raw); return m ? +m[1] : 0; }
 // 控えの 説明 (いちばん レベルの 高い キャラ・ステージ・コイン)
@@ -240,6 +240,7 @@ function recordHit(key) {
   if (!key || key === ' ') return;
   const h = Save.data.hitKeys = Save.data.hitKeys || {};
   h[key] = (h[key] || 0) + 1;
+  if (typeof masteryAdd === 'function') masteryAdd(Save.data.active, 'keys'); // 熟練度: 正しく 打った 数
 }
 
 function weakKeys(n = 5) {
@@ -417,6 +418,7 @@ Screens.select = {
         <p class="cc-desc">${d.desc}</p>
         <div class="stats">${statBars(rankBase(id), 100)}</div>
         ${abilityHtml(c)}
+        ${masteryHtml(id)}
         <div class="evo-note">Lv.20・40・60・80で進化すると特性・必殺もパワーアップ</div>
       </button>`;
     }).join('');
@@ -523,6 +525,7 @@ Screens.home = {
         ${Object.keys(diffName).map(k => `<div><span>${diffName[k]}</span><b>${best[lang + '-' + k] ?? '—'}</b></div>`).join('')}
         <div><span>バトル突破</span><b>${Save.data.cleared}/${MAIN_STAGES}</b></div>
         <div><span>サバイバル</span><b>${svRecord(best)}</b></div>
+        <div><span>段位</span><b>${danName()}</b></div>
         <div><span>プレイ時間</span><b>${(PlayTime.flush(), fmtHMS(PlayTime.total()))}</b></div>
       </div>
       <div class="weak"><span>苦手なキー</span>${wk.length ? wk.map(([k, n]) => `<kbd>${k === ';' ? ';' : k.toUpperCase()}</kbd><small>${n}</small>`).join('') : '<small>まだデータがありません</small>'}</div>`;
@@ -540,6 +543,7 @@ Screens.home = {
     if (e.key === '9') $('#go-doors').click();
     if (e.key.toLowerCase() === 'r') $('#go-growth').click();
     if (e.key.toLowerCase() === 'c') $('#go-challenge').click();
+    if (e.key.toLowerCase() === 'd') { SFX.select(); Screens.dan.from = 'home'; App.show('dan'); }
     // 0 は 設定 (App の キー処理で 開く)
     if (e.key === 'Escape') App.show('title');
   },

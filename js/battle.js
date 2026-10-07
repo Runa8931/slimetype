@@ -836,6 +836,7 @@ Screens.battle = {
     const ch = this.ch;
     const col = ch.def.colors;
     const sk = ch.skill;
+    masteryAdd(ch.id, 'skills'); // 熟練度: 必殺を 使った 数
     cutin(sk.name, ch.name, col.main, slimeSVG(ch.id, ch.stage), charRank(ch.id));
     if (charRank(ch.id)) SFX.rankCut();
     SFX.skill(ch.id); // キャラごとの ひっさつの 音
@@ -1240,8 +1241,9 @@ Screens.battle = {
     const exp = Math.round(typingExp(this.correct, this.miss, secs, 0.3, this.ch.L));
     grantExp(this.ch.id, exp);
     Save.data.totals.keys += this.correct;
-    if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); }
+    if (won) { Save.data.totals.wins++; dexWin(this.ed.id, secs); masteryAdd(this.ch.id, 'wins'); }
     this.recordGrowth(won, secs, acc);
+    masteryCheck(this.ch.id);
     const bd = this.bd;
     let html;
     if (this.rush) {
@@ -1321,6 +1323,7 @@ Screens.battle = {
       if (!this.ed.hidden) {
         stars = starsFor(this.dk, acc0, hpLeft0); prevStars = stageStars(this.idx);
         if (stars > prevStars) (Save.data.stars = Save.data.stars || {})[this.idx] = stars;
+        if (stars >= 3) masteryStar3(this.ch.id, this.idx); // 熟練度: そのキャラで ★3
       }
     }
     const firstClear = won && !this.ed.hidden && this.idx === Save.data.cleared;
@@ -1342,6 +1345,8 @@ Screens.battle = {
     const coins = grantCoins(winCoins + firstCoins);
     const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
     this.recordGrowth(won, secs, acc);
+    if (won) masteryAdd(this.ch.id, 'wins');
+    masteryCheck(this.ch.id);
     App.show('result', {
       mode: 'battle', won, enemyIdx: this.idx, firstClear, stars, prevStars,
       hpLeft: Math.max(0, this.p.hp / this.p.max), playerLv: this.ch.L, enemyLv: this.ed.lv,

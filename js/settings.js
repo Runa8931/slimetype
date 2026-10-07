@@ -6,7 +6,7 @@
 // ============================================================
 
 // 0 キーで 開ける 画面 (タイピング中の 画面は のぞく。そこでは ポーズ中に S)
-const SETTINGS_KEY_SCREENS = ['title', 'home', 'select', 'psetup', 'stages', 'dex', 'ach', 'doors', 'gacha', 'wardrobe', 'result', 'growth', 'challenge'];
+const SETTINGS_KEY_SCREENS = ['title', 'home', 'select', 'psetup', 'stages', 'dex', 'ach', 'doors', 'gacha', 'wardrobe', 'result', 'growth', 'challenge', 'dan'];
 
 const SETTING_ROWS = [
   { id: 'volume', label: '🔊 マスター音量', kind: 'vol', note: 'すべての音の大きさ' },

@@ -500,7 +500,7 @@ Screens.stages = {
       return `<div class="node ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''} ${e.boss ? 'boss' : ''}" id="node-${i}" data-g="${g}" data-i="${i}" style="left:${p.x}px;top:${p.y}px">
         <div class="node-pad"></div>
         <div class="node-icon">${icon}</div>
-        ${cleared ? '<div class="node-star">★</div>' : ''}
+        ${cleared ? nodeStars(g) : ''}
         <div class="node-label">${stageLabel(g)}${locked ? '' : ' ' + e.name}</div>
       </div>`;
     }).join('');
@@ -557,7 +557,7 @@ Screens.stages = {
             <div class="st-desc">${locked ? '前の相手を倒すと現れる' : e.desc}</div>
             ${locked ? '' : `<div class="st-ability">${e.abilityDesc}</div>`}
           </div>
-          ${cleared ? '<div class="st-clear">CLEAR</div>' : ''}
+          ${cleared ? `<div class="st-clear">CLEAR${!e.hidden ? `<span class="st-stars">${stageStarText(stageStars(g))}</span>` : ''}</div>` : ''}
           ${locked ? '' : `<div class="st-actions">${here ? '<span class="st-here">今ここ</span>' : '<span class="st-warp">ワープ</span>'}<button class="st-fight" data-g="${g}">戦う</button></div>`}
         </div>`;
       }).join('');
@@ -926,3 +926,9 @@ Screens.stages = {
   onKeyUp(e) { const k = e.key.toLowerCase(); this.held.delete(k); if (k === this.selKey) this.stopSelRepeat(); },
   onBlur() { this.held.clear(); this.stopSelRepeat(); },
 };
+
+// マップの 敵の 上に ★評価を 出す (3 つ中 いくつ。★評価が できる 前に クリアした ステージは ☆☆☆)
+function nodeStars(g) {
+  const n = stageStars(g);
+  return `<div class="node-stars s${n}" title="★評価 ${n}/3">${'<b>★</b>'.repeat(n)}${'<i>☆</i>'.repeat(3 - n)}</div>`;
+}

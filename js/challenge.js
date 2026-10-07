@@ -79,6 +79,14 @@ Screens.challenge = {
           <div class="ch-rec">${wk.cleared ? '✔ 今週はクリア済み（何度でも挑戦できる）' : `ごほうび: 🪙 ${WEEKLY_REWARD.coins}・💎 ${WEEKLY_REWARD.shards}（週に1回）`}</div>
         </div>
       </div>
+      <div class="ch-card dan">
+        <div class="ch-icon">📜</div>
+        <div class="ch-body">
+          <div class="ch-name"><kbd>D</kbd> 段位認定 <small>今の段位: ${danName()}</small></div>
+          <div class="ch-text">60秒打って、打鍵/分と正確率の両方が条件をこえたら合格。10級から十段まで。キャラのレベルは関係なし</div>
+          <div class="ch-rec">${danRank() >= DAN_RANKS.length - 1 ? '✔ 十段まで合格' : `次は <b>${DAN_RANKS[danRank() + 1].name}</b>（打鍵/分 ${DAN_RANKS[danRank() + 1].kpm}・正確率 ${(DAN_RANKS[danRank() + 1].acc * 100).toFixed(1)}%）`}</div>
+        </div>
+      </div>
       <div class="ch-card stars">
         <div class="ch-icon">⭐</div>
         <div class="ch-body">
@@ -90,6 +98,7 @@ Screens.challenge = {
     $('#ch-desc').querySelectorAll('.ch-diff button').forEach(b => { b.onclick = () => { setBattleDiff(b.dataset.k); this.render(); }; });
     $('#ch-list .rush').onclick = () => this.startRush();
     $('#ch-list .weekly').onclick = () => this.startWeekly();
+    $('#ch-list .dan').onclick = () => { SFX.select(); Screens.dan.from = 'challenge'; App.show('dan'); };
   },
 
   startRush() {
@@ -110,5 +119,6 @@ Screens.challenge = {
     if (n >= 1 && n <= BATTLE_DIFF_KEYS.length) { setBattleDiff(BATTLE_DIFF_KEYS[n - 1]); this.render(); }
     if (k === 'b') this.startRush();
     if (k === 'w') this.startWeekly();
+    if (k === 'd') { SFX.select(); Screens.dan.from = 'challenge'; App.show('dan'); }
   },
 };

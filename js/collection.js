@@ -145,6 +145,14 @@ const ACHIEVEMENTS = [
   { id: 'rush_all', name: 'ボスハンター', desc: 'ボスラッシュで全部のボスを倒す', check: () => Object.values(Save.data.rush || {}).some(r => r.n >= RUSH_LIST.length) },
   { id: 'rush_adv', name: '覇者', desc: '上級者のボスラッシュで全部のボスを倒す', hard: true, check: () => ((Save.data.rush || {}).adv || {}).n >= RUSH_LIST.length },
   { id: 'weekly3', name: '週ごとの挑戦者', desc: '今週のチャレンジを3週クリアする', check: () => (Save.data.weeklyClears || 0) >= 3 },
+  // 熟練度
+  { id: 'master_1', name: '極めし者', desc: 'どれか1体の熟練度を極みにする', check: () => masteredCount() >= 1 },
+  { id: 'master_5', name: '五つの極み', desc: '5体の熟練度を極みにする', check: () => masteredCount() >= 5 },
+  { id: 'master_all', name: 'スライムの師匠', desc: '全員の熟練度を極みにする', hard: true, check: () => masteredCount() >= Object.keys(CHARACTERS).length },
+  // 段位認定
+  { id: 'dan_1', name: '有段者', desc: '段位認定で初段に合格する', check: () => danRank() >= 10 },
+  { id: 'dan_5', name: '五段の指', desc: '段位認定で五段に合格する', hard: true, check: () => danRank() >= 14 },
+  { id: 'dan_10', name: 'タイピング名人', desc: '段位認定で十段に合格する', hard: true, check: () => danRank() >= 19 },
   // せんざいかくせい ★4 (キャラごと)
   ...Object.keys(CHARACTERS).map(id => ({
     id: 'aw4_' + id, name: `${CHARACTERS[id].names[0]}の親友`, desc: `${CHARACTERS[id].names[0]}を覚醒★4にする`, check: () => awakenOf(id) >= AWAKEN_MAX,
