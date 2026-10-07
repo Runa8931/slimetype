@@ -83,7 +83,7 @@ Screens.challenge = {
         <div class="ch-icon">📜</div>
         <div class="ch-body">
           <div class="ch-name"><kbd>D</kbd> 段位認定 <small>今の段位: ${danName()}</small></div>
-          <div class="ch-text">60秒打って、打鍵/分と正確率の両方が条件をこえたら合格。10級から十段まで。キャラのレベルは関係なし</div>
+          <div class="ch-text">${DAN_SECS}秒打って、打鍵/分と正確率の両方が条件をこえたら合格。10級から十段まで。キャラのレベルは関係なし</div>
           <div class="ch-rec">${danRank() >= DAN_RANKS.length - 1 ? '✔ 十段まで合格' : `次は <b>${DAN_RANKS[danRank() + 1].name}</b>（打鍵/分 ${DAN_RANKS[danRank() + 1].kpm}・正確率 ${(DAN_RANKS[danRank() + 1].acc * 100).toFixed(1)}%）`}</div>
         </div>
       </div>

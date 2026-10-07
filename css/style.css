@@ -1678,3 +1678,4 @@ body.no-kb #p-kb { display: none; }
 .ms-bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
 .ms-bar i { display: block; height: 100%; background: var(--gold); }
 .ms-row small { font-size: 10px; white-space: nowrap; }
+.sub-card.dan { background: linear-gradient(120deg, rgba(105,219,124,.28), rgba(105,219,124,.06)); }

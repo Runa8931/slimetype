@@ -460,6 +460,7 @@ Screens.home = {
     $('#go-doors').onclick = () => { SFX.select(); App.show('doors'); };
     $('#go-growth').onclick = () => { SFX.select(); App.show('growth'); };
     $('#go-challenge').onclick = () => { SFX.select(); App.show('challenge'); };
+    $('#go-dan').onclick = () => { SFX.select(); Screens.dan.from = 'home'; App.show('dan'); };
     // これまでの記録で とれる しょうごうが あれば 知らせる
     announceDoors(checkDoors(), 300);
     checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 400 + i * 2800));
@@ -503,6 +504,7 @@ Screens.home = {
     $('#home-coins').textContent = Save.data.coins || 0;
     $('#doors-count').textContent = `${doorCount()}/${DOORS.length}`;
     $('#ch-count').textContent = `★${starTotal()}`;
+    $('#dan-count').textContent = danRank() >= 0 ? danName() : '';
     // ひらいていない モードの カード
     for (const [el, door] of [['#go-survival', 'survival'], ['#go-gacha', 'gacha'], ['#go-wardrobe', 'gacha']]) {
       const card = $(el), open = doorOpen(door);
@@ -543,7 +545,7 @@ Screens.home = {
     if (e.key === '9') $('#go-doors').click();
     if (e.key.toLowerCase() === 'r') $('#go-growth').click();
     if (e.key.toLowerCase() === 'c') $('#go-challenge').click();
-    if (e.key.toLowerCase() === 'd') { SFX.select(); Screens.dan.from = 'home'; App.show('dan'); }
+    if (e.key.toLowerCase() === 'd') $('#go-dan').click();
     // 0 は 設定 (App の キー処理で 開く)
     if (e.key === 'Escape') App.show('title');
   },
