@@ -227,6 +227,12 @@ function showKps(root, kps, extra = '', hot = false) {
   floatText(r.left + 90, r.top + 2, `${kps.toFixed(1)}打/秒${extra}`, 'kps-pop' + (hot ? ' hot' : ''));
 }
 
+// PERFECT! を お題の 枠の 外 (右上) に 出す (次の お題の 文字に かぶらない ように)
+function perfectPop(root) {
+  const r = root.getBoundingClientRect();
+  floatText(r.right - 70, r.top - 14, 'PERFECT!', 'perfect');
+}
+
 function recordMiss(key) {
   if (!key || key === ' ') return;
   Save.data.missKeys[key] = (Save.data.missKeys[key] || 0) + 1;

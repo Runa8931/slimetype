@@ -695,8 +695,7 @@ Screens.battle = {
     const from = FX.center(ps);
     const to = FX.center($('#b-esprite'));
     if (perfect) {
-      const tp = FX.center($('#b-tp .tp-roma'));
-      floatText(tp.x + 200, tp.y - 60, 'PERFECT!', 'perfect');
+      perfectPop($('#b-tp'));
     }
     this.pending++;
     const kinds = {

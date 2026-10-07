@@ -260,12 +260,15 @@ Screens.practice = {
     if (keys >= 4) this.bestKps = Math.max(this.bestKps, kps);
     const tr = this.char.trait;
     showKps($('#p-tp'), kps, '', this.char.id === 'onpuru' && kps > tr.speedFrom);
-    const from = FX.center($('#p-tp .tp-roma'));
+    // 経験値の 玉は 枠の 左はしから 飛ばす (まん中から だと 次の お題に かぶる)
+    const tpr = $('#p-tp').getBoundingClientRect();
+    const from = { x: tpr.left + 12, y: tpr.top + tpr.height / 2 };
     const sprite = $('#p-sprite');
     const to = FX.center(sprite);
     const col = this.char.def.colors;
     const gain = this.target.totalKeys();
-    FX.burst(from.x, from.y, { colors: [col.main, '#fff', col.accent], count: this.wordMiss ? 10 : 22, speed: 4 });
+    // 光の 粒は 着せ替えの エフェクトを つけて いる ときだけ (つけて いない ときは 次の お題が 見やすいように 出さない)
+    if (fxStyle()) FX.burst(from.x, from.y, { colors: [col.main, '#fff', col.accent], count: this.wordMiss ? 10 : 22, speed: 4 });
     FX.projectile(from, to, {
       color: col.accent, size: 7, frames: 20, arc: -80,
       onHit: () => {
@@ -274,7 +277,7 @@ Screens.practice = {
         floatText(to.x, to.y - 50, `+${gain}`, 'exp-pop');
       },
     });
-    if (!this.wordMiss) floatText(from.x + 200, from.y - 70, 'PERFECT!', 'perfect');
+    if (!this.wordMiss) perfectPop($('#p-tp'));
     this.nextWord();
     this.updateHud();
   },
