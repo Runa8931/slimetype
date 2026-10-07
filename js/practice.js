@@ -101,6 +101,10 @@ Screens.practice = {
     this.missMap = {};
     this.timeLeft = this.duration;
 
+    // 段位認定: 道場の 背景と 掛け軸、始まる ときに 幕
+    $('#scr-practice').classList.toggle('dojo', !!this.exam);
+    if (this.exam) { dojoDeco($('#scr-practice'), this.exam.name, '一打入魂'); this.curtainUntil = performance.now() + danCurtain(this.exam); }
+    else { const dd = $('#scr-practice .dojo-deco'); if (dd) dd.remove(); this.curtainUntil = 0; }
     $('#p-sprite').innerHTML = slimeSVG(this.char.id, this.char.stage);
     $('#p-name').textContent = `${this.char.name} Lv.${this.char.L}`;
     buildKeyboard($('#p-kb'));
@@ -109,6 +113,7 @@ Screens.practice = {
     this.nextWord();
     this.updateHud();
     $('#p-timebar').style.width = '100%';
+    $('#p-time').textContent = this.duration; // 始める 前から この 回の 時間を 出す (毎日ガチャ 30 秒・段位 30 秒)
     $('#p-exp').previousElementSibling.textContent = this.daily ? 'ガチャ' : '獲得EXP';
     this.overlay(this.exam
       ? `<div class="ov-box"><div class="ov-title">📜 段位認定「${this.exam.name}」・${this.duration}秒</div>
@@ -209,6 +214,7 @@ Screens.practice = {
       return;
     }
     if (this.state === 'ready') {
+      if (e.key === ' ' && performance.now() < this.curtainUntil) return; // 幕が ひらく まで まつ
       if (e.key === ' ') {
         // 毎日ガチャ: ここで 今日の 1 回を 使う
         if (this.daily) { gachaData().dailyPlayed = todayKey(); Save.save(); }

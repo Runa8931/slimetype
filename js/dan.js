@@ -53,6 +53,7 @@ Screens.dan = {
   },
 
   render() {
+    dojoDeco($('#scr-dan'), '段位認定', '一打入魂');
     const d = danData(), next = Math.min(d.rank + 1, DAN_RANKS.length - 1), done = d.rank >= DAN_RANKS.length - 1;
     const r = this.result;
     const head = r ? `<div class="dan-result ${r.pass ? 'pass' : 'fail'}">
@@ -85,3 +86,25 @@ Screens.dan = {
     if (e.key === ' ' || e.key === 'Enter') this.start();
   },
 };
+
+// ---------------- 道場の かざり・幕 ----------------
+// 左右の 掛け軸 (たて書き)。screen の 中に 1 つだけ 置く
+function dojoDeco(screen, left, right) {
+  let el = screen.querySelector('.dojo-deco');
+  if (!el) { el = document.createElement('div'); el.className = 'dojo-deco'; screen.prepend(el); }
+  el.innerHTML = `<div class="kakejiku l"><div class="kj-paper"><span>${left}</span><i class="kj-seal">印</i></div></div>
+    <div class="kakejiku r"><div class="kj-paper"><span>${right}</span></div></div>`;
+}
+// 試験が 始まる ときの 幕 (歌舞伎の 定式幕: 黒・柿色・萌葱色)。名前を 見せてから 横に ひらく
+function danCurtain(rank) {
+  document.querySelectorAll('.dan-curtain').forEach(x => x.remove());
+  const el = document.createElement('div');
+  el.className = 'dan-curtain';
+  el.innerHTML = `<div class="dc-cloth"></div><div class="dc-label"><small>段位認定</small><b>${rank.name}</b><small>${DAN_SECS}秒・打鍵/分 ${rank.kpm}・正確率 ${(rank.acc * 100).toFixed(1)}%</small></div>`;
+  document.body.appendChild(el);
+  // 拍子木 (カン・カン) → 幕が ひらく
+  SFX.tone(1900, 0.06, { type: 'square', vol: 0.05 }); SFX.tone(2100, 0.06, { type: 'square', vol: 0.05, delay: 0.28 });
+  setTimeout(() => { el.classList.add('open'); SFX.noise(0.9, { vol: 0.05, filter: 900, sweep: 300 }); }, 1100);
+  setTimeout(() => el.remove(), 2300);
+  return 2000; // この あいだは Space を うけつけない
+}
