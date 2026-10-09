@@ -79,7 +79,7 @@ Screens.result = {
         <button class="btn big" id="res-again">${r.mode === 'practice' ? 'もう一度 <kbd>Space</kbd>' : r.mode === 'survival' ? 'もう一度 <kbd>Space</kbd>' : r.won ? 'マップへ <kbd>Space</kbd> <kbd>Esc</kbd>' : 'リベンジ <kbd>Space</kbd>'}</button>
       </div>`;
     // しょうごう: 新しく とれたものを 知らせる
-    const got = checkAchievements(r);
+    const got = checkAchievements(r, { quiet: true }); // 結果画面は 上に 自分で 出す
     // ぼうけんのとびら: 新しく ひらいた ものを 知らせる
     const doors = checkDoors();
     if (doors.length) {
@@ -89,7 +89,7 @@ Screens.result = {
     const have = $('#result-wrap .res-coin-have');
     if (have) have.textContent = Save.data.coins; // しょうごうの コインも ふくめる
     if (got.length) {
-      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="ach-get">${got.map(a => `<div>🏅 称号「<b>${a.name}</b>」ゲット！ 🪙+${ACH_COINS}<small>${a.desc}</small></div>`).join('')}</div>`);
+      $('#result-wrap').insertAdjacentHTML('afterbegin', `<div class="ach-get">${got.map(a => `<div>🏅 称号「<b>${a.name}</b>」ゲット！ 🪙+${ACH_COINS} <span class="new-tag">NEW</span><small>${a.desc}</small></div>`).join('')}</div>`);
       setTimeout(() => { SFX.levelup(); FX.confetti(); }, 600);
     }
     if ($('#res-home')) $('#res-home').onclick = () => this.home();

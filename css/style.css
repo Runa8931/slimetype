@@ -1726,3 +1726,23 @@ body.no-kb #p-kb { display: none; }
 .dc-label small { font-size: 14px; font-weight: 700; }
 .dan-curtain.open .dc-cloth { transform: translateX(-102%); }
 .dan-curtain.open .dc-label { opacity: 0; }
+
+/* ---------- NEW の 印・称号の お知らせ ---------- */
+.new-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: linear-gradient(180deg, #ff6b6b, #e03131); color: #fff; font-size: 10px; font-weight: 900; letter-spacing: .05em; line-height: 1.4; vertical-align: middle; box-shadow: 0 0 8px rgba(255,80,80,.7); animation: new-blink 1.2s ease-in-out infinite; font-family: var(--font); }
+@keyframes new-blink { 50% { transform: scale(1.12); } }
+.ach-card, .dex-cell, .wd-item, .door-card, .char-card { position: relative; }
+.ach-card > .new-tag, .dex-cell > .new-tag, .wd-item > .new-tag, .door-card > .new-tag { position: absolute; top: -6px; right: -6px; margin: 0; z-index: 2; }
+.new-tag.corner { position: absolute; top: -8px; right: -8px; margin: 0; z-index: 2; }
+.door-card.is-new { cursor: pointer; }
+#wd-tabs button.has-new { position: relative; }
+#wd-tabs button.has-new::after { content: 'NEW'; position: absolute; top: -8px; right: -6px; padding: 0 4px; border-radius: 5px; background: #e03131; color: #fff; font-size: 9px; font-weight: 900; }
+.ach-notice { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 9500; display: flex; align-items: center; gap: 12px; min-width: 340px; max-width: 92vw; padding: 12px 18px; border-radius: 16px;
+  background: linear-gradient(120deg, #3b2f0b, #1d1b3a); border: 2px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,.5), 0 0 24px rgba(255,210,63,.45); animation: an-in .45s cubic-bezier(.3,1.5,.5,1); pointer-events: none; }
+.ach-notice.hard { border-color: #ff6bff; box-shadow: 0 10px 30px rgba(0,0,0,.5), 0 0 24px rgba(255,107,255,.5); }
+.ach-notice.out { transition: opacity .35s, transform .35s; opacity: 0; transform: translate(-50%, -20px); }
+.an-icon { font-size: 34px; }
+.an-body { display: grid; gap: 1px; }
+.an-body small { color: var(--gold); font-size: 12px; font-weight: 700; }
+.an-body b { font-size: 20px; }
+.an-body span { color: var(--sub); font-size: 12px; }
+@keyframes an-in { from { opacity: 0; transform: translate(-50%, -30px) scale(.9); } }

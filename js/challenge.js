@@ -52,7 +52,7 @@ function weeklyEnds(w) { const d = new Date(new Date(2026, 0, 5).getTime() + ((w
 Screens.challenge = {
   enter() {
     $('#btn-ch-back').onclick = () => App.show('home');
-    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 400 + i * 2800));
+
     this.render();
   },
 

@@ -195,18 +195,18 @@ function receive(it) {
   if (it.rarity === 'SSR') g.ssr++;
   if (it.kind === 'char') {
     const id = it.char;
-    if (!hasChar(id)) { g.chars[id] = true; return { it, kind: 'new' }; }
+    if (!hasChar(id)) { g.chars[id] = true; markNew('char:' + id); return { it, kind: 'new' }; }
     const aw = awakenOf(id);
     if (aw < AWAKEN_MAX) {
       g.awaken[id] = aw + 1;
-      if (aw + 1 === AWAKEN_MAX) g.items['aw_' + id] = Date.now();
+      if (aw + 1 === AWAKEN_MAX) { g.items['aw_' + id] = Date.now(); markNew('item:aw_' + id); }
       return { it, kind: 'awaken', stars: aw + 1 };
     }
     const n = CHAR_SHARD[CHARACTERS[id].gacha ? 'gacha' : 'starter'];
     g.shards += n;
     return { it, kind: 'shard', n };
   }
-  if (!g.items[it.id]) { g.items[it.id] = Date.now(); return { it, kind: 'new' }; }
+  if (!g.items[it.id]) { g.items[it.id] = Date.now(); markNew('item:' + it.id); return { it, kind: 'new' }; }
   const n = RARITY[it.rarity].shard;
   g.shards += n;
   return { it, kind: 'shard', n };
@@ -753,7 +753,7 @@ Screens.gacha = {
       if (r.it.kind === 'char' && r.kind === 'new') setTimeout(() => toast(`🎉 ${r.it.name}が仲間になった！「スライムを変える」で選べるよ`, 3200), 900 + i * 200);
       // ★4 は showAwakenReward で 大きく 見せる
     });
-    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 1800 + i * 2800));
+    setTimeout(() => checkAchievements(null), 1800); // 帯で 知らせる (newmark.js)
     this.render();
   },
 
@@ -819,9 +819,14 @@ Screens.wardrobe = {
       return `<button class="wd-item r-${it.rarity} ${cur === it.id ? 'on' : ''} ${own ? '' : 'locked'}" data-id="${it.id}" style="--rc:${RARITY[it.rarity].color}" ${own ? '' : 'disabled'}>
         <span class="gc-rar-s">${RARITY[it.rarity].name}</span>
         ${own ? itemIcon(it, id) : '<div class="gc-q">？</div>'}
-        <div class="gc-name">${own ? it.name : '？？？'}</div></button>`;
+        <div class="gc-name">${own ? it.name : '？？？'}</div>${own ? newTag('item:' + it.id) : ''}</button>`;
     }).join('');
-    $('#wd-items').querySelectorAll('.wd-item:not(.locked)').forEach(b => { b.onclick = () => this.wear(b.dataset.id || null); });
+    $('#wd-items').querySelectorAll('.wd-item:not(.locked)').forEach(b => { b.onclick = () => { if (b.dataset.id) clearNew('item:' + b.dataset.id); this.wear(b.dataset.id || null); }; });
+    // 種類の タブにも NEW
+    document.querySelectorAll('#wd-tabs button').forEach(b => {
+      const n = GACHA_ITEMS.filter(it => it.kind === b.dataset.v && isNew('item:' + it.id)).length + (b.dataset.v === 'color' ? Object.keys(CHARACTERS).filter(c => isNew('item:aw_' + c)).length : 0);
+      b.classList.toggle('has-new', n > 0);
+    });
     const owned = list.filter(it => hasItem(it.id)).length;
     $('#wd-count').textContent = `${KIND_NAME[this.tab]} ${owned}/${list.length}${this.tab === 'fx' ? '　・　バトルの攻撃の弾と、お題を打ち終わったときに枠から出る' : ''}`;
   },

@@ -49,7 +49,7 @@ Screens.dan = {
     this.render();
     if (this.result) {
       const r = this.result;
-      if (r.pass) { SFX.win(); checkAchievements(null).forEach((a, k) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 1200 + k * 2800)); }
+      if (r.pass) SFX.win();
       else SFX.miss();
     }
   },

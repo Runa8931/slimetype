@@ -107,7 +107,7 @@ const Save = {
   },
 };
 
-const GAME_VERSION = 'v5.17.2';
+const GAME_VERSION = 'v5.18';
 // セーブの 文字から 書いた 回数を 取り出す (全部 読まなくて よいように 文字で さがす)
 function readRev(raw) { const m = raw && /"_rev":(\d+)/.exec(raw); return m ? +m[1] : 0; }
 // 控えの 説明 (いちばん レベルの 高い キャラ・ステージ・コイン)
@@ -327,6 +327,8 @@ const App = {
     $('#scr-' + name).classList.add('active');
     this.current = name;
     this.shownAt = performance.now();
+    // 画面を かえる たびに 称号を しらべる (どこで 条件を みたしても すぐ 知らせる)。画面を 作る 前に して、ボタンの NEW にも 入れる
+    if (Save.data && Save.data.active && name !== 'title') checkAchievements(null);
     if (Screens[name] && Screens[name].enter) Screens[name].enter(arg);
     // タイトルは 草原の 背景 (ホームは もとの 星空)
     if (name === 'title') Meadow.show(true); else Meadow.hide();
@@ -418,7 +420,7 @@ Screens.select = {
       return `<button class="char-card ${Save.data.active === id ? 'current' : ''} ${charRank(id) ? 'rank-' + charRank(id) : ''}" data-id="${id}" style="--cc:${d.colors.main};--cd:${d.colors.dark}">
         ${rankFrame(id)}<span class="mc-key">${i + 1}</span>
         <div class="sprite bounce d${i}">${slimeSVG(id, c.stage)}</div>
-        <div class="cc-name">${c.name} <small>Lv.${c.L}</small></div>
+        <div class="cc-name">${c.name} <small>Lv.${c.L}</small>${newTag('char:' + id)}</div>
         ${c.awaken ? `<div class="cc-stars">${starText(c.awaken)}</div>` : ''}
         <div class="badges">${rankBadge(id)}<span class="badge type-${id}">${d.type}</span><span class="badge">${d.role}</span></div>
         <p class="cc-desc">${d.desc}</p>
@@ -432,6 +434,7 @@ Screens.select = {
     $('#btn-select-back').onclick = () => this.back();
   },
   pick(id) {
+    clearNew('char:' + id);
     Save.data.active = id;
     Save.save();
     SFX.select();
@@ -469,7 +472,7 @@ Screens.home = {
     $('#go-dan').onclick = () => { SFX.select(); Screens.dan.from = 'home'; App.show('dan'); };
     // これまでの記録で とれる しょうごうが あれば 知らせる
     announceDoors(checkDoors(), 300);
-    checkAchievements(null).forEach((a, i) => setTimeout(() => toast(`🏅 称号「${a.name}」を手に入れた！（🪙+${ACH_COINS}）`, 2600), 400 + i * 2800));
+    checkAchievements(null); // 新しい 称号は 帯で 知らせる (newmark.js)
     // 音量・エフェクト・言語などは 設定画面 (settings.js) で 変える
     $('#go-settings').onclick = () => Settings.open();
   },
@@ -510,6 +513,13 @@ Screens.home = {
     $('#home-coins').textContent = Save.data.coins || 0;
     $('#doors-count').textContent = `${doorCount()}/${DOORS.length}`;
     $('#ch-count').textContent = `★${starTotal()}`;
+    // 新しく 手に 入れた ものが ある ボタンに NEW
+    for (const [btn, kind] of [['#go-select', 'char'], ['#go-wardrobe', 'item'], ['#go-dex', 'dex'], ['#go-ach', 'ach'], ['#go-doors', 'door']]) {
+      const el = $(btn); if (!el) continue;
+      let t = el.querySelector(':scope > .new-tag');
+      if (newCount(kind) && !t) el.insertAdjacentHTML('beforeend', '<span class="new-tag corner">NEW</span>');
+      else if (!newCount(kind) && t) t.remove();
+    }
     $('#dan-count').textContent = danRank() >= 0 ? danName() : '';
     // ひらいていない モードの カード
     for (const [el, door] of [['#go-survival', 'survival'], ['#go-gacha', 'gacha'], ['#go-wardrobe', 'gacha']]) {

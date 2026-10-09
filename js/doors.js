@@ -57,7 +57,11 @@ function checkDoors() {
     if (doorOpen(d.id)) continue;
     let ok = false;
     try { ok = d.check(); } catch (e) { ok = false; }
-    if (ok) { Save.data.doors[d.id] = Date.now(); got.push(d); if (d.give) gachaData().items[d.give] = Date.now(); }
+    if (ok) {
+      Save.data.doors[d.id] = Date.now(); got.push(d); markNew('door:' + d.id);
+      if (d.char) markNew('char:' + d.char);
+      if (d.give) { gachaData().items[d.give] = Date.now(); markNew('item:' + d.give); }
+    }
   }
   if (got.length) Save.save();
   return got;
@@ -98,7 +102,7 @@ Screens.doors = {
     $('#doors-desc').innerHTML = `開いた扉 <b>${doorCount()}</b> / ${DOORS.length}　・　ステージを進めると新しいモードやスライムに出会える`;
     $('#doors-list').innerHTML = DOORS.map(d => {
       const open = doorOpen(d.id);
-      return `<div class="door-card ${open ? 'open' : 'closed'}">
+      return `<div class="door-card ${open ? 'open' : 'closed'} ${isNew('door:' + d.id) ? 'is-new' : ''}" data-id="${d.id}">${newTag('door:' + d.id)}
         <div class="door-frame">${open ? doorIcon(d) : '<div class="door-lock">🚪</div>'}</div>
         <div class="door-body">
           <div class="door-name">${d.name} ${open ? '<span class="door-ok">開いた！</span>' : ''}</div>
@@ -106,6 +110,7 @@ Screens.doors = {
           <div class="door-cond ${open ? 'done' : ''}">${open ? '✔' : '🔑'} ${d.text}${!open && d.progress ? ` <small>（今 ${d.progress()}）</small>` : ''}</div>
         </div></div>`;
     }).join('');
+    $('#doors-list').querySelectorAll('.door-card.is-new').forEach(c => { c.onclick = () => { clearNew('door:' + c.dataset.id); SFX.select(); this.render(); }; });
   },
   onKey(e) { if (e.key === 'Escape') App.show('home'); },
 };

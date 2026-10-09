@@ -7,9 +7,10 @@ function dexEntry(id) {
   Save.data.dex = Save.data.dex || {};
   return (Save.data.dex[id] = Save.data.dex[id] || { seen: false, wins: 0, best: null });
 }
-function dexSeen(id) { dexEntry(id).seen = true; Save.save(); }
+function dexSeen(id) { const d = dexEntry(id); if (!d.seen) markNew('dex:' + id); d.seen = true; Save.save(); }
 function dexWin(id, secs) {
   const d = dexEntry(id);
+  if (!d.seen) markNew('dex:' + id);
   d.seen = true; d.wins++;
   if (d.best == null || secs < d.best) d.best = Math.round(secs * 10) / 10;
   Save.save();
@@ -28,15 +29,18 @@ Screens.dex = {
         return `<button class="dex-cell ${st} ${e.boss ? 'boss' : ''}" data-g="${g}">
           <span class="dex-no">No.${String(g + 1).padStart(2, '0')}</span>
           <div class="dex-sprite">${enemySVG(e.id)}</div>
-          <div class="dex-name">${st === 'none' ? '？？？' : e.name}</div></button>`;
+          <div class="dex-name">${st === 'none' ? '？？？' : e.name}</div>${newTag('dex:' + e.id)}</button>`;
       }).join('');
       return `<div class="dex-world w-${w.id}">ワールド${wi + 1}　${w.name}</div><div class="dex-grid">${cells}</div>`;
     }).join('') + `<div class="dex-world w-hidden">隠しステージ</div><div class="dex-grid">${HIDDEN_DEFS.map(h => {
       const e = ENEMIES[h.idx], d = (Save.data.dex || {})[e.id] || {};
       const st = d.wins > 0 ? 'won' : d.seen ? 'seen' : 'none';
-      return `<button class="dex-cell ${st} boss" data-g="${h.idx}"><span class="dex-no">隠し</span><div class="dex-sprite">${enemySVG(e.id)}</div><div class="dex-name">${st === 'none' ? '？？？' : e.name}</div></button>`;
+      return `<button class="dex-cell ${st} boss" data-g="${h.idx}"><span class="dex-no">隠し</span><div class="dex-sprite">${enemySVG(e.id)}</div><div class="dex-name">${st === 'none' ? '？？？' : e.name}</div>${newTag('dex:' + e.id)}</button>`;
     }).join('')}</div>`;
-    $('#dex-list').querySelectorAll('.dex-cell').forEach(b => { b.onclick = () => this.show(+b.dataset.g); });
+    $('#dex-list').querySelectorAll('.dex-cell').forEach(b => { b.onclick = () => {
+      if (clearNew('dex:' + ENEMIES[+b.dataset.g].id)) { const t = b.querySelector('.new-tag'); if (t) t.remove(); }
+      this.show(+b.dataset.g);
+    }; });
     $('#btn-dex-back').onclick = () => App.show('home');
     this.show(null);
   },
@@ -163,16 +167,18 @@ const ACHIEVEMENTS = [
 const ACH_COINS = 100;
 
 // まだ持っていない しょうごうを しらべて、新しく とれたものを返す
-function checkAchievements(r) {
+// opts.quiet: 帯の お知らせを 出さない (結果画面は 自分で 出す)
+function checkAchievements(r, opts = {}) {
   Save.data.ach = Save.data.ach || {};
   const got = [];
   for (const a of ACHIEVEMENTS) {
     if (Save.data.ach[a.id]) continue;
     let ok = false;
     try { ok = a.check(r); } catch (e) { ok = false; }
-    if (ok) { Save.data.ach[a.id] = Date.now(); got.push(a); }
+    if (ok) { Save.data.ach[a.id] = Date.now(); got.push(a); markNew('ach:' + a.id); }
   }
   if (got.length) grantCoins(ACH_COINS * got.length);
+  if (got.length && !opts.quiet) AchNotice.push(got);
   return got;
 }
 function achCount() { return Object.keys(Save.data.ach || {}).length; }
@@ -196,10 +202,11 @@ Screens.ach = {
       return `<button class="ach-card ${ok ? 'got' : 'locked'} ${on ? 'on' : ''}" data-id="${a.id}" ${ok ? '' : 'disabled'}>
         <div class="ach-icon">${ok ? '🏅' : '🔒'}</div>
         <div class="ach-body"><div class="ach-name">${a.hard ? '<span class="ach-hard">★難しい</span> ' : ''}${ok ? a.name : '？？？'}</div><div class="ach-desc">${a.desc}${ok ? '' : ` <small class="ach-coin">🪙${ACH_COINS}</small>`}</div></div>
-        ${on ? '<div class="ach-on">飾り中</div>' : ''}</button>`;
+        ${on ? '<div class="ach-on">飾り中</div>' : ''}${ok ? newTag('ach:' + a.id) : ''}</button>`;
     }).join('');
     $('#ach-list').querySelectorAll('.ach-card.got').forEach(b => {
       b.onclick = () => {
+        if (clearNew('ach:' + b.dataset.id)) { SFX.select(); this.render(); return; } // NEW は 1 回 押すと 消える
         Save.data.title = Save.data.title === b.dataset.id ? null : b.dataset.id;
         Save.save(); SFX.select(); this.render();
       };
