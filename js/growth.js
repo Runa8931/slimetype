@@ -42,7 +42,7 @@ Screens.growth = {
     const battles = all.filter(h => historyMode(h) === 'battle'), wins = battles.filter(h => h.won).length;
     const stat = (label, val, sub) => `<div class="gr-stat"><span>${label}</span><b>${val}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
     $('#growth-stats').innerHTML = [
-      stat(`${kindName}の回数`, all.length + '回', !battles.length ? '' : this.kind === 'battle' ? `勝ち ${wins}回（勝率 ${Math.round(wins / battles.length * 100)}%）` : `うちバトル ${battles.length}回・勝ち ${wins}回`),
+      stat(`${kindName}の回数`, all.length + '回', !battles.length ? '' : this.kind === 'battle' ? `勝ち ${wins}回（勝率 ${Math.round(wins / battles.length * 100)}%）` : ''), // 「すべて」は 練習と バトルを 分けずに 出す
       stat('最高の打鍵/分', best || '—'),
       stat('最近10回の平均', all.length ? Math.round(avg(last, h => h.kpm)) : '—', all.length ? `正確率 ${(avg(last, h => h.acc) * 100).toFixed(1)}%` : ''),
       stat('最初の10回から', up === null ? '—' : `${up >= 0 ? '+' : ''}${up}`, up === null ? '11回以上で表示' : '打鍵/分の伸び'),
@@ -66,12 +66,13 @@ Screens.growth = {
         <text x="${W - R + 6}" y="${y + 4}" class="gr-axis acc">${Math.round((accMin + (1 - accMin) * f) * 100)}%</text>`;
     }).join('');
     const path = (f, y) => list.map((h, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(f(h)).toFixed(1)}`).join(' ');
-    // 練習は 青い 丸、バトルは ピンクの ひし形 (勝ちは ぬりつぶし・負けは わく だけ)
+    // 「バトル」だけの ときは ピンクの ひし形 (勝ちは ぬりつぶし・負けは わく だけ)。それ 以外は 青い 丸
     const dots = list.map((h, i) => {
       const cx = x(i).toFixed(1), cy = yK(h.kpm).toFixed(1);
       const tip = `${new Date(h.t).toLocaleDateString('ja-JP')}　${h.kpm}打鍵/分・正確率${(h.acc * 100).toFixed(1)}%・${historyMode(h) === 'battle'
         ? `バトル「${h.enemy || ''}」${(BATTLE_DIFFS[h.bdiff] || {}).name || ''}・${h.won ? '勝ち' : '負け'}` : `練習・${(DIFFS[h.diff] || {}).name || ''}`}`;
-      return historyMode(h) === 'battle'
+      // 「すべて」では 練習と バトルを 見分けず、同じ 丸で 出す (2026-10-09 ユーザーの 希望)
+      return this.kind === 'battle'
         ? `<path d="M${cx},${cy - 5} L${+cx + 5},${cy} L${cx},${+cy + 5} L${cx - 5},${cy} Z" class="gr-dot battle ${h.won ? 'won' : 'lost'}"><title>${tip}</title></path>`
         : `<circle cx="${cx}" cy="${cy}" r="3.5" class="gr-dot"><title>${tip}</title></circle>`;
     }).join('');
@@ -84,7 +85,7 @@ Screens.growth = {
       <text x="${L}" y="${H - 6}" class="gr-axis">${d0}</text>
       <text x="${W - R}" y="${H - 6}" text-anchor="end" class="gr-axis">${d1}</text>
     </svg>
-    <div class="gr-legend"><span class="kpm">― 打鍵/分（左の目もり）</span><span class="acc">┄ 正確率（右の目もり）</span>${this.kind !== 'battle' ? '<span class="kpm">● 練習</span>' : ''}${this.kind !== 'practice' ? '<span class="bt">◆ バトル（白抜きは負け）</span>' : ''}<small>最近の${list.length}回</small></div>`;
+    <div class="gr-legend"><span class="kpm">― 打鍵/分（左の目もり）</span><span class="acc">┄ 正確率（右の目もり）</span>${this.kind === 'battle' ? '<span class="bt">◆ 白抜きは負け</span>' : ''}<small>最近の${list.length}回</small></div>`;
   },
 
   // キーごとの ミスの わりあい
