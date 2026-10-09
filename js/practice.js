@@ -93,7 +93,7 @@ Screens.practice = {
     if (this.exam) this.diff = 'normal';
     this.weak = !this.daily && !this.exam && s.diff === 'weak' ? practiceWeakKeys() : null;
     // 毎日ガチャは いつも「普通」の お題 (練習で 選んで いる 難易度は 使わない。苦手キー特訓だと 止まって いた)
-    this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : new WordDeck(s.lang, this.exam ? this.exam.pools : [this.diff]);
+    this.deck = this.weak ? new WeakDeck(s.lang, this.weak.keys) : (this.exam ? new WordDeck(s.lang, this.exam.pools, null, { plain: true }) : new WordDeck(s.lang, [this.diff]));
     this.state = 'ready';
     this.started = false;
     this.correct = 0; this.miss = 0; this.combo = 0; this.comboAcc = 0; this.maxCombo = 0; this.words = 0; this.bestKps = 0;

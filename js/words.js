@@ -109,15 +109,20 @@ class NoRepeatDeck {
   }
 }
 
+// 数字・記号・句読点 (ー と 英語の スペースは ふつうの 文字 あつかい)
+const PLAIN_NG = /[0-9０-９、。，．,.!?！？:;'"()（）「」&$#%+=\/@*~^\[\]]/;
+
 class WordDeck {
   // theme: ワールドの id のとき、そのワールドに ちなんだ お題も まぜる (約 2 わり)
-  constructor(lang, diffs, theme) {
+  // opts.plain: 数字・記号・「、」「。」の 入った お題を のぞく (段位認定)
+  constructor(lang, diffs, theme, opts = {}) {
     this.lang = lang; this.diffs = diffs; this.theme = theme;
-    const main = [];
+    let main = [];
     for (const d of diffs) {
       if (lang === 'en') main.push(...WORDS_EN[d].map(w => ({ t: w, k: w })));
       else main.push(...WORDS_JA[d]);
     }
+    if (opts.plain) main = main.filter(w => !PLAIN_NG.test(w.t) && !PLAIN_NG.test(w.k));
     const th = typeof WORDS_THEME !== 'undefined' && WORDS_THEME[theme];
     const themeList = th ? (lang === 'en' ? th.en.map(w => ({ t: w, k: w })) : th.ja) : [];
     this.theme = new NoRepeatDeck(themeList);
