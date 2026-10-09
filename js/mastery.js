@@ -7,7 +7,7 @@
 // ============================================================
 
 const MASTERY_TASKS = [
-  { id: 'keys', name: '正しく打った数', goal: 20000, unit: '打鍵', get: m => m.keys || 0 },
+  { id: 'keys', name: '正しく打った数', goal: 3000, unit: '打鍵', get: m => m.keys || 0 }, // 2026-10-09 に 20000 → 3000 (多すぎると 言われた)
   { id: 'wins', name: 'バトルの勝利', goal: 30, unit: '回', get: m => m.wins || 0 },
   { id: 'skills', name: '必殺を使った数', goal: 150, unit: '回', get: m => m.skills || 0 },
   { id: 's3', name: '★3にしたステージ', goal: 5, unit: '個', get: m => Object.keys(m.s3 || {}).length },
@@ -43,6 +43,12 @@ function masteryCheck(id) {
     ? `✨ ${name}の熟練度が極みになった！ 専用のオーラがついた（🪙+${MASTERY_COINS * up}）`
     : `⭐ ${name}の熟練度が ${lv} になった！（🪙+${MASTERY_COINS * up}）`, 4200), 1500);
   Save.save();
+}
+
+// 名前の 横に 出す 小さな 印 (熟練度 2/4・極み)
+function masteryBadge(id) {
+  const lv = masteryLv(id);
+  return `<span class="ms-badge ${lv >= MASTERY_MAX ? 'max' : ''}" title="熟練度">${lv >= MASTERY_MAX ? '✨極み' : `熟練度 ${lv}/${MASTERY_MAX}`}</span>`;
 }
 
 // キャラ選びの カードに 出す 熟練度

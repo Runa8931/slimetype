@@ -421,6 +421,7 @@ Screens.select = {
         ${rankFrame(id)}<span class="mc-key">${i + 1}</span>
         <div class="sprite bounce d${i}">${slimeSVG(id, c.stage)}</div>
         <div class="cc-name">${c.name} <small>Lv.${c.L}</small>${newTag('char:' + id)}</div>
+        <div class="cc-mastery">${masteryBadge(id)}</div>
         ${c.awaken ? `<div class="cc-stars">${starText(c.awaken)}</div>` : ''}
         <div class="badges">${rankBadge(id)}<span class="badge type-${id}">${d.type}</span><span class="badge">${d.role}</span></div>
         <p class="cc-desc">${d.desc}</p>
@@ -490,7 +491,7 @@ Screens.home = {
       <div class="hc-top">
         <div class="sprite big bounce">${slimeSVG(c.id, c.stage)}</div>
         <div class="hc-id">
-          <div class="hc-name">${c.name}${c.awaken ? ` <span class="hc-stars">${starText(c.awaken)}</span>` : ''}</div>
+          <div class="hc-name">${c.name}${c.awaken ? ` <span class="hc-stars">${starText(c.awaken)}</span>` : ''} ${masteryBadge(c.id)}</div>
           ${currentTitle() ? `<div class="hc-title">🏅 ${currentTitle()}</div>` : ''}
           <div class="badges">${rankBadge(c.id)}<span class="badge type-${c.id}">${d.type}</span><span class="badge">${d.role}</span><span class="badge evo">${nextEvo}</span></div>
           <div class="hc-lv">Lv.<b>${c.L}</b></div>
@@ -499,6 +500,7 @@ Screens.home = {
         </div>
       </div>
       <div class="stats">${statBars(c.stats, Math.max(60, c.stats.hp))}</div>
+      ${masteryHtml(c.id)}
       ${abilityHtml(c)}
       ${c.stage < EVO_LEVELS.length ? (() => {
         // 進化したときの すがた (かくせいの ぶんも ふくめる)
