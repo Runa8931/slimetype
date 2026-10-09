@@ -107,7 +107,7 @@ const Save = {
   },
 };
 
-const GAME_VERSION = 'v5.17';
+const GAME_VERSION = 'v5.17.2';
 // セーブの 文字から 書いた 回数を 取り出す (全部 読まなくて よいように 文字で さがす)
 function readRev(raw) { const m = raw && /"_rev":(\d+)/.exec(raw); return m ? +m[1] : 0; }
 // 控えの 説明 (いちばん レベルの 高い キャラ・ステージ・コイン)
