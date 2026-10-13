@@ -109,8 +109,11 @@ Object.assign(ENEMY_SVG, {
 //  ・HP は へらしすぎず、Lv124・完凸 3 体・中級者 300 打鍵・正確さ 95% の 計算で 1 体 約 25〜40 秒 (全体 約 3 分) に そろえた
 //    2 階 (トレントン) は 殻と コンボ半減で 長く なるので HP を 少なめに
 //  ・手強さは 攻撃で 出す: 中級者で 1 階ごとに パーティの HP が 3〜5 割 へる くらい。上級者は 攻撃 ×0.5 (DUNGEON_POW。もともと 敵の 攻撃が 約 1.8 倍)
-const DUNGEON_POW = { beg: 1, mid: 1, adv: 0.5 };
-function dungeonEnemy(f, dk) { return { ...f, power: Math.round(f.power * (DUNGEON_POW[dk] || 1)) }; }
+//  ・2026-10-13 (v5.19.6): バグ (どろりんの 毒で 無敵) が 直って「もう少し 強く」と 言われた。
+//    5 階 つづけて (HP 持ちこし) の 計算で、初心者は 5 階 すべて HP 7 割 以上 残って いたので 大きく、中級者・上級者は 少し 強く した
+const DUNGEON_POW = { beg: 1.9, mid: 1.08, adv: 0.55 };  // 攻撃の 倍率 (難易度ごと)
+const DUNGEON_HPK = { beg: 1.45, mid: 1.1, adv: 1.05 }; // HP の 倍率 (難易度ごと)
+function dungeonEnemy(f, dk) { return { ...f, power: Math.round(f.power * (DUNGEON_POW[dk] || 1)), hpMult: f.hpMult * (DUNGEON_HPK[dk] || 1) }; }
 const DUNGEON_FLOORS = [
   { id: 'd_octo', name: '大ダコ王オクトキング', lv: 100, bg: 'sea', ability: ['ink', 'charge'], power: 312, interval: 5000, hpMult: 1.6,
     abilityDesc: '墨でガイドを隠し、3回に1回強い攻撃', desc: '深い海の底のダンジョンを治める大ダコの王。8本の足で何でもつかむ。' },
