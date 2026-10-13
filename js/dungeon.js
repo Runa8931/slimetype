@@ -104,19 +104,19 @@ Object.assign(ENEMY_SVG, {
 });
 
 // ---------------- 階と ボス ----------------
-// 同じ くらいの レベルの ふつうの ボスと くらべて HP 約 2.7 倍・攻撃 約 1.55 倍 (2026-10-13: 「1 体 3 分は 長い」と 言われ HP を 約 55% に、
-// その ぶん 攻撃を 1.25 倍 して 手強さは 残した)
-// 連携攻撃と チームスキルで パーティの 攻撃は 1 体の 約 1.7 倍 → たおすまで ふつうの ボスの 約 1.6 倍の 時間 (1 体 約 1 分半)
+// HP は「全ダンジョンで 5 分 (1 体 約 1 分)」が 目安 (2026-10-13 に ユーザーが 決めた)。推奨レベル・ミスなしの 計算で 1 体 約 20 秒、
+// ミス・読む 時間・レベル不足 などで 実際は その 約 3 倍 (前は 計算 1 分 → 実際 5 分 以上 かかった)。攻撃は ふつうの ボスの 約 1.55 倍
+// 連携攻撃と チームスキルで パーティの 攻撃は 1 体の 約 1.7 倍
 const DUNGEON_FLOORS = [
-  { id: 'd_octo', name: '大ダコ王オクトキング', lv: 40, bg: 'sea', ability: ['ink', 'charge'], power: 78, interval: 5000, hpMult: 2.5,
+  { id: 'd_octo', name: '大ダコ王オクトキング', lv: 40, bg: 'sea', ability: ['ink', 'charge'], power: 78, interval: 5000, hpMult: 0.85,
     abilityDesc: '墨でガイドを隠し、3回に1回強い攻撃', desc: '深い海の底のダンジョンを治める大ダコの王。8本の足で何でもつかむ。' },
-  { id: 'd_treant', name: '森の巨人トレントン', lv: 65, bg: 'rain', ability: ['armor', 'shell'], power: 90, interval: 5200, hpMult: 2.6,
+  { id: 'd_treant', name: '森の巨人トレントン', lv: 65, bg: 'rain', ability: ['armor', 'shell'], power: 90, interval: 5200, hpMult: 0.9,
     abilityDesc: 'かたい樹皮: コンボ30未満だとダメージ半減。ときどき殻にこもる', desc: '千年生きた大木の巨人。ちょっとやそっとの攻撃ではびくともしない。' },
-  { id: 'd_thunderbird', name: '雷鳥ライボルト', lv: 90, bg: 'sky', ability: ['thunder', 'wind', 'rage'], power: 110, interval: 4800, hpMult: 2.6,
+  { id: 'd_thunderbird', name: '雷鳥ライボルト', lv: 90, bg: 'sky', ability: ['thunder', 'wind', 'rage'], power: 110, interval: 4800, hpMult: 0.9,
     abilityDesc: '落雷の予告・文字がゆれる風・HP半分で速くなる', desc: '嵐の雲の上に巣をつくる金色の鳥。羽ばたくたびに雷が落ちる。' },
-  { id: 'd_serpent', name: '氷の大蛇ヨルムガント', lv: 110, bg: 'snow', ability: ['freeze', 'charge', 'rage'], power: 115, interval: 5000, hpMult: 2.7,
+  { id: 'd_serpent', name: '氷の大蛇ヨルムガント', lv: 110, bg: 'snow', ability: ['freeze', 'charge', 'rage'], power: 115, interval: 5000, hpMult: 0.9,
     abilityDesc: 'こごえさせる・3回に1回強い攻撃・HP半分で速くなる', desc: '氷の山をとりまくほど長い大蛇。吐く息で何でも凍らせる。' },
-  { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 92, interval: 5200, hpMult: 2.9,
+  { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 92, interval: 5200, hpMult: 0.95,
     abilityDesc: '本気になると闇でガイドを隠し、必殺ゲージを奪う。毒・落雷の予告', desc: 'ダンジョンのいちばん奥でねむる、すべての魔物の王。目がいくつあるのか、だれも知らない。' },
 ].map((f, i) => ({ ...f, floor: i, type: 'boss', boss: true, giant: true, base: { ...ENEMY_TYPES.boss }, abilities: f.ability, diff: 'hard', exp: 0 }));
 const DUNGEON_HEAL = 0.3, DUNGEON_REVIVE = 0.25; // 階の 間の 回復 / 倒れた キャラ
@@ -492,7 +492,7 @@ function teamCutin(name, synNames, extra, members) {
     <div class="tc-center"><div class="tc-label">TEAM SKILL</div><div class="tc-title">${name}</div>
       ${synNames.length ? `<div class="tc-syns">${synNames.map(n => `<span>${n}</span>`).join('')}</div>` : ''}
       ${extra.length ? `<div class="tc-extra">${extra.join('・')}</div>` : ''}</div>`;
-  document.body.appendChild(el);
+  ($('#arena') || document.body).appendChild(el); // バトルの 場の 中だけ (お題の 欄は 見えた まま 打てる)
   // 音: 3 体ぶん の 音が 重なって 和音に なる
   [523, 659, 784].forEach((f, i) => SFX.tone(f, 0.35, { type: 'triangle', vol: 0.05, delay: 0.12 * i }));
   SFX.tone(1047, 0.6, { type: 'triangle', vol: 0.06, delay: 0.5, slide: 1568 });
