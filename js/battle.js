@@ -193,6 +193,9 @@ Screens.battle = {
   // 毎フレームの処理: 敵の攻撃ゲージ・どく・きり
   tick(now) {
     if (this.state !== 'run') return;
+    // 守り: 計算の まちがいで 敵の HP が 数で なくなったら 直前の 値に もどす (無敵に ならない ように)
+    if (!Number.isFinite(this.e.hp)) { console.warn('敵の HP が おかしく なったので もどした', this.e.hp); this.e.hp = Number.isFinite(this._lastEhp) ? this._lastEhp : this.e.max; this.updateBars(); }
+    this._lastEhp = this.e.hp;
     const dt = Math.min(50, now - this.last);
     this.last = now;
     this.elapsed += dt;
@@ -245,7 +248,10 @@ Screens.battle = {
     // どろりん: 敵の どく (1 秒ごと、かさなった 数だけ)
     if (this.e.poison > 0 && this.elapsed >= this.e.nextPoison) {
       this.e.nextPoison = this.elapsed + 1000;
-      const d = Math.max(1, Math.round(this.e.max * this.ch.trait.poisonPct * this.e.poison * (this.poisonBoostUntil > this.elapsed ? 2 : 1)));
+      // 毒の 強さは 毒を つけた どろりんの 値 (敵に 覚えて おく。ダンジョンで 攻撃の 中心が ほかの キャラに 回っても こわれない)
+      const pct = this.e.poisonPct || this.ch.trait.poisonPct || 0.0035;
+      const boosted = Math.max(this.poisonBoostUntil || 0, this.e.poisonBoostUntil || 0) > this.elapsed;
+      const d = Math.max(1, Math.round(this.e.max * pct * this.e.poison * (boosted ? 2 : 1)));
       this.e.hp -= d;
       const ec = FX.center($('#b-esprite'));
       floatText(ec.x + (Math.random() - 0.5) * 30, ec.y - 30, d, 'dmg poison');
@@ -601,7 +607,7 @@ Screens.battle = {
     const tempoHit = this.tempo > 0;
     if (tempoHit) { dmg *= this.tempoMult; this.tempo--; }
     // どろりん: 敵に どくが かさなる / ゆきだるん: ゆきだまが たまる
-    if (this.ch.id === 'dororin') { this.e.poison = Math.min(this.ch.trait.poisonMax, this.e.poison + 1); if (!this.e.nextPoison || this.e.nextPoison < this.elapsed) this.e.nextPoison = this.elapsed + 1000; }
+    if (this.ch.id === 'dororin') { this.e.poisonPct = this.ch.trait.poisonPct; this.e.poison = Math.min(this.ch.trait.poisonMax, this.e.poison + 1); if (!this.e.nextPoison || this.e.nextPoison < this.elapsed) this.e.nextPoison = this.elapsed + 1000; }
     if (this.ch.id === 'yukidarun') this.snow = Math.min(this.ch.trait.snowMax, this.snow + 1);
     // メタルン: ながい お題ほど 強い
     if (this.ch.id === 'metarun' && keys > this.ch.trait.longFrom) dmg *= 1 + Math.min(this.ch.trait.longMax, (keys - this.ch.trait.longFrom) * this.ch.trait.longStep);
@@ -770,6 +776,7 @@ Screens.battle = {
   },
 
   hitEnemy(dmg, { crit = false, colors = ['#fff'], big = false, sound = null } = {}) {
+    if (!Number.isFinite(dmg)) { console.warn('ダメージが おかしいので 1 に した', dmg); dmg = 1; }
     const broken = this.e.breakUntil > this.elapsed;
     if (broken) dmg = Math.round(dmg * 1.3); // メタルンの ブレイク
     if (this.teamAtk !== 1) dmg = Math.round(dmg * this.teamAtk); // パーティの 相性と 絆
@@ -943,7 +950,7 @@ Screens.battle = {
           if (ch.id === 'ryumaru') this.log(`${sk.name}！ ${dmg}のダメージ！`, 'good');
           if (ch.id === 'koorin') { this.e.chillUntil = this.elapsed + sk.chill * 1000; this.log(`${sk.name}！ ${dmg}ダメージ、敵を${sk.chill}秒こごえさせた！`, 'good'); }
           if (ch.id === 'fuwari') { this.p.evade = sk.evade; this.log(`${sk.name}！ ${dmg}ダメージ、次の攻撃を${sk.evade}回かわす！`, 'good'); }
-          if (ch.id === 'dororin') { this.e.poison = Math.min(this.ch.trait.poisonMax + sk.addPoison, this.e.poison + sk.addPoison); this.e.nextPoison = this.elapsed + 1000; this.e.weakUntil = this.elapsed + sk.weaken * 1000; this.log(`${sk.name}！ ${dmg}ダメージ、毒×${this.e.poison}、敵の攻撃が弱くなった！`, 'good'); }
+          if (ch.id === 'dororin') { this.e.poisonPct = this.ch.trait.poisonPct; this.e.poison = Math.min(this.ch.trait.poisonMax + sk.addPoison, this.e.poison + sk.addPoison); this.e.nextPoison = this.elapsed + 1000; this.e.weakUntil = this.elapsed + sk.weaken * 1000; this.log(`${sk.name}！ ${dmg}ダメージ、毒×${this.e.poison}、敵の攻撃が弱くなった！`, 'good'); }
           if (ch.id === 'gorurin') { this.healP(dmg * sk.skillDrain); this.log(`${sk.name}！ ${dmg}ダメージ、元気を吸い取った！`, 'good'); }
           if (ch.id === 'yukidarun') this.log(`${sk.name}！ 雪玉${this.snow}個で${dmg}ダメージ！`, 'good');
           if (ch.id === 'yuusharin') { this.healP(this.p.max * sk.heal); this.e.gauge = 0; this.log(`${sk.name}！ ${dmg}ダメージ、HP回復・敵の攻撃を止めた！`, 'good'); }
@@ -994,8 +1001,8 @@ Screens.battle = {
     if (sk.regenBoost) this.regenUntil = T(sk.regenBoost);
     if (sk.streakGuard) this.streakGuard = sk.streakGuard;
     if (sk.doubleSecs) this.doubleUntil = T(sk.doubleSecs);
-    if (sk.poisonBoostSecs) this.poisonBoostUntil = T(sk.poisonBoostSecs);
-    if (sk.poisonFill) this.e.poison = Math.max(this.e.poison, tr.poisonMax + (sk.addPoison || 0));
+    if (sk.poisonBoostSecs) this.poisonBoostUntil = this.e.poisonBoostUntil = T(sk.poisonBoostSecs);
+    if (sk.poisonFill) { this.e.poisonPct = tr.poisonPct; this.e.poison = Math.max(this.e.poison, tr.poisonMax + (sk.addPoison || 0)); }
     if (sk.drainSecs) this.drainUntil = T(sk.drainSecs);
     if (sk.lifesteal && dmg) this.healP(dmg * sk.lifesteal);
     if (sk.addBarrier) { this.p.barrier = Math.max(this.p.barrier, sk.addBarrier); $('#b-player').classList.add('bubbled'); }

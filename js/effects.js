@@ -83,7 +83,8 @@ const FX = {
     ctx.clearRect(0, 0, innerWidth, innerHeight);
     const alive = [];
     for (const p of this.parts) {
-      if (this.step(p, ctx)) alive.push(p);
+      // 1 つの 弾で エラーが 起きても、ほかの 弾は 動きつづける (止まると 攻撃が 全部 とどかなく なる)
+      try { if (this.step(p, ctx)) alive.push(p); } catch (e) { console.error('FX', e); try { ctx.restore(); } catch (e2) { /* */ } }
     }
     this.parts = alive;
     if (this.parts.length) requestAnimationFrame(() => this.loop());
