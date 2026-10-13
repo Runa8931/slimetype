@@ -153,6 +153,11 @@ const ACHIEVEMENTS = [
   { id: 'master_1', name: '極めし者', desc: 'どれか1体の熟練度を極みにする', check: () => masteredCount() >= 1 },
   { id: 'master_5', name: '五つの極み', desc: '5体の熟練度を極みにする', check: () => masteredCount() >= 5 },
   { id: 'master_all', name: 'スライムの師匠', desc: '全員の熟練度を極みにする', hard: true, check: () => masteredCount() >= Object.keys(CHARACTERS).length },
+  // パーティダンジョン
+  { id: 'dg_3', name: '迷宮の探検家', desc: 'パーティダンジョンの3階を突破する', check: () => Math.max(0, ...Object.values(dungeonData().best)) >= 3 },
+  { id: 'dg_all', name: '迷宮の覇者', desc: 'パーティダンジョンの5階を全部突破する', check: () => Math.max(0, ...Object.values(dungeonData().best)) >= DUNGEON_FLOORS.length },
+  { id: 'dg_adv', name: '混沌を越えし者', desc: '上級者でパーティダンジョンを全部突破する', hard: true, check: () => (dungeonData().best.adv || 0) >= DUNGEON_FLOORS.length },
+  { id: 'bond_5', name: '固い絆', desc: 'どれか2体の絆をLv.5にする', check: () => maxBondLv() >= 5 },
   // 段位認定
   { id: 'dan_1', name: '有段者', desc: '段位認定で初段に合格する', check: () => danRank() >= 10 },
   { id: 'dan_5', name: '五段の指', desc: '段位認定で五段に合格する', hard: true, check: () => danRank() >= 14 },

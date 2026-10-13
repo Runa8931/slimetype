@@ -24,14 +24,15 @@ Screens.battle = {
     const opt = arg && typeof arg === 'object' ? arg : { idx: arg };
     const idx = opt.idx;
     this.arg = opt; this.rush = opt.rush || null; this.rule = opt.rule || null;
+    this.dungeon = opt.dungeon || null; // パーティダンジョン (dungeon.js)。opt.enemy に 敵、opt.dungeon.party に 3 体
     this.bid++;
     this.idx = idx;
     this.dk = battleDiffKey();
     this.bd = BATTLE_DIFFS[this.dk];
     // 難易度で 敵の レベルが かわる
-    this.ed = ENEMIES[idx];
-    this.k = diffK(this.bd, idx); // 難易度と ステージで きまる 敵の 強さ
-    const ch = charInfo(Save.data.active);
+    this.ed = opt.enemy || ENEMIES[idx];
+    this.k = diffK(this.bd, opt.enemy ? MAIN_STAGES - 1 : idx); // 難易度と ステージで きまる 敵の 強さ (ダンジョンは いちばん 先の ステージと 同じ)
+    const ch = charInfo(this.dungeon ? this.dungeon.party[this.dungeon.lead || 0].id : Save.data.active);
     this.ch = ch;
     // ダイヤマイマイ: いどんだ キャラの レベルに あわせて つよく なる
     if (this.ed.matchLv) this.ed = { ...this.ed, lv: Math.max(this.ed.lv, ch.L + this.ed.matchLv) };
@@ -41,6 +42,10 @@ Screens.battle = {
     // ボスラッシュ: 前の 戦いの HP を 持ちこす (間に 少し 回復) / 今週の チャレンジ「HP半分」
     if (this.rush && this.rush.hpFrac != null) this.p.hp = Math.round(this.p.max * Math.min(1, this.rush.hpFrac + RUSH_HEAL));
     if (this.rule === 'glass') this.p.hp = Math.round(this.p.max / 2);
+    // パーティ: 3 体 それぞれの HP と 必殺ゲージ。相性と 絆の 効果 (dungeon.js の dungeonTeam)
+    this.party = null; this.pi = 0; this.teamAtk = 1; this.teamCut = 1; this.teamCrit = 0; this.teamCharge = 1; this.swapAt = 0;
+    if (this.dungeon) this.setupParty();
+    const ch2 = this.ch; // パーティで 前に 出る キャラ
     const ehp = Math.round(es.hp * ENEMY_HP_SCALE * Math.pow(this.k, 0.7) * (this.ed.hpMult || 1)); // 難易度で HP が かわる (こうてつマイマイは とても 多い)
     this.e = { hp: ehp, max: ehp, stats: es, gauge: 0, attacks: 0, angry: false, burnUntil: 0, bindUntil: 0, chillUntil: 0, breakUntil: 0, poison: 0, nextPoison: 0, weakUntil: 0 };
     this.nextRegenP = 3000; this._estatus = null;
@@ -61,20 +66,21 @@ Screens.battle = {
     this.pending = 0; // 飛んでいる途中の攻撃
 
     this.deck = new WordDeck(Save.data.settings.lang, this.rule === 'long' || this.rule === 'symbol' ? [this.rule] : DIFF_POOLS[this.ed.diff], this.ed.bg);
-    dexSeen(this.ed.id); // ずかん: であった
+    if (!this.dungeon) dexSeen(this.ed.id); // ずかん: であった (ダンジョンの 敵は 図鑑に のらない)
 
     const arena = $('#arena');
     arena.className = 'arena bg-' + this.ed.bg;
     $('#b-player').className = 'fighter player';
-    $('#b-enemy').className = 'fighter enemy' + (this.ed.boss ? ' boss' : '') + (this.ed.sprite ? ' variant v-' + this.ed.bg : '');
-    $('#b-psprite').innerHTML = slimeSVG(ch.id, ch.stage);
+    $('#b-enemy').className = 'fighter enemy' + (this.ed.boss ? ' boss' : '') + (this.ed.giant ? ' giant' : '') + (this.ed.sprite ? ' variant v-' + this.ed.bg : '');
+    $('#b-psprite').innerHTML = slimeSVG(ch2.id, ch2.stage);
     $('#b-esprite').innerHTML = enemySVG(this.ed.id);
-    $('#b-pname').textContent = ch.name;
-    $('#b-plv').textContent = ` Lv.${ch.L}`;
+    $('#b-pname').textContent = ch2.name;
+    $('#b-plv').textContent = ` Lv.${ch2.L}`;
     $('#b-ename').textContent = this.ed.name;
     $('#b-elv').textContent = ` Lv.${this.ed.lv}`;
-    $('#b-skillname').textContent = ch.skill.name;
-    $('#b-skill').style.setProperty('--cc', ch.def.colors.main);
+    $('#b-skillname').textContent = ch2.skill.name;
+    $('#b-skill').style.setProperty('--cc', ch2.def.colors.main);
+    if (!this.party) { const bp = $('#b-party'); if (bp) bp.remove(); } // ふつうの バトルでは パーティの 表示を 消す
     $('#b-log').innerHTML = '';
     $('#b-tp .tp-roma').classList.remove('hidden-guide');
     $('#b-tp').classList.remove('fog', 'inked', 'blizzard', 'frozen', 'windy');
@@ -87,7 +93,7 @@ Screens.battle = {
     this.updateBars(true);
     this.updateCombo();
     this.overlay(`<div class="ov-box vs">
-      <div class="vs-row"><div class="sprite">${slimeSVG(ch.id, ch.stage)}</div><div class="vs-text">VS</div><div class="sprite enemy-mini">${enemySVG(this.ed.id)}</div></div>
+      <div class="vs-row">${this.party ? `<div class="vs-party">${this.party.map(m => `<div class="sprite">${slimeSVG(m.id, m.ch.stage)}</div>`).join('')}</div>` : `<div class="sprite">${slimeSVG(ch.id, ch.stage)}</div>`}<div class="vs-text">VS</div><div class="sprite enemy-mini">${enemySVG(this.ed.id)}</div></div>
       ${this.challengeBanner()}
       <div class="ov-title">${this.ed.name}が現れた！</div>
       <div class="ov-sub">${this.ed.abilityDesc}</div>
@@ -106,18 +112,19 @@ Screens.battle = {
   },
   pickDiff(k) {
     if (this.state !== 'ready' || k === this.dk) return;
-    if (this.rush && this.rush.i > 0) { SFX.miss(); return; } // ボスラッシュの 途中では 変えられない
+    if ((this.rush && this.rush.i > 0) || (this.dungeon && this.dungeon.floor > 0)) { SFX.miss(); return; } // ボスラッシュ・ダンジョンの 途中では 変えられない
     setBattleDiff(k);
     this.enter(this.arg); // 敵の HP を 作りなおす
   },
 
   // バトル前の 画面に 出す チャレンジの 見出し
   challengeBanner() {
+    if (this.dungeon) return dungeonBanner(this);
     if (this.rush) return `<div class="ov-challenge">👑 ボスラッシュ ${this.rush.i + 1} / ${RUSH_LIST.length}${this.rush.hpFrac != null ? `　HP ${Math.round(this.p.hp / this.p.max * 100)}%で続ける` : ''}</div>`;
     const r = this.rule && WEEKLY_RULES.find(x => x.id === this.rule);
     return r ? `<div class="ov-challenge">${r.icon} 今週のチャレンジ「${r.name}」: ${r.desc}</div>` : '';
   },
-  backScreen() { return this.rush || this.rule ? 'challenge' : 'stages'; },
+  backScreen() { return this.dungeon ? 'dungeon' : this.rush || this.rule ? 'challenge' : 'stages'; },
 
   leave() { this.state = 'off'; this.bid++; cancelAnimationFrame(this.raf); },
 
@@ -191,6 +198,7 @@ Screens.battle = {
     // こおりん: ひっさつで こごえた 敵は 攻撃ゲージが 半分の 速さ
     if (!(this.e.bindUntil > this.elapsed)) this.e.gauge += dt / this.interval() * (1 - (this.ch.trait.slow || 0)) * (this.e.chillUntil > this.elapsed ? 0.5 : 1);
     if (this.e.gauge >= 1) { this.e.gauge = 0; this.enemyAttack(); }
+    if (this.party) this.partyTick(dt);
     $('#b-atk').style.transform = `scaleX(${this.e.gauge})`;
     $('#b-atk').classList.toggle('danger', this.e.gauge > 0.8);
 
@@ -450,9 +458,9 @@ Screens.battle = {
       return;
     }
     // ボスラッシュの 戦いの 間 / チャレンジの 結果
-    if (this.state === 'between') { if (e.key === ' ') this.betweenNext(); return; }
+    if (this.state === 'between') { if (e.key === ' ') { if (this.dungeon) this.dungeonNext(); else this.betweenNext(); } return; }
     if (this.state === 'chend') {
-      if (e.key === ' ' || e.key === 'Escape') App.show('challenge');
+      if (e.key === ' ' || e.key === 'Escape') App.show(this.dungeon ? 'dungeon' : 'challenge');
       if (e.key.toLowerCase() === 'r' && this.rule) App.show('battle', { ...this.arg });
       return;
     }
@@ -463,9 +471,12 @@ Screens.battle = {
       this.state = 'pause';
       cancelAnimationFrame(this.raf);
       this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div></div>');
-      Settings.open({ title: 'ポーズ中', quit: { label: this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', warn: this.rush ? 'ボスラッシュはここで終わり（倒したボスの分のコインはもらえる）' : this.rule ? '今週のチャレンジのこの挑戦はここで終わり（ごほうびはもらえない）' : 'このバトルはここで終わり。経験値とコインはもらえない', fn: () => this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
+      Settings.open({ title: 'ポーズ中', quit: { label: this.dungeon ? 'やめる（ダンジョンへ）' : this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', warn: this.dungeon ? 'ダンジョンはここで終わり（ここまでの階の記録とごほうびは残る）' : this.rush ? 'ボスラッシュはここで終わり（倒したボスの分のコインはもらえる）' : this.rule ? '今週のチャレンジのこの挑戦はここで終わり（ごほうびはもらえない）' : 'このバトルはここで終わり。経験値とコインはもらえない', fn: () => this.dungeon ? this.dungeonFinish(false) : this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
       return;
     }
+    // パーティ: 1・2・3 で 交代、Tab で 次の キャラへ (ダンジョンの お題に 数字は 出ない)
+    if (this.party && /^[123]$/.test(e.key)) { this.swap(+e.key - 1); return; }
+    if (this.party && e.key === 'Tab') { e.preventDefault(); this.swapNext(); return; }
     if (e.key.length !== 1) return;
 
     const key = e.key.toLowerCase();
@@ -506,11 +517,12 @@ Screens.battle = {
       if (this.bd.missDmg && this.state === 'run' && this.p.hp > 0) this.damagePlayer(Math.max(1, Math.round(this.p.max * this.bd.missDmg)), 'miss');
     } else {
       this.correct++;
-      recordHit(key);
+      recordHit(key, this.ch.id);
+      if (this.party) this.party[this.pi].keys++;
       this.combo += comboStep(this, this.ch.trait);
       this.maxCombo = Math.max(this.maxCombo, this.combo);
       const before = this.p.skill;
-      this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200) * this.ch.skill.charge);
+      this.p.skill = Math.min(100, this.p.skill + (0.7 + this.ch.def.base.spd / 200) * this.ch.skill.charge * this.teamCharge);
       if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.useSkill(); }
       SFX.key();
       if (r === 'done') wordFx($('#b-tp'));
@@ -622,6 +634,7 @@ Screens.battle = {
     // ぴたりん: ノーミスの お題は かならず 会心
     if (this.ch.id === 'pitarin' && perfect) { critRate = 1; critMult = this.ch.trait.perfectCrit; }
     if (this.critUntil > this.elapsed) critRate += this.critAdd;            // ゆうしゃりん: 会心アップ
+    critRate += this.teamCrit;                                              // パーティの 相性
     if (tempoHit && this.ch.skill.tempoCrit) critRate = 1;                   // おんぷる 最終進化
     let crit;
     if (this.ch.id === 'torio') {
@@ -753,6 +766,7 @@ Screens.battle = {
   hitEnemy(dmg, { crit = false, colors = ['#fff'], big = false, sound = null } = {}) {
     const broken = this.e.breakUntil > this.elapsed;
     if (broken) dmg = Math.round(dmg * 1.3); // メタルンの ブレイク
+    if (this.teamAtk !== 1) dmg = Math.round(dmg * this.teamAtk); // パーティの 相性と 絆
     const sk0 = this.ch.skill;
     if (sk0.bindBoost && this.e.bindUntil > this.elapsed) dmg = Math.round(dmg * (1 + sk0.bindBoost)); // かげまる: 縛り中
     if (sk0.burnBoost && this.e.burnUntil > this.elapsed) dmg = Math.round(dmg * (1 + sk0.burnBoost)); // ほむら: やけど中
@@ -1190,6 +1204,7 @@ Screens.battle = {
 
   damagePlayer(dmg, kind) {
     const pc = FX.center($('#b-psprite'));
+    if (this.teamCut !== 1) dmg = Math.max(1, Math.round(dmg * this.teamCut)); // パーティの 相性 (受ける ダメージ を へらす)
     this.p.hp -= dmg;
     if (kind === 'poison' || kind === 'shock' || kind === 'miss') {
       floatText(pc.x + 20, pc.y - 30, dmg, kind === 'poison' ? 'dmg poison' : 'dmg shock');
@@ -1203,7 +1218,7 @@ Screens.battle = {
       floatText(pc.x, pc.y - 40, dmg, 'dmg taken');
     }
     this.updateBars();
-    if (this.p.hp <= 0) this.lose();
+    if (this.p.hp <= 0) { if (this.party) this.partyFall(); else this.lose(); }
   },
 
   // ---------------- 決着 ----------------
@@ -1305,6 +1320,7 @@ Screens.battle = {
   },
 
   finish(won) {
+    if (this.dungeon) { this.dungeonFinish(won); return; }
     if (this.rush || this.rule) { this.challengeFinish(won); return; }
     const secs = Math.max(1, this.elapsed / 1000);
     // 格下をたおしたときは 経験値がへる (レベル差の補正)

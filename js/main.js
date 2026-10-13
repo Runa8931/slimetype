@@ -107,7 +107,7 @@ const Save = {
   },
 };
 
-const GAME_VERSION = 'v5.18';
+const GAME_VERSION = 'v5.19';
 // セーブの 文字から 書いた 回数を 取り出す (全部 読まなくて よいように 文字で さがす)
 function readRev(raw) { const m = raw && /"_rev":(\d+)/.exec(raw); return m ? +m[1] : 0; }
 // 控えの 説明 (いちばん レベルの 高い キャラ・ステージ・コイン)
@@ -242,11 +242,12 @@ function recordMiss(key) {
 }
 
 // 正しく 打った キーの 数 (成長記録の キーボードで、ミスの わりあいを 出す)
-function recordHit(key) {
+// cid: 打った キャラ (ダンジョンでは 前に 出て いる キャラ)
+function recordHit(key, cid = Save.data.active) {
   if (!key || key === ' ') return;
   const h = Save.data.hitKeys = Save.data.hitKeys || {};
   h[key] = (h[key] || 0) + 1;
-  if (typeof masteryAdd === 'function') masteryAdd(Save.data.active, 'keys'); // 熟練度: 正しく 打った 数
+  if (typeof masteryAdd === 'function') masteryAdd(cid, 'keys'); // 熟練度: 正しく 打った 数
 }
 
 function weakKeys(n = 5) {
@@ -471,6 +472,7 @@ Screens.home = {
     $('#go-growth').onclick = () => { SFX.select(); App.show('growth'); };
     $('#go-challenge').onclick = () => { SFX.select(); App.show('challenge'); };
     $('#go-dan').onclick = () => { SFX.select(); Screens.dan.from = 'home'; App.show('dan'); };
+    $('#go-dungeon').onclick = () => { SFX.select(); App.show('dungeon'); };
     // これまでの記録で とれる しょうごうが あれば 知らせる
     announceDoors(checkDoors(), 300);
     checkAchievements(null); // 新しい 称号は 帯で 知らせる (newmark.js)
@@ -523,6 +525,7 @@ Screens.home = {
       else if (!newCount(kind) && t) t.remove();
     }
     $('#dan-count').textContent = danRank() >= 0 ? danName() : '';
+    { const db = dungeonData().best, b = Math.max(0, ...Object.values(db)); $('#dg-count').textContent = b ? `${b}/${DUNGEON_FLOORS.length}階` : ''; }
     // ひらいていない モードの カード
     for (const [el, door] of [['#go-survival', 'survival'], ['#go-gacha', 'gacha'], ['#go-wardrobe', 'gacha']]) {
       const card = $(el), open = doorOpen(door);
@@ -564,6 +567,7 @@ Screens.home = {
     if (e.key.toLowerCase() === 'r') $('#go-growth').click();
     if (e.key.toLowerCase() === 'c') $('#go-challenge').click();
     if (e.key.toLowerCase() === 'd') $('#go-dan').click();
+    if (e.key.toLowerCase() === 'g') $('#go-dungeon').click();
     // 0 は 設定 (App の キー処理で 開く)
     if (e.key === 'Escape') App.show('title');
   },
