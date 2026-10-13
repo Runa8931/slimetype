@@ -1751,3 +1751,5 @@ body.no-kb #p-kb { display: none; }
 .ms-badge.max { background: linear-gradient(90deg, rgba(255,210,63,.35), rgba(255,107,255,.3)); border-color: var(--gold); color: #fff; }
 .cc-mastery { margin: 2px 0 4px; }
 .home-char .mastery { margin: 8px 0; }
+.wd-char { position: relative; }
+.wd-char > .new-tag { position: absolute; top: 2px; right: 2px; margin: 0; z-index: 2; font-size: 9px; padding: 0 4px; }

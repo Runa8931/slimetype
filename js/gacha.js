@@ -388,6 +388,9 @@ function wordFx(root) {
   if (f.bolt && !lite) FX.bolt(r.right + 20, r.top - 80, r.right - 30, r.top, '#fff27a', 10);
 }
 
+// 着せ替え: その キャラ専用の 新しい アイテム (覚醒★4 の 色など) が あるか (キャラの ボタンに NEW を 出す)
+function wdCharHasNew(cid) { return GACHA_ITEMS.some(it => it.only === cid && isNew('item:' + it.id)); }
+
 // ---------------- ガチャの 画面 ----------------
 Screens.gacha = {
   // arg.daily: まいにち タイピングガチャから もどってきた ときの ただで 回せる 回数
@@ -796,7 +799,7 @@ Screens.wardrobe = {
     const aw = c.awaken;
     // キャラの きりかえ
     $('#wd-chars').innerHTML = Object.keys(CHARACTERS).filter(hasChar).map(cid =>
-      `<button class="wd-char ${cid === id ? 'on' : ''}" data-id="${cid}" title="${charInfo(cid).name}"><div class="sprite">${slimeSVG(cid, charInfo(cid).stage)}</div></button>`).join('');
+      `<button class="wd-char ${cid === id ? 'on' : ''}" data-id="${cid}" title="${charInfo(cid).name}"><div class="sprite">${slimeSVG(cid, charInfo(cid).stage)}</div>${wdCharHasNew(cid) ? '<span class="new-tag">NEW</span>' : ''}</button>`).join('');
     $('#wd-chars').querySelectorAll('.wd-char').forEach(b => { b.onclick = () => { this.char = b.dataset.id; SFX.select(); this.render(); }; });
 
     $('#wd-preview').innerHTML = `<div class="sprite big bounce" id="wd-sprite">${slimeSVG(id, c.stage)}</div>
@@ -822,9 +825,9 @@ Screens.wardrobe = {
         <div class="gc-name">${own ? it.name : '？？？'}</div>${own ? newTag('item:' + it.id) : ''}</button>`;
     }).join('');
     $('#wd-items').querySelectorAll('.wd-item:not(.locked)').forEach(b => { b.onclick = () => { if (b.dataset.id) clearNew('item:' + b.dataset.id); this.wear(b.dataset.id || null); }; });
-    // 種類の タブにも NEW
+    // 種類の タブにも NEW (今 えらんで いる キャラの 一覧に 出る ものだけ 数える。ほかの キャラ専用の ものは キャラの ボタンに 出す)
     document.querySelectorAll('#wd-tabs button').forEach(b => {
-      const n = GACHA_ITEMS.filter(it => it.kind === b.dataset.v && isNew('item:' + it.id)).length + (b.dataset.v === 'color' ? Object.keys(CHARACTERS).filter(c => isNew('item:aw_' + c)).length : 0);
+      const n = GACHA_ITEMS.filter(it => it.kind === b.dataset.v && (!it.only || it.only === id) && isNew('item:' + it.id)).length;
       b.classList.toggle('has-new', n > 0);
     });
     const owned = list.filter(it => hasItem(it.id)).length;
