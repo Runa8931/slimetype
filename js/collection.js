@@ -157,6 +157,8 @@ const ACHIEVEMENTS = [
   { id: 'dg_3', name: '迷宮の探検家', desc: 'パーティダンジョンの3階を突破する', check: () => Math.max(0, ...Object.values(dungeonData().best)) >= 3 },
   { id: 'dg_all', name: '迷宮の覇者', desc: 'パーティダンジョンの5階を全部突破する', check: () => Math.max(0, ...Object.values(dungeonData().best)) >= DUNGEON_FLOORS.length },
   { id: 'dg_adv', name: '混沌を越えし者', desc: '上級者でパーティダンジョンを全部突破する', hard: true, check: () => (dungeonData().best.adv || 0) >= DUNGEON_FLOORS.length },
+  { id: 'dg_volcano', name: '火山洞の征服者', desc: '灼熱の火山洞を全部突破する', check: () => dungeonCleared('volcano') },
+  { id: 'dg_sky', name: '天空の覇者', desc: '星降る天空塔を全部突破する', hard: true, check: () => dungeonCleared('sky') },
   { id: 'bond_5', name: '固い絆', desc: 'どれか2体の絆をLv.5にする', check: () => maxBondLv() >= 5 },
   // 段位認定
   { id: 'dan_1', name: '有段者', desc: '段位認定で初段に合格する', check: () => danRank() >= 10 },

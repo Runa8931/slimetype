@@ -111,7 +111,7 @@ Object.assign(ENEMY_SVG, {
 //  ・手強さは 攻撃で 出す: 中級者で 1 階ごとに パーティの HP が 3〜5 割 へる くらい。上級者は 攻撃 ×0.5 (DUNGEON_POW。もともと 敵の 攻撃が 約 1.8 倍)
 //  ・2026-10-13 (v5.19.6): バグ (どろりんの 毒で 無敵) が 直って「もう少し 強く」と 言われた。
 //    5 階 つづけて (HP 持ちこし) の 計算で、初心者は 5 階 すべて HP 7 割 以上 残って いたので 大きく、中級者・上級者は 少し 強く した
-const DUNGEON_POW = { beg: 1.9, mid: 1.08, adv: 0.55 };  // 攻撃の 倍率 (難易度ごと)
+const DUNGEON_POW = { beg: 2.2, mid: 1.24, adv: 0.63 };  // 攻撃の 倍率 (難易度ごと)。v5.20 で 中心 いがいの パッシブが 効く ように なった ぶん 1.15 倍
 const DUNGEON_HPK = { beg: 1.45, mid: 1.1, adv: 1.05 }; // HP の 倍率 (難易度ごと)
 function dungeonEnemy(f, dk) { return { ...f, power: Math.round(f.power * (DUNGEON_POW[dk] || 1)), hpMult: f.hpMult * (DUNGEON_HPK[dk] || 1) }; }
 const DUNGEON_FLOORS = [
@@ -125,7 +125,132 @@ const DUNGEON_FLOORS = [
     abilityDesc: 'こごえさせる・3回に1回強い攻撃・HP半分で速くなる', desc: '氷の山をとりまくほど長い大蛇。吐く息で何でも凍らせる。' },
   { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 368, interval: 5200, hpMult: 1.9,
     abilityDesc: '本気になると闇でガイドを隠し、必殺ゲージを奪う。毒・落雷の予告', desc: 'ダンジョンのいちばん奥でねむる、すべての魔物の王。目がいくつあるのか、だれも知らない。' },
-].map((f, i) => ({ ...f, floor: i, type: 'boss', boss: true, giant: true, base: { ...ENEMY_TYPES.boss }, abilities: f.ability, diff: 'hard', exp: 0 }));
+].map((f, i) => ({ ...f, dg: 'abyss', floor: i, type: 'boss', boss: true, giant: true, base: { ...ENEMY_TYPES.boss }, abilities: f.ability, diff: 'hard', exp: 0 }));
+const mkFloors = (dg, arr) => arr.map((f, i) => ({ ...f, dg, floor: i, type: 'boss', boss: true, giant: true, base: { ...ENEMY_TYPES.boss }, abilities: f.ability, diff: 'hard', exp: 0 }));
+
+// ---------------- 2 つめ: 灼熱の 火山洞 (新しい 巨大ボス 5 体) ----------------
+Object.assign(ENEMY_SVG, {
+  // 溶岩ガニ: 背中が 冷えた 溶岩、ひびから マグマが 光る 大きな カニ
+  d_magmacrab: () => `<svg viewBox="0 0 260 230" class="enemy-svg">
+    <ellipse cx="130" cy="222" rx="110" ry="8" fill="#000" opacity=".3"/>
+    <g class="squish">
+      <g stroke="#3b0a00" stroke-width="5" stroke-linecap="round" fill="none">
+        <path d="M70,170 L40,205 M86,176 L66,212 M174,176 L194,212 M190,170 L220,205"/></g>
+      <path d="M58,110 C20,96 10,60 30,40 C46,50 52,64 64,74 C44,74 40,92 66,100 Z" fill="#e8590c" stroke="#3b0a00" stroke-width="4"/>
+      <path d="M202,110 C240,96 250,60 230,40 C214,50 208,64 196,74 C216,74 220,92 194,100 Z" fill="#e8590c" stroke="#3b0a00" stroke-width="4"/>
+      <path d="M50,170 C40,120 80,92 130,92 C180,92 220,120 210,170 C200,190 60,190 50,170 Z" fill="#495057" stroke="#212529" stroke-width="4"/>
+      <path d="M80,120 L100,140 L94,160 M150,110 L140,134 L160,152 M118,166 L132,148 L170,170" fill="none" stroke="#ff922b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="spark-soft"/>
+      <path d="M100,92 L96,62 M160,92 L164,62" stroke="#3b0a00" stroke-width="5"/>
+      <circle cx="96" cy="56" r="13" fill="#fff4e6" stroke="#3b0a00" stroke-width="3.5"/><circle cx="164" cy="56" r="13" fill="#fff4e6" stroke="#3b0a00" stroke-width="3.5"/>
+      <circle cx="98" cy="58" r="6" fill="#c92a2a"/><circle cx="162" cy="58" r="6" fill="#c92a2a"/>
+      <path d="M112,128 Q130,140 148,128" fill="none" stroke="#212529" stroke-width="4" stroke-linecap="round"/>
+    </g></svg>`,
+  // 炎の 魔人: 角の ある 炎の 上半身。下は 燃える 炎
+  d_ifrit: () => `<svg viewBox="0 0 260 230" class="enemy-svg">
+    <ellipse cx="130" cy="222" rx="80" ry="8" fill="#000" opacity=".3"/>
+    <g class="squish">
+      <path d="M86,214 C70,190 92,176 84,150 C110,166 112,186 130,198 C148,186 150,166 176,150 C168,176 190,190 174,214 Z" fill="#ff922b" opacity=".9" class="spark-soft"/>
+      <path d="M100,214 C96,196 112,190 110,172 C124,184 130,196 130,208 C130,196 136,184 150,172 C148,190 164,196 160,214 Z" fill="#ffe066"/>
+      <path d="M40,104 C28,90 30,70 46,64 C56,80 70,84 86,88 L84,118 Z M220,104 C232,90 230,70 214,64 C204,80 190,84 174,88 L176,118 Z" fill="#d9480f" stroke="#5c1a00" stroke-width="4"/>
+      <path d="M80,150 C70,100 90,60 130,60 C170,60 190,100 180,150 C170,166 90,166 80,150 Z" fill="#f03e3e" stroke="#5c1a00" stroke-width="4"/>
+      <path d="M96,66 C86,46 88,26 104,14 C104,34 110,44 116,58 Z M164,66 C174,46 172,26 156,14 C156,34 150,44 144,58 Z" fill="#343a40" stroke="#000" stroke-width="3"/>
+      <path d="M100,96 L120,104 M160,96 L140,104" stroke="#5c1a00" stroke-width="6" stroke-linecap="round"/>
+      <ellipse cx="112" cy="112" rx="9" ry="7" fill="#ffe066"/><ellipse cx="148" cy="112" rx="9" ry="7" fill="#ffe066"/>
+      <path d="M108,136 Q130,150 152,136" fill="#5c1a00" stroke="#5c1a00" stroke-width="3"/>
+      <path d="M116,138 L120,146 L124,139 M136,139 L140,146 L144,138" fill="#fff"/>
+      <path d="M104,64 C112,50 124,44 136,44" fill="none" stroke="#ffa8a8" stroke-width="5" stroke-linecap="round" opacity=".6"/>
+    </g></svg>`,
+  // 黒曜の 巨人: 黒い 結晶の 体に マグマの すじ
+  d_obsidian: () => `<svg viewBox="0 0 260 230" class="enemy-svg">
+    <ellipse cx="130" cy="222" rx="100" ry="8" fill="#000" opacity=".35"/>
+    <g class="squish">
+      <path d="M40,150 L56,86 L84,100 L76,170 Z M220,150 L204,86 L176,100 L184,170 Z" fill="#343a40" stroke="#000" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M84,214 L74,120 L100,62 L130,48 L160,62 L186,120 L176,214 Z" fill="#212529" stroke="#000" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M100,62 L118,120 L130,48 M160,62 L142,120 L130,48 M118,120 L142,120 L130,170 Z" fill="#495057" opacity=".6"/>
+      <path d="M96,150 L112,170 L104,200 M164,150 L150,172 L158,204 M74,120 L60,140 M186,120 L200,140" fill="none" stroke="#ff6b00" stroke-width="4" stroke-linecap="round" class="spark-soft"/>
+      <path d="M108,98 L124,104 L108,110 Z M152,98 L136,104 L152,110 Z" fill="#ff922b" class="spark-soft"/>
+      <path d="M114,132 L146,132" stroke="#ff6b00" stroke-width="4" stroke-linecap="round"/>
+      <path d="M130,48 L122,22 L130,30 L138,22 Z" fill="#495057" stroke="#000" stroke-width="3"/>
+    </g></svg>`,
+  // 火山竜: 背中に 火山の ような とげ、口から 火の 粉
+  d_volcdragon: () => `<svg viewBox="0 0 260 230" class="enemy-svg">
+    <ellipse cx="130" cy="222" rx="110" ry="8" fill="#000" opacity=".3"/>
+    <g class="squish">
+      <path d="M30,210 C20,160 60,130 110,140 C150,146 180,170 230,160 C226,196 190,214 130,214 Z" fill="#c92a2a" stroke="#4a0a0a" stroke-width="4"/>
+      <g fill="#495057" stroke="#212529" stroke-width="3" stroke-linejoin="round">${[[70, 142], [104, 138], [140, 146], [176, 156]].map(([x, y]) => `<path d="M${x - 14},${y + 4} L${x - 6},${y - 22} L${x + 6},${y - 22} L${x + 14},${y + 4} Z"/><path d="M${x - 5},${y - 22} L${x + 5},${y - 22}" stroke="#ff922b" stroke-width="4"/>`).join('')}</g>
+      <path d="M150,150 C150,110 130,90 128,64 C126,36 150,20 180,22 C214,24 232,50 224,78 C216,104 190,110 186,130 Z" fill="#e03131" stroke="#4a0a0a" stroke-width="4"/>
+      <path d="M150,30 L140,4 L160,22 M200,26 L214,2 L212,30" fill="#ffd8a8" stroke="#4a0a0a" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="164" cy="60" rx="9" ry="10" fill="#ffe066" stroke="#4a0a0a" stroke-width="3"/><ellipse cx="200" cy="58" rx="9" ry="10" fill="#ffe066" stroke="#4a0a0a" stroke-width="3"/>
+      <rect x="161" y="52" width="6" height="16" rx="3" fill="#000"/><rect x="197" y="50" width="6" height="16" rx="3" fill="#000"/>
+      <path d="M170,92 Q190,100 214,88" fill="none" stroke="#4a0a0a" stroke-width="4" stroke-linecap="round"/>
+      <g fill="#ffa94d" class="spark">${[[226, 96], [236, 86], [240, 104]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4"/>`).join('')}</g>
+    </g></svg>`,
+  // 炎帝: 炎の つばさと 王冠を もつ 火の 鳥の 王
+  d_kagutsuchi: () => `<svg viewBox="0 0 260 230" class="enemy-svg">
+    <ellipse cx="130" cy="222" rx="100" ry="8" fill="#000" opacity=".3"/>
+    <g class="squish">
+      <g fill="#ff6b00" stroke="#7a2600" stroke-width="3.5" stroke-linejoin="round" class="spark-soft">
+        <path d="M108,120 C70,80 30,70 6,86 C30,94 30,104 20,116 C40,116 44,126 34,140 C56,136 66,144 64,158 C84,148 98,148 108,156 Z"/>
+        <path d="M152,120 C190,80 230,70 254,86 C230,94 230,104 240,116 C220,116 216,126 226,140 C204,136 194,144 196,158 C176,148 162,148 152,156 Z"/></g>
+      <path d="M40,96 C56,92 70,96 84,104 M220,96 C204,92 190,96 176,104" fill="none" stroke="#ffe066" stroke-width="4" stroke-linecap="round"/>
+      <path d="M100,200 C90,180 104,170 100,150 L160,150 C156,170 170,180 160,200 C150,214 110,214 100,200 Z" fill="#ff922b" stroke="#7a2600" stroke-width="4"/>
+      <path d="M96,130 C92,92 108,66 130,66 C152,66 168,92 164,130 C162,154 98,154 96,130 Z" fill="#fa5252" stroke="#7a2600" stroke-width="4"/>
+      <path d="M104,62 L110,30 L122,48 L130,22 L138,48 L150,30 L156,62 Z" fill="#ffd43b" stroke="#a66b00" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="130" cy="40" r="5" fill="#ff6bff"/>
+      <ellipse cx="116" cy="102" rx="8" ry="10" fill="#fff" stroke="#7a2600" stroke-width="3"/><ellipse cx="144" cy="102" rx="8" ry="10" fill="#fff" stroke="#7a2600" stroke-width="3"/>
+      <circle cx="117" cy="104" r="4.5" fill="#c92a2a"/><circle cx="143" cy="104" r="4.5" fill="#c92a2a"/>
+      <path d="M122,120 L138,120 L130,136 Z" fill="#fcc419" stroke="#a66b00" stroke-width="3" stroke-linejoin="round"/>
+    </g></svg>`,
+});
+const VOLCANO_FLOORS = mkFloors('volcano', [
+  { id: 'd_magmacrab', name: '溶岩ガニマグマクラブ', lv: 110, bg: 'volcano', ability: ['armor', 'charge'], power: 480, interval: 5000, hpMult: 1.7,
+    abilityDesc: '溶岩のこうら: コンボ30未満だとダメージ半減・3回に1回強い攻撃', desc: '冷えた溶岩を背負った大ガニ。ひびの中ではマグマが煮えている。' },
+  { id: 'd_ifrit', name: '炎の魔人イフリート', lv: 114, bg: 'volcano', ability: ['poison', 'rage'], statusName: 'やけど', power: 495, interval: 4800, hpMult: 1.75,
+    abilityDesc: 'やけどにする・HP半分で速くなる', desc: '火山の熱から生まれた魔人。笑い声だけで岩がとける。' },
+  { id: 'd_obsidian', name: '黒曜の巨人オブシディアン', lv: 118, bg: 'volcano', ability: ['shell', 'charge'], power: 540, interval: 5200, hpMult: 1.6,
+    abilityDesc: 'ときどき黒曜石の殻にこもる・3回に1回強い攻撃', desc: '黒曜石でできた巨人。体のすきまをマグマが流れている。' },
+  { id: 'd_volcdragon', name: '火山竜ボルケドラ', lv: 121, bg: 'volcano', ability: ['dragon', 'rage'], power: 460, interval: 5000, hpMult: 1.85,
+    abilityDesc: '3回に1回炎のブレス・HP半分で速くなる', desc: '背中に小さな火山をいくつも背負った竜。ねむるたびに噴火する。' },
+  { id: 'd_kagutsuchi', name: '炎帝カグツチ', lv: 124, bg: 'magma', ability: ['demon', 'poison', 'wind'], statusName: 'やけど', power: 437, interval: 5000, hpMult: 2,
+    abilityDesc: '本気になると闇でガイドを隠し必殺ゲージを奪う・やけど・風', desc: '火山洞の主。炎のつばさで羽ばたくと、洞くつ全体が赤く光る。' },
+]);
+
+// ---------------- 3 つめ: 星降る 天空塔 (深淵の 迷宮の ボスが 星の 力で 変わった 変異種。能力が 1 つずつ 多い) ----------------
+const SKY_FLOORS = mkFloors('sky', [
+  { id: 's_octo', vbase: 'd_octo', filter: 'hue-rotate(190deg) saturate(1.6) brightness(1.1)', name: '星海の王オクトスター', lv: 124, bg: 'space', ability: ['ink', 'charge', 'wind'], power: 400, interval: 4800, hpMult: 2.1,
+    abilityDesc: '墨でガイドを隠す・強い攻撃・風で文字がゆれる', desc: '星の海を泳ぐ大ダコ。8本の足の先が星のように光る。' },
+  { id: 's_treant', vbase: 'd_treant', filter: 'hue-rotate(160deg) saturate(1.4)', name: '星の巨樹ユグドラ', lv: 124, bg: 'space', ability: ['armor', 'shell', 'charge'], power: 600, interval: 5200, hpMult: 1.3,
+    abilityDesc: 'コンボ30未満で半減・殻にこもる・強い攻撃', desc: '天空塔をつらぬいて生える星の大樹。実のかわりに星がなる。' },
+  { id: 's_thunderbird', vbase: 'd_thunderbird', filter: 'hue-rotate(200deg) saturate(1.5) brightness(1.15)', name: '銀河鳥ギャラクシア', lv: 124, bg: 'space', ability: ['thunder', 'wind', 'rage', 'fade'], power: 470, interval: 4600, hpMult: 2,
+    abilityDesc: '落雷の予告・風・怒る・霧でガイドを隠す', desc: '銀河を横切って飛ぶ鳥。羽ばたきで流れ星が生まれる。' },
+  { id: 's_serpent', vbase: 'd_serpent', filter: 'hue-rotate(230deg) saturate(1.8) brightness(1.05)', name: '星屑の大蛇コスモガント', lv: 124, bg: 'space', ability: ['freeze', 'charge', 'rage', 'poison'], power: 430, interval: 4800, hpMult: 2.1,
+    abilityDesc: 'こごえ・強い攻撃・怒る・毒', desc: '星屑でできた大蛇。とぐろの中に小さな銀河がある。' },
+  { id: 's_chaos', vbase: 'd_chaos', filter: 'hue-rotate(260deg) saturate(2) brightness(1.2)', name: '虚無の王ヴォイドロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder', 'fade'], power: 420, interval: 5000, hpMult: 2.3,
+    abilityDesc: '本気で闇・必殺ゲージを奪う・毒・落雷・霧', desc: '天空塔のてっぺんで、すべての星を見下ろす王。カオスロードの本当の姿とも言われる。' },
+]);
+for (const f of SKY_FLOORS) ENEMY_VARIANT[f.id] = { base: f.vbase, filter: f.filter };
+
+// ---------------- ダンジョンの 一覧 ----------------
+// reward: 報酬の 倍率 / unlock: この ダンジョンを 全部 突破 (どの 難易度でも) すると 開く
+const DUNGEONS = [
+  { id: 'abyss', name: '深淵の迷宮', icon: '🏰', floors: DUNGEON_FLOORS, reward: 1, unlock: null },
+  { id: 'volcano', name: '灼熱の火山洞', icon: '🌋', floors: VOLCANO_FLOORS, reward: 1.6, unlock: 'abyss' },
+  { id: 'sky', name: '星降る天空塔', icon: '🌌', floors: SKY_FLOORS, reward: 2.5, unlock: 'volcano' },
+];
+function dungeonDef(id) { return DUNGEONS.find(x => x.id === id) || DUNGEONS[0]; }
+// 記録 (深淵の 迷宮は 前からの d.best / d.clear を そのまま つかう)
+function dgRec(id) {
+  const d = dungeonData();
+  if (id === 'abyss') return { best: d.best, clear: d.clear };
+  d.recs = d.recs || {};
+  return d.recs[id] = d.recs[id] || { best: {}, clear: {} };
+}
+function dungeonCleared(id) { const r = dgRec(id); return Math.max(0, ...Object.values(r.best)) >= dungeonDef(id).floors.length; }
+function dungeonOpen(dgd) { return !dgd.unlock || dungeonCleared(dgd.unlock); }
+// 持ち帰りの 報酬 (1 階 突破ごと。脱出か 全部 突破で もらえる)
+function floorPot(dgd, f) { return { coins: Math.round((120 + f * 80) * dgd.reward), shards: Math.round((3 + f * 2) * dgd.reward) }; }
+const DUNGEON_WIPE_KEEP = 0.5; // 全滅したら 持ち帰りの 半分
+
 const DUNGEON_HEAL = 0.3, DUNGEON_REVIVE = 0.25; // 階の 間の 回復 / 倒れた キャラ
 const DUNGEON_REWARD = i => ({ coins: 400 + i * 300, shards: 10 + i * 8 });
 const SUPPORT_RATE = 0.2;       // うしろの キャラの 連携攻撃 (1 体ぶん、お題の 威力の 2 割)
@@ -321,6 +446,35 @@ Object.assign(Screens.battle, {
     this.after(() => this.nextTurn(), 120);
   },
 
+  // ---- 中心で なくても いつも 効く 特性 (2026-10-13: ユーザーの 希望) ----
+  // 当たった キャラ自身の 守りの 特性で ダメージを へらす (ごつん・ゆうしゃりんの カット、ゆきだるんの 雪玉)
+  guardCut(m, dmg) {
+    const tr = m.ch.trait;
+    if (m.id === 'gotsun' || m.id === 'yuusharin') dmg *= 1 - (tr.cut || 0);
+    if (m.id === 'yukidarun') {
+      const snow = m === this.party[this.pi] ? this.snow : ((m.st && m.st.snow) || 0);
+      dmg *= 1 - (tr.snowCut || 0) * snow;
+    }
+    return Math.max(1, Math.round(dmg));
+  },
+  // 中心 いがいの キャラに 当たった: その キャラの 回避・カット・押し返しで 受ける
+  memberHit(i, dmg) {
+    const m = this.party[i], tr = m.ch.trait, el = document.querySelector(`#b-trio .tr-mem[data-i="${i}"]`);
+    const c = FX.center(el.querySelector('.tr-sprite'));
+    if (m.id === 'piriri' && Math.random() < (tr.dodge || 0)) { // ぴりり: すばやく よける
+      replayAnim(el.querySelector('.tr-sprite'), 'dodge', 400); floatText(c.x, c.y - 40, 'よけた！', 'guard'); return;
+    }
+    if (m.id === 'koorin' && Math.random() < (tr.counter || 0)) { // こおりん: 攻撃ゲージを 押し返す
+      this.e.gauge = Math.max(0, this.e.gauge - (tr.pushback || 0)); floatText(c.x, c.y - 60, 'ひんやり！', 'guard');
+    }
+    dmg = this.guardCut(m, dmg);
+    if (m.id === 'yukidarun' && m.st && m.st.snow > 0) m.st.snow--; // 雪玉は 攻撃を うけると 1 個 へる
+    if (this.teamCut !== 1) dmg = Math.max(1, Math.round(dmg * this.teamCut));
+    this.damageMember(i, dmg);
+  },
+  // かげまる: 生きて いれば いつも 敵の 攻撃が 遅く なる (いちばん 強い 値)
+  partySlow() { return Math.max(0, ...this.party.filter(m => m.hp > 0 || m === this.party[this.pi]).map(m => m.ch.trait.slow || 0)); },
+
   // 敵の 攻撃: 3 体の だれかに 当たる (中心の キャラ いがいなら その キャラの HP を へらす)
   pickTarget() {
     const alive = this.party.map((m, i) => i).filter(i => this.party[i].hp > 0);
@@ -353,6 +507,24 @@ Object.assign(Screens.battle, {
   },
 
   partyTick(dt) {
+    // もりりん: 3 秒ごとに 全員を 回復 (中心で なくても)
+    this._regenT = (this._regenT || 0) + dt;
+    if (this._regenT >= 3000) {
+      this._regenT = 0;
+      for (const h of this.party) {
+        if (h.hp <= 0 && h !== this.party[this.pi]) continue;
+        const r = h.ch.trait.regen; if (!r) continue;
+        const own = h === this.party[this.pi] ? this : h.st || {};
+        const mult = (own.regenUntil || 0) > this.elapsed ? 2 : 1;
+        this.party.forEach((m, i) => {
+          if (i === this.pi) { if (this.p.hp > 0) this.p.hp = Math.min(this.p.max, this.p.hp + this.p.max * r * mult); }
+          else if (m.hp > 0) m.hp = Math.min(m.max, m.hp + m.max * r * mult);
+        });
+        const el = document.querySelector(`#b-trio .tr-mem[data-i="${this.party.indexOf(h)}"]`);
+        if (el) { const c = FX.center(el.querySelector('.tr-sprite')); floatText(c.x, c.y - 50, '全員回復', 'heal'); }
+      }
+      this.updateBars();
+    }
     this._ptT = (this._ptT || 0) + dt;
     if (this._ptT > 300) { this._ptT = 0; this.renderParty(); }
   },
@@ -411,24 +583,35 @@ Object.assign(Screens.battle, {
     this.overlay(`<div class="ov-box">${dungeonBanner(this)}<div class="ov-title">${this.ed.floor + 1}階 ${this.ed.name}</div><div class="ov-sub">${this.ed.abilityDesc}</div></div>`);
     this.after(() => { if (this.state === 'ready') this.countdown(); }, 1400);
   },
-  // 階と 階の 間で リタイア (ここまでの 記録と ごほうびは 残る)
-  dungeonRetire() {
-    const d = dungeonData(), bd = this.bd;
-    d.runs = (d.runs || 0) + 1;
-    Save.save();
+  // 階と 階の 間で 脱出: ここまで 突破した 階の 報酬 (持ち帰り) を 全部 もらう
+  dungeonEscape() {
+    const dg = this.nextDungeon || this.dungeon;
     this.nextDungeon = null;
+    this.dungeonEnd('escape', dg.pot, this.ed.floor + 1, '');
+  },
+  // ダンジョンの 終わり (脱出・全部 突破・全滅)。持ち帰りの 報酬を わたして 結果を 出す
+  dungeonEnd(kind, pot, floorsDone, lines) {
+    const d = dungeonData(), bd = this.bd, dgd = dungeonDef(this.dungeon.dg), rec = dgRec(dgd.id);
+    d.runs = (d.runs || 0) + 1;
+    pot = pot || { coins: 0, shards: 0 };
+    const rate = kind === 'wipe' ? DUNGEON_WIPE_KEEP : 1; // 全滅は 持ち帰りの 半分
+    const coins = grantCoins(pot.coins * rate), shards = Math.round(pot.shards * rate);
+    gachaData().shards += shards;
+    Save.save();
     this.state = 'chend';
     SFX.select();
-    this.overlay(`<div class="ov-box"><div class="ov-challenge">🏰 ダンジョン（${bd.name}）</div>
-      <div class="ov-title">${this.ed.floor + 1}階まで突破して、リタイアした</div>
-      <div class="ov-sub">${bd.name}の最高記録: ${d.best[this.dk] || 0} / ${DUNGEON_FLOORS.length}階</div>
+    const title = { escape: `${floorsDone}階まで突破して、脱出した！`, clear: '全部の階を突破した！', wipe: `${floorsDone + 1}階で全員倒れてしまった…` }[kind];
+    this.overlay(`<div class="ov-box"><div class="ov-challenge">${dgd.icon} ${dgd.name}（${bd.name}）</div>
+      <div class="ov-title">${title}</div>
+      <div class="ov-sub">${lines ? lines + '<br>' : ''}🎒 持ち帰った報酬: 🪙 ${coins}・💎 ${shards}${kind === 'wipe' && pot.coins ? '（全滅したので半分）' : ''}
+        <br>${bd.name}の最高記録: ${rec.best[this.dk] || 0} / ${dgd.floors.length}階</div>
       <div class="ov-key"><kbd>Space</kbd>でダンジョンの入口へ</div></div>`);
   },
 
   // 階の 終わり
   dungeonFinish(won) {
     this.leave(); this.state = 'chend';
-    const dg = this.dungeon, f = this.ed.floor, dk = this.dk, bd = this.bd;
+    const dg = this.dungeon, f = this.ed.floor, dk = this.dk, bd = this.bd, dgd = dungeonDef(dg.dg), floors = dgd.floors;
     this.stash(this.party[this.pi]); this.party[this.pi].hp = Math.max(0, this.p.hp);
     const secs = Math.max(1, this.elapsed / 1000);
     const ids = this.party.map(m => m.id);
@@ -439,50 +622,49 @@ Object.assign(Screens.battle, {
       if (won && m.hp > 0) masteryAdd(m.id, 'wins');
       masteryCheck(m.id);
       return `${m.ch.name} EXP+${exp}`;
-    });
+    }).join('　');
     Save.data.totals.keys += this.correct;
-    const d = dungeonData();
+    const rec = dgRec(dgd.id);
+    const pot = { ...(dg.pot || { coins: 0, shards: 0 }) };
     let rw = '';
     if (won) {
       Save.data.totals.wins++;
       addBond(ids, 1 + (dk === 'adv' ? 1 : 0)); // 上級者は 絆が 2 倍
-      const cl = d.clear[dk] = d.clear[dk] || {};
-      if (!cl[f]) { cl[f] = Date.now(); const r = DUNGEON_REWARD(f); const c = grantCoins(r.coins * bd.reward); gachaData().shards += r.shards; rw = `<br>🎁 ${bd.name}で初めて突破: 🪙 ${c}・💎 ${r.shards}`; }
-      d.best[dk] = Math.max(d.best[dk] || 0, f + 1);
+      // 持ち帰りの 報酬が ふえる (脱出か 全部 突破で もらえる)
+      const r = floorPot(dgd, f);
+      pot.coins += Math.round(r.coins * bd.reward); pot.shards += r.shards;
+      // 初めて 突破した ごほうびは すぐ もらえる
+      const cl = rec.clear[dk] = rec.clear[dk] || {};
+      if (!cl[f]) { cl[f] = Date.now(); const fr = DUNGEON_REWARD(f); const c = grantCoins(fr.coins * bd.reward * dgd.reward); const sh = Math.round(fr.shards * dgd.reward); gachaData().shards += sh; rw = `<br>🎁 ${bd.name}で初めて突破: 🪙 ${c}・💎 ${sh}`; }
+      rec.best[dk] = Math.max(rec.best[dk] || 0, f + 1);
     }
     const acc = this.correct + this.miss ? this.correct / (this.correct + this.miss) : 0;
     this.recordGrowth(won, secs, acc);
     Save.save();
-    if (won && f + 1 < DUNGEON_FLOORS.length) {
+    if (won && f + 1 < floors.length) {
       // 次の 階へ: HP を 持ちこして 少し 回復、倒れた キャラも 起きる
       const party = this.party.map(m => ({ id: m.id, hp: m.hp > 0 ? Math.min(1, m.hp / m.max + DUNGEON_HEAL) : DUNGEON_REVIVE, skill: (m.st && m.st.p_skill) || 0 }));
-      this.nextDungeon = { floor: f + 1, party, lead: this.pi, teamGauge: this.teamGauge };
+      this.nextDungeon = { dg: dg.dg, floor: f + 1, party, lead: this.pi, teamGauge: this.teamGauge, pot };
       this.state = 'between';
-      const nf = DUNGEON_FLOORS[f + 1];
-      this.overlay(`<div class="ov-box"><div class="ov-challenge">🏰 ダンジョン ${f + 1}階 突破！</div>
+      const nf = floors[f + 1];
+      this.overlay(`<div class="ov-box"><div class="ov-challenge">${dgd.icon} ${dgd.name} ${f + 1}階 突破！</div>
         <div class="ov-title">${this.ed.name}を倒した！</div>
-        <div class="ov-sub">${lines.join('　')}${rw}<br>次は ${f + 2}階: <b>${nf.name}</b>（Lv.${nf.lv}）　HPが${Math.round(DUNGEON_HEAL * 100)}%回復、倒れた仲間も起きる</div>
-        <div class="set-actions"><button class="btn big dg-go">▶ 続ける <kbd>Space</kbd></button><button class="btn ghost dg-retire">リタイア <kbd>Esc</kbd></button></div>
-        <div class="ov-sub"><small>リタイアしても、ここまでの記録とごほうびは残る</small></div></div>`);
+        <div class="ov-sub">${lines}${rw}<br>🎒 持ち帰りの報酬: 🪙 ${pot.coins}・💎 ${pot.shards}（脱出か全部突破でもらえる。全滅すると半分）
+          <br>次は ${f + 2}階: <b>${nf.name}</b>（Lv.${nf.lv}）　HPが${Math.round(DUNGEON_HEAL * 100)}%回復、倒れた仲間も起きる</div>
+        <div class="set-actions"><button class="btn big dg-go">▶ 続ける <kbd>Space</kbd></button><button class="btn ghost dg-retire">🏃 脱出（報酬をもらう） <kbd>Esc</kbd></button></div></div>`);
       const o = $('#b-overlay');
       o.querySelector('.dg-go').onclick = () => this.dungeonNext();
-      o.querySelector('.dg-retire').onclick = () => this.dungeonRetire();
+      o.querySelector('.dg-retire').onclick = () => this.dungeonEscape();
       return;
     }
-    d.runs = (d.runs || 0) + 1;
-    Save.save();
-    const all = won && f + 1 >= DUNGEON_FLOORS.length;
-    this.overlay(`<div class="ov-box"><div class="ov-challenge">🏰 ダンジョン（${bd.name}）</div>
-      <div class="ov-title">${all ? '全部の階を突破した！' : won ? `${f + 1}階を突破した` : `${f + 1}階で全員倒れてしまった…`}</div>
-      <div class="ov-sub">${lines.join('　')}${rw}<br>${bd.name}の最高記録: ${d.best[dk] || 0} / ${DUNGEON_FLOORS.length}階</div>
-      <div class="ov-key"><kbd>Space</kbd>でダンジョンの入口へ</div></div>`);
+    this.dungeonEnd(won ? 'clear' : 'wipe', pot, won ? f + 1 : f, lines + rw);
   },
   dungeonNext() {
     const n = this.nextDungeon;
     if (!n) return;
     this.nextDungeon = null;
     SFX.select();
-    this.enter({ enemy: DUNGEON_FLOORS[n.floor], dungeon: n });
+    this.enter({ enemy: dungeonDef(n.dg).floors[n.floor], dungeon: n });
   },
 });
 
@@ -511,7 +693,8 @@ function teamCutin(name, synNames, extra, members) {
 // バトル前の 見出し
 function dungeonBanner(b) {
   const syn = activeSynergies(b.party.map(m => m.id));
-  return `<div class="ov-challenge">🏰 ダンジョン ${b.ed.floor + 1} / ${DUNGEON_FLOORS.length}階${syn.length ? `　相性: ${syn.map(s => s.name).join('・')}` : ''}${b.team.bond ? `　絆 攻撃+${Math.round(b.team.bond * 100)}%` : ''}</div>`;
+  const dgd = dungeonDef(b.dungeon.dg);
+  return `<div class="ov-challenge">${dgd.icon} ${dgd.name} ${b.ed.floor + 1} / ${dgd.floors.length}階${syn.length ? `　相性: ${syn.map(s => s.name).join('・')}` : ''}${b.team.bond ? `　絆 攻撃+${Math.round(b.team.bond * 100)}%` : ''}</div>`;
 }
 
 // ---------------- ダンジョンの 入口 (パーティを えらぶ 画面) ----------------
@@ -548,10 +731,15 @@ Screens.dungeon = {
       <div class="dg-bonds">${bonds || '<small>3体えらぶと出る</small>'}</div>
       <div class="dg-h">このパーティの効果</div>
       <div class="dg-team">${party.length ? `攻撃 +${Math.round((team.atk + team.bond) * 100)}%・受けるダメージ -${Math.round(team.cut * 100)}%・会心率 +${Math.round(team.crit * 100)}%・必殺ゲージ +${Math.round(team.charge * 100)}%・HP +${Math.round(team.hp * 100)}%` : '—'}</div>`;
-    $('#dg-floors').innerHTML = DUNGEON_FLOORS.map(f => {
-      const cl = (d.clear[dk] || {})[f.floor];
+    // ダンジョンの 切りかえ (Tab / ボタン)。まだ 開いて いない ものは 開き方を 出す
+    const dgd = this.cur(), rec = dgRec(dgd.id);
+    $('#dg-tabs').innerHTML = DUNGEONS.map(x => { const open = dungeonOpen(x);
+      return `<button class="dg-tab ${x.id === dgd.id ? 'on' : ''} ${open ? '' : 'locked'}" data-id="${x.id}" title="${open ? '' : `「${dungeonDef(x.unlock).name}」を全部突破すると開く`}">${open ? x.icon : '🔒'} ${x.name}</button>`; }).join('') + '<small><kbd>Tab</kbd> 切りかえ</small>';
+    $('#dg-tabs').querySelectorAll('.dg-tab').forEach(b => { b.onclick = () => this.pick(b.dataset.id); });
+    $('#dg-floors').innerHTML = dgd.floors.map(f => {
+      const cl = (rec.clear[dk] || {})[f.floor], fr = DUNGEON_REWARD(f.floor), pot = floorPot(dgd, f.floor);
       return `<div class="dg-floor ${cl ? 'clear' : ''}"><div class="dg-fsprite">${enemySVG(f.id)}</div><div><b>${f.floor + 1}階 ${f.name}</b><small>Lv.${f.lv}・${f.abilityDesc}</small>
-        <small>${cl ? '✔ 突破' : `初めて突破: 🪙 ${DUNGEON_REWARD(f.floor).coins}×${bd.reward}・💎 ${DUNGEON_REWARD(f.floor).shards}`}</small></div></div>`;
+        <small>🎒 持ち帰り +🪙${Math.round(pot.coins * bd.reward)}・💎${pot.shards}${cl ? '　✔ 突破' : `　初めて突破: 🪙 ${Math.round(fr.coins * bd.reward * dgd.reward)}・💎 ${Math.round(fr.shards * dgd.reward)}`}</small></div></div>`;
     }).join('');
     $('#dg-chars').innerHTML = owned.map(id => {
       const c = charInfo(id), on = party.includes(id);
@@ -559,21 +747,32 @@ Screens.dungeon = {
     }).join('');
     $('#dg-start').innerHTML = `<kbd>Space</kbd> ${party.length === 3 ? `1階から挑む（${bd.name}）` : `あと${3 - party.length}体えらぶ`}`;
     $('#dg-start').classList.toggle('disabled', party.length < 3);
-    $('#dg-best').textContent = `最高記録（${bd.name}）: ${d.best[dk] || 0} / ${DUNGEON_FLOORS.length}階`;
+    $('#dg-best').textContent = `最高記録（${bd.name}）: ${rec.best[dk] || 0} / ${dgd.floors.length}階`;
+    $('#dg-start').classList.toggle('disabled', party.length < 3 || !dungeonOpen(dgd));
+    if (!dungeonOpen(dgd)) $('#dg-start').innerHTML = `🔒「${dungeonDef(dgd.unlock).name}」を全部突破すると開く`;
     $('#dg-chars').querySelectorAll('.dg-char').forEach(b => { b.onclick = () => this.toggle(b.dataset.id); });
     $('#dg-party').querySelectorAll('.dg-slot[data-id]').forEach(b => { b.onclick = () => this.toggle(b.dataset.id); });
     $('#dg-desc').querySelectorAll('.ch-diff button').forEach(b => { b.onclick = () => { setBattleDiff(b.dataset.k); this.render(); }; });
     $('#dg-start').onclick = () => this.start();
   },
+  // 今 えらんで いる ダンジョン
+  cur() { return dungeonDef(Save.data.dungeonSel); },
+  pick(id) {
+    const x = dungeonDef(id);
+    if (!dungeonOpen(x)) { SFX.miss(); toast(`「${dungeonDef(x.unlock).name}」を全部突破すると開く`, 2000); return; }
+    Save.data.dungeonSel = x.id; Save.save(); SFX.select(); this.render();
+  },
   start() {
-    const party = dungeonParty();
+    const party = dungeonParty(), dgd = this.cur();
+    if (!dungeonOpen(dgd)) { SFX.miss(); return; }
     if (party.length < 3) { SFX.miss(); toast('仲間を3体えらんでね', 1800); return; }
     SFX.select();
-    App.show('battle', { enemy: DUNGEON_FLOORS[0], dungeon: { floor: 0, party: party.map(id => ({ id })), lead: 0 } });
+    App.show('battle', { enemy: dgd.floors[0], dungeon: { dg: dgd.id, floor: 0, party: party.map(id => ({ id })), lead: 0, pot: { coins: 0, shards: 0 } } });
   },
   onKey(e) {
     if (e.key === 'Escape') App.show('home');
     if (e.key === ' ' || e.key === 'Enter') this.start();
+    if (e.key === 'Tab') { e.preventDefault(); const i = DUNGEONS.indexOf(this.cur()); for (let k = 1; k <= DUNGEONS.length; k++) { const x = DUNGEONS[(i + k) % DUNGEONS.length]; if (dungeonOpen(x)) { this.pick(x.id); break; } } }
     const n = parseInt(e.key, 10);
     if (n >= 1 && n <= BATTLE_DIFF_KEYS.length) { setBattleDiff(BATTLE_DIFF_KEYS[n - 1]); this.render(); }
   },

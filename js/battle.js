@@ -202,7 +202,7 @@ Screens.battle = {
 
     // かげまる: ひっさつで しばっている間は 敵の攻撃ゲージが止まる / とくせいで 少しおそくなる
     // こおりん: ひっさつで こごえた 敵は 攻撃ゲージが 半分の 速さ
-    if (!(this.e.bindUntil > this.elapsed)) this.e.gauge += dt / this.interval() * (1 - (this.ch.trait.slow || 0)) * (this.e.chillUntil > this.elapsed ? 0.5 : 1);
+    if (!(this.e.bindUntil > this.elapsed)) this.e.gauge += dt / this.interval() * (1 - (this.party ? this.partySlow() : (this.ch.trait.slow || 0))) * (this.e.chillUntil > this.elapsed ? 0.5 : 1);
     if (this.e.gauge >= 1) { this.e.gauge = 0; this.enemyAttack(); }
     if (this.party) this.partyTick(dt);
     $('#b-atk').style.transform = `scaleX(${this.e.gauge})`;
@@ -260,7 +260,7 @@ Screens.battle = {
       if (this.e.hp <= 0) { this.win(); return; }
     }
     // もりりん: こうごうせい (3 秒ごとに回復)
-    if (this.ch.trait.regen && this.elapsed >= (this.nextRegenP || 3000)) {
+    if (this.ch.trait.regen && !this.party && this.elapsed >= (this.nextRegenP || 3000)) {
       this.nextRegenP = this.elapsed + 3000;
       if (this.p.hp < this.p.max) {
         const h = Math.max(1, Math.round(this.p.max * this.ch.trait.regen * (this.regenUntil > this.elapsed ? 2 : 1)));
@@ -469,7 +469,7 @@ Screens.battle = {
     // ボスラッシュの 戦いの 間 / チャレンジの 結果
     if (this.state === 'between') {
       if (e.key === ' ') { if (this.dungeon) this.dungeonNext(); else this.betweenNext(); }
-      if (this.dungeon && (e.key === 'Escape' || e.key.toLowerCase() === 'r')) this.dungeonRetire(); // ダンジョン: ここで やめる
+      if (this.dungeon && (e.key === 'Escape' || e.key.toLowerCase() === 'r')) this.dungeonEscape(); // ダンジョン: 脱出 (報酬を もらう)
       return;
     }
     if (this.state === 'chend') {
@@ -484,7 +484,7 @@ Screens.battle = {
       this.state = 'pause';
       cancelAnimationFrame(this.raf);
       this.overlay('<div class="ov-box"><div class="ov-title">ポーズ中</div></div>');
-      Settings.open({ title: 'ポーズ中', quit: { label: this.dungeon ? 'やめる（ダンジョンへ）' : this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', warn: this.dungeon ? 'ダンジョンはここで終わり（ここまでの階の記録とごほうびは残る）' : this.rush ? 'ボスラッシュはここで終わり（倒したボスの分のコインはもらえる）' : this.rule ? '今週のチャレンジのこの挑戦はここで終わり（ごほうびはもらえない）' : 'このバトルはここで終わり。経験値とコインはもらえない', fn: () => this.dungeon ? this.dungeonFinish(false) : this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
+      Settings.open({ title: 'ポーズ中', quit: { label: this.dungeon ? '脱出する' : this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', warn: this.dungeon ? '戦っている階はあきらめて脱出する（ここまでに突破した階の持ち帰りの報酬はもらえる）' : this.rush ? 'ボスラッシュはここで終わり（倒したボスの分のコインはもらえる）' : this.rule ? '今週のチャレンジのこの挑戦はここで終わり（ごほうびはもらえない）' : 'このバトルはここで終わり。経験値とコインはもらえない', fn: () => this.dungeon ? (this.leave(), this.dungeonEnd('escape', this.dungeon.pot, this.ed.floor, '')) : this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
       return;
     }
     if (e.key.length !== 1) return;
@@ -1026,8 +1026,10 @@ Screens.battle = {
     let dmg = calcDamage(ed.lv, ed.power, this.e.stats.atk, this.ch.stats.def) * this.k * (0.85 + Math.random() * 0.15);
     if (breath) dmg *= 1.5;
     if (charged) dmg *= 1.8;
-    if (this.ch.id === 'gotsun' || this.ch.id === 'yuusharin') dmg *= 1 - this.ch.trait.cut;
-    if (this.ch.id === 'yukidarun') dmg *= 1 - this.ch.trait.snowCut * this.snow; // ゆきだまで ダメージが へる
+    if (!this.party) { // パーティでは 当たった キャラ自身の 特性で へらす (dungeon.js の guardCut)
+      if (this.ch.id === 'gotsun' || this.ch.id === 'yuusharin') dmg *= 1 - this.ch.trait.cut;
+      if (this.ch.id === 'yukidarun') dmg *= 1 - this.ch.trait.snowCut * this.snow; // ゆきだまで ダメージが へる
+    }
     if (this.e.weakUntil > this.elapsed) dmg *= 0.8; // どろりんの ひっさつで よわっている
     const sk1 = this.ch.skill;
     if (sk1.chillWeak && this.e.chillUntil > this.elapsed) dmg *= 1 - sk1.chillWeak;   // こおりん: こごえた 敵
@@ -1108,6 +1110,12 @@ Screens.battle = {
 
   resolveEnemyHit(dmg, big) {
     if (this.state !== 'run' && this.state !== 'pause') return;
+    // パーティ: 先に 当たる キャラを きめる。中心 いがいなら その キャラの 特性で 受ける (dungeon.js)
+    if (this.party) {
+      const t = this.pickTarget();
+      if (t !== this.pi) { this.memberHit(t, dmg); return; }
+      dmg = this.guardCut(this.party[this.pi], dmg);
+    }
     const pc = FX.center($('#b-psprite'));
     // ぷるん: 水のバリア
     if (this.p.barrier > 0) {
@@ -1217,11 +1225,6 @@ Screens.battle = {
 
   damagePlayer(dmg, kind) {
     if (this.teamCut !== 1) dmg = Math.max(1, Math.round(dmg * this.teamCut)); // パーティの 相性 (受ける ダメージ を へらす)
-    // パーティ: 敵の 攻撃は 3 体の だれかに 当たる (ミス・どくは 中心の キャラ)
-    if (this.party && kind !== 'miss' && kind !== 'poison' && kind !== 'shock') {
-      const t = this.pickTarget();
-      if (t !== this.pi) { this.damageMember(t, dmg); return; }
-    }
     const pc = FX.center($('#b-psprite'));
     this.p.hp -= dmg;
     if (kind === 'poison' || kind === 'shock' || kind === 'miss') {
