@@ -31,7 +31,7 @@ Screens.battle = {
     this.dk = battleDiffKey();
     this.bd = BATTLE_DIFFS[this.dk];
     // 難易度で 敵の レベルが かわる
-    this.ed = opt.enemy || ENEMIES[idx];
+    this.ed = opt.enemy ? (this.dungeon ? dungeonEnemy(opt.enemy, this.dk) : opt.enemy) : ENEMIES[idx];
     this.k = diffK(this.bd, opt.enemy ? MAIN_STAGES - 1 : idx); // 難易度と ステージで きまる 敵の 強さ (ダンジョンは いちばん 先の ステージと 同じ)
     const ch = charInfo(this.dungeon ? this.dungeon.party[this.dungeon.lead || 0].id : Save.data.active);
     this.ch = ch;

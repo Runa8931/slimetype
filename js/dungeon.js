@@ -104,19 +104,23 @@ Object.assign(ENEMY_SVG, {
 });
 
 // ---------------- 階と ボス ----------------
-// HP は「全ダンジョンで 5 分 (1 体 約 1 分)」が 目安 (2026-10-13 に ユーザーが 決めた)。推奨レベル・ミスなしの 計算で 1 体 約 20 秒、
-// ミス・読む 時間・レベル不足 などで 実際は その 約 3 倍 (前は 計算 1 分 → 実際 5 分 以上 かかった)。攻撃は ふつうの ボスの 約 1.55 倍
-// 連携攻撃と チームスキルで パーティの 攻撃は 1 体の 約 1.7 倍
+// 2026-10-13 (v5.19.4): Lv124・完凸 3 体で「1 階は 一瞬、2 階は 5 分 いじょう」と 言われ、作りなおした。
+//  ・ボスの レベルを 終盤向けに そろえた (Lv100〜124。クリア後の やりこみ なので)
+//  ・HP は へらしすぎず、Lv124・完凸 3 体・中級者 300 打鍵・正確さ 95% の 計算で 1 体 約 25〜40 秒 (全体 約 3 分) に そろえた
+//    2 階 (トレントン) は 殻と コンボ半減で 長く なるので HP を 少なめに
+//  ・手強さは 攻撃で 出す: 中級者で 1 階ごとに パーティの HP が 3〜5 割 へる くらい。上級者は 攻撃 ×0.5 (DUNGEON_POW。もともと 敵の 攻撃が 約 1.8 倍)
+const DUNGEON_POW = { beg: 1, mid: 1, adv: 0.5 };
+function dungeonEnemy(f, dk) { return { ...f, power: Math.round(f.power * (DUNGEON_POW[dk] || 1)) }; }
 const DUNGEON_FLOORS = [
-  { id: 'd_octo', name: '大ダコ王オクトキング', lv: 40, bg: 'sea', ability: ['ink', 'charge'], power: 78, interval: 5000, hpMult: 0.85,
+  { id: 'd_octo', name: '大ダコ王オクトキング', lv: 100, bg: 'sea', ability: ['ink', 'charge'], power: 312, interval: 5000, hpMult: 1.6,
     abilityDesc: '墨でガイドを隠し、3回に1回強い攻撃', desc: '深い海の底のダンジョンを治める大ダコの王。8本の足で何でもつかむ。' },
-  { id: 'd_treant', name: '森の巨人トレントン', lv: 65, bg: 'rain', ability: ['armor', 'shell'], power: 90, interval: 5200, hpMult: 0.9,
+  { id: 'd_treant', name: '森の巨人トレントン', lv: 106, bg: 'rain', ability: ['armor', 'shell'], power: 540, interval: 5200, hpMult: 1.05,
     abilityDesc: 'かたい樹皮: コンボ30未満だとダメージ半減。ときどき殻にこもる', desc: '千年生きた大木の巨人。ちょっとやそっとの攻撃ではびくともしない。' },
-  { id: 'd_thunderbird', name: '雷鳥ライボルト', lv: 90, bg: 'sky', ability: ['thunder', 'wind', 'rage'], power: 110, interval: 4800, hpMult: 0.9,
+  { id: 'd_thunderbird', name: '雷鳥ライボルト', lv: 112, bg: 'sky', ability: ['thunder', 'wind', 'rage'], power: 440, interval: 4800, hpMult: 1.7,
     abilityDesc: '落雷の予告・文字がゆれる風・HP半分で速くなる', desc: '嵐の雲の上に巣をつくる金色の鳥。羽ばたくたびに雷が落ちる。' },
-  { id: 'd_serpent', name: '氷の大蛇ヨルムガント', lv: 110, bg: 'snow', ability: ['freeze', 'charge', 'rage'], power: 115, interval: 5000, hpMult: 0.9,
+  { id: 'd_serpent', name: '氷の大蛇ヨルムガント', lv: 118, bg: 'snow', ability: ['freeze', 'charge', 'rage'], power: 390, interval: 5000, hpMult: 1.75,
     abilityDesc: 'こごえさせる・3回に1回強い攻撃・HP半分で速くなる', desc: '氷の山をとりまくほど長い大蛇。吐く息で何でも凍らせる。' },
-  { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 92, interval: 5200, hpMult: 0.95,
+  { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 368, interval: 5200, hpMult: 1.9,
     abilityDesc: '本気になると闇でガイドを隠し、必殺ゲージを奪う。毒・落雷の予告', desc: 'ダンジョンのいちばん奥でねむる、すべての魔物の王。目がいくつあるのか、だれも知らない。' },
 ].map((f, i) => ({ ...f, floor: i, type: 'boss', boss: true, giant: true, base: { ...ENEMY_TYPES.boss }, abilities: f.ability, diff: 'hard', exp: 0 }));
 const DUNGEON_HEAL = 0.3, DUNGEON_REVIVE = 0.25; // 階の 間の 回復 / 倒れた キャラ
