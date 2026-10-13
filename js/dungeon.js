@@ -1,8 +1,8 @@
 // ============================================================
 //  パーティダンジョン
 //  持っている キャラから 3 体を えらんで、5 階建ての ダンジョンに いどむ。各階に 新しい 巨大ボス
-//  ・戦いの 中で 1・2・3 キーで 交代 (Tab で 次の キャラ)。控えの キャラは 少しずつ HP が もどる
-//    前の キャラが 倒れたら 次の キャラが 自動で 出る。3 体とも 倒れたら 負け
+//  ・3 体 いっしょに 戦う。お題を 打ち切る たびに 攻撃の 中心が 自動で 次の キャラへ。のこりの 2 体も 連携攻撃
+//    敵の 攻撃は 3 体の だれかに 当たる。3 体とも 倒れたら 負け。チームスキルは ゲージが 満タンで 自動
 //  ・相性: キャラの タイプの 組み合わせで 効果 (TEAM_SYNERGIES)
 //  ・絆: 同じ パーティで 階を 突破する たびに、2 体ずつの 絆が 深まり 攻撃が 上がる (育てる やりこみ)
 //  ・HP は 階を こえて 持ちこし (階の 間に 30% 回復、倒れた キャラも 25% で 起きる)
@@ -118,13 +118,24 @@ const DUNGEON_FLOORS = [
   { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 74, interval: 5200, hpMult: 5.2,
     abilityDesc: '本気になると闇でガイドを隠し、必殺ゲージを奪う。毒・落雷の予告', desc: 'ダンジョンのいちばん奥でねむる、すべての魔物の王。目がいくつあるのか、だれも知らない。' },
 ].map((f, i) => ({ ...f, floor: i, type: 'boss', boss: true, giant: true, base: { ...ENEMY_TYPES.boss }, abilities: f.ability, diff: 'hard', exp: 0 }));
-const DUNGEON_HEAL = 0.3, DUNGEON_REVIVE = 0.25, BENCH_REGEN = 0.004; // 階の 間の 回復 / 倒れた キャラ / 控えの 回復 (1 秒に 最大HP の 0.4%)
-const DUNGEON_SWAP_CD = 1500; // 交代の あと しばらく 交代 できない
+const DUNGEON_HEAL = 0.3, DUNGEON_REVIVE = 0.25; // 階の 間の 回復 / 倒れた キャラ
 const DUNGEON_REWARD = i => ({ coins: 400 + i * 300, shards: 10 + i * 8 });
 const SUPPORT_RATE = 0.2;       // うしろの キャラの 連携攻撃 (1 体ぶん、お題の 威力の 2 割)
 const TEAM_GAUGE_KEY = 0.75;    // チームゲージ: 正しく 1 打つ ごとに (約 130 打で 満タン)
 const TEAM_GAUGE_MISS = 2;      // ミスで へる
 const TEAM_SKILL_POWER = 140;   // チームスキル: 3 体 それぞれの 威力
+// キャラごとに しまって おく 状態 (battle.js の enter で 0 に して いる もの)
+const PARTY_STATE = ['streak', 'tempo', 'tempoMult', 'snow', 'seg', 'luck', 'trioStreak', 'forgiven', 'forgiveUntil', 'wardUntil', 'critUntil', 'critAdd', 'rageUntil', 'regenUntil',
+  'streakGuard', 'doubleUntil', 'poisonBoostUntil', 'drainUntil', 'comboGuardUntil', 'trioNext', 'segGuardUntil', 'diceN', 'diceZoro', 'diceWeight', 'diceTriple', 'diceExt', 'bestKps'];
+const PARTY_STATE_INIT = { tempoMult: 1, trioNext: false };
+const PARTY_PSTATE = ['skill', 'shield', 'barrier', 'evade', 'reflect', 'boost'];
+const PARTY_PSTATE_INIT = { boost: 1 };
+// ふつうの バトルに もどる ときに 1 体の 表示へ もどす
+function restoreSolo() {
+  const t = document.getElementById('b-trio'); if (t) t.remove();
+  const s = document.getElementById('b-psprite-solo'); if (s) s.id = 'b-psprite';
+  const p = document.getElementById('b-player'); if (p) p.style.display = '';
+}
 
 // ---------------- 相性 ----------------
 const tset = ids => new Set(ids.map(id => CHARACTERS[id].type));
@@ -173,39 +184,164 @@ function dungeonParty() { return (Save.data.dungeonParty || []).filter(id => CHA
 
 // ---------------- バトルの 中の パーティ (battle.js に 足す) ----------------
 Object.assign(Screens.battle, {
-  // ---- 3 体 同時に 戦う: うしろの 2 体の 表示・連携攻撃・チームスキル ----
-  renderSupport() {
-    let el = $('#b-support');
-    if (!this.party) { if (el) el.remove(); return; }
-    if (!el) { el = document.createElement('div'); el.id = 'b-support'; $('#arena').appendChild(el); }
-    const bench = this.party.map((m, i) => ({ m, i })).filter(x => x.i !== this.pi);
-    el.innerHTML = bench.map(({ m, i }, k) => `<div class="sup s${k} ${m.hp <= 0 ? 'down' : ''}" data-i="${i}"><div class="sup-sprite">${slimeSVG(m.id, m.ch.stage)}</div>
-      <div class="sup-hp"><i style="width:${Math.max(0, m.hp / m.max * 100).toFixed(1)}%"></i></div></div>`).join('');
+  // ---- 3 体 いっしょに 戦う ----
+  // 3 体は いつも 並んで いる (#b-trio)。お題を 打ち切る たびに「攻撃の 中心」(this.pi) が 次の キャラへ 自動で 回る。
+  // 中心の キャラが 自分の 特性で 攻撃し、のこりの 2 体も 連携攻撃。キャラごとの 状態 (連続ボーナス・必殺ゲージ など) は
+  // キャラごとに しまって おく (stash / unstash)。敵の 攻撃は 3 体の だれかに 当たる
+  setupParty() {
+    const dg = this.dungeon, team = dungeonTeam(dg.party.map(m => m.id));
+    this.team = team;
+    this.teamAtk = 1 + team.atk + team.bond; this.teamCut = 1 - Math.min(0.5, team.cut); this.teamCrit = team.crit; this.teamCharge = 1 + team.charge;
+    this.party = dg.party.map(m => {
+      const ch = charInfo(m.id), max = Math.round(ch.stats.hp * BATTLE_HP_SCALE * (1 + team.hp));
+      return { id: m.id, ch, max, hp: m.hp == null ? max : Math.round(Math.min(1, m.hp) * max), keys: 0, st: { skill: m.skill || 0 } };
+    });
+    const lead = dg.lead || 0;
+    this.pi = this.party[lead] && this.party[lead].hp > 0 ? lead : Math.max(0, this.party.findIndex(m => m.hp > 0));
+    this.teamGauge = dg.teamGauge || 0;
+    this.buildTrio();
+    this.unstash(this.party[this.pi]);
+    this.markTurn();
+    this.renderParty(); // 敵は 使わないので ここで 出して よい
+    this._ptT = 0;
   },
-  // お題を 打ち切った: うしろの 2 体も 少し 攻撃する
+
+  // キャラごとの 状態を しまう / とりだす
+  stash(m) {
+    const st = m.st = {};
+    for (const k of PARTY_STATE) st[k] = this[k];
+    for (const k of PARTY_PSTATE) st['p_' + k] = this.p[k];
+    m.hp = this.p.hp;
+  },
+  unstash(m) {
+    const st = m.st || {};
+    for (const k of PARTY_STATE) this[k] = st[k] ?? PARTY_STATE_INIT[k] ?? 0;
+    for (const k of PARTY_PSTATE) this.p[k] = st['p_' + k] ?? PARTY_PSTATE_INIT[k] ?? 0;
+    this.p.skill = st.skill ?? st.p_skill ?? 0;
+    this.ch = m.ch; this.p.hp = m.hp; this.p.max = m.max;
+  },
+
+  // 3 体の 並び (ひとりの 絵の かわりに 3 つの 枠)。中心の キャラの 絵に id="b-psprite" を つけて、攻撃の 動きは そこから 出す
+  buildTrio() {
+    const solo = $('#b-psprite');
+    if (solo && solo.closest('#b-player')) solo.id = 'b-psprite-solo';
+    $('#b-player').style.display = 'none';
+    let el = $('#b-trio');
+    if (!el) { el = document.createElement('div'); el.id = 'b-trio'; $('#arena').appendChild(el); }
+    el.innerHTML = this.party.map((m, i) => `<div class="tr-mem t${i}" data-i="${i}">
+      <div class="tr-info"><b>${m.ch.name}</b><small>Lv.${m.ch.L}</small>
+        <div class="tr-hp"><i></i></div><div class="tr-sk"><i></i></div></div>
+      <div class="tr-sprite">${slimeSVG(m.id, m.ch.stage)}</div><div class="tr-ring"></div></div>`).join('');
+  },
+  // 攻撃の 中心を 光らせる (id も 移す)
+  markTurn() {
+    document.querySelectorAll('#b-trio .tr-mem').forEach(el => {
+      const i = +el.dataset.i, sp = el.querySelector('.tr-sprite');
+      el.classList.toggle('turn', i === this.pi);
+      sp.id = i === this.pi ? 'b-psprite' : '';
+    });
+    $('#b-pname').textContent = this.ch.name;
+    $('#b-plv').textContent = ` Lv.${this.ch.L}`;
+    $('#b-skillname').textContent = this.ch.skill.name;
+    $('#b-skill').style.setProperty('--cc', this.ch.def.colors.main);
+    if (this.e && this.e.max) this.updateBars(true); // 敵が できる 前 (setupParty の とき) は まだ 出さない
+  },
+  // 次の キャラへ (お題を 打ち切る たび)
+  nextTurn() {
+    if (!this.party || this.state !== 'run') return;
+    for (let k = 1; k <= this.party.length; k++) {
+      const i = (this.pi + k) % this.party.length;
+      if (this.party[i].hp > 0) {
+        if (i === this.pi) return;
+        this.stash(this.party[this.pi]);
+        this.pi = i;
+        this.unstash(this.party[i]);
+        this.markTurn();
+        this.renderParty();
+        return;
+      }
+    }
+  },
+
+  // 上の チームゲージと、3 体の HP・必殺ゲージ
+  renderParty() {
+    let el = $('#b-party');
+    if (!this.party) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.id = 'b-party'; $('#arena').appendChild(el); }
+    this.party[this.pi].hp = this.p.hp;
+    el.innerHTML = `<div class="bp-team ${this.teamGauge >= 100 ? 'ready' : ''}" id="bp-team"><span>チームスキル</span><b><i style="width:${this.teamGauge}%"></i></b><small>満タンで自動</small></div>`;
+    document.querySelectorAll('#b-trio .tr-mem').forEach(t => {
+      const i = +t.dataset.i, m = this.party[i];
+      const sk = i === this.pi ? this.p.skill : (m.st && (m.st.skill ?? m.st.p_skill)) || 0;
+      t.classList.toggle('down', m.hp <= 0);
+      t.querySelector('.tr-hp i').style.width = Math.max(0, m.hp / m.max * 100).toFixed(1) + '%';
+      t.querySelector('.tr-hp i').classList.toggle('low', m.hp / m.max < 0.3);
+      t.querySelector('.tr-sk i').style.width = clamp(sk, 0, 100) + '%';
+    });
+  },
+
+  // お題を 打ち切った: 中心 いがいの 2 体も 連携攻撃 → 中心を 次の キャラへ
   supportAttack() {
     if (this.state !== 'run') return;
     const ec = FX.center($('#b-esprite'));
-    $('#b-support').querySelectorAll('.sup:not(.down)').forEach((el, k) => {
-      const m = this.party[+el.dataset.i];
-      if (!m || m.hp <= 0) return;
+    this.party.forEach((m, i) => {
+      if (i === this.pi || m.hp <= 0) return;
+      const el = document.querySelector(`#b-trio .tr-mem[data-i="${i}"]`);
       const d = Math.max(1, Math.round(calcDamage(m.ch.L, wordPower(this.lastWordKeys || 10), m.ch.stats.atk, this.e.stats.def) * SUPPORT_RATE));
       replayAnim(el, 'sup-hop', 300);
-      this.proj(FX.center(el.querySelector('.sup-sprite')), ec, { color: m.ch.def.colors.main, size: 7, frames: 14 + k * 4, arc: -60,
+      this.proj(FX.center(el.querySelector('.tr-sprite')), ec, { color: m.ch.def.colors.main, size: 7, frames: 16 + i * 3, arc: -60,
         onHit: () => { if (this.state === 'run') this.hitEnemy(d, { colors: [m.ch.def.colors.main, '#fff'] }); } });
     });
+    this.after(() => this.nextTurn(), 120);
   },
+
+  // 敵の 攻撃: 3 体の だれかに 当たる (中心の キャラ いがいなら その キャラの HP を へらす)
+  pickTarget() {
+    const alive = this.party.map((m, i) => i).filter(i => this.party[i].hp > 0);
+    return alive[Math.floor(Math.random() * alive.length)];
+  },
+  damageMember(i, dmg) {
+    const m = this.party[i], el = document.querySelector(`#b-trio .tr-mem[data-i="${i}"]`);
+    m.hp -= dmg;
+    const c = FX.center(el.querySelector('.tr-sprite'));
+    floatText(c.x, c.y - 40, dmg, 'dmg taken');
+    replayAnim(el.querySelector('.tr-sprite'), 'hurt', 450);
+    SFX.hurt();
+    shake($('#arena'), false);
+    if (m.hp <= 0) {
+      m.hp = 0;
+      toast(`${m.ch.name}が倒れた！`, 1800);
+      if (!this.party.some(x => x.hp > 0)) { this.renderParty(); this.lose(); return; }
+    }
+    this.renderParty();
+  },
+
+  // 中心の キャラが 倒れた: 次の キャラが 中心に なる。全員 倒れたら 負け
+  partyFall() {
+    this.p.hp = 0;
+    this.party[this.pi].hp = 0;
+    toast(`${this.ch.name}が倒れた！`, 1800);
+    if (!this.party.some(m => m.hp > 0)) { this.renderParty(); this.lose(); return; }
+    this.nextTurn();
+    this.renderParty();
+  },
+
+  partyTick(dt) {
+    this._ptT = (this._ptT || 0) + dt;
+    if (this._ptT > 300) { this._ptT = 0; this.renderParty(); }
+  },
+
   addTeamGauge(n) {
     const before = this.teamGauge;
     this.teamGauge = clamp(this.teamGauge + n, 0, 100);
-    if (before < 100 && this.teamGauge >= 100) { SFX.charge(); this.log('チームゲージが満タン！ Enter でチームスキル', 'player'); }
     const f = $('#bp-team i'); if (f) f.style.width = this.teamGauge + '%';
     const b = $('#bp-team'); if (b) b.classList.toggle('ready', this.teamGauge >= 100);
+    // 満タンに なったら 自動で チームスキル
+    if (before < 100 && this.teamGauge >= 100) { SFX.charge(); this.after(() => this.teamSkill(), 250); }
   },
   // チームスキル: 3 体 そろって 大技。相性に 合わせて 追加の 効果
   teamSkill() {
-    if (this.state !== 'run') return;
-    if (this.teamGauge < 100) { SFX.miss(); return; }
+    if (this.state !== 'run' || this.teamGauge < 100) return;
     this.teamGauge = 0; this.addTeamGauge(0);
     const syn = activeSynergies(this.party.map(m => m.id));
     const kinds = new Set(syn.flatMap(x => Object.keys(x.eff)));
@@ -215,26 +351,36 @@ Object.assign(Screens.battle, {
     if (kinds.has('atk')) { mult = 1.5; extra.push('威力1.5倍'); }
     if (kinds.has('crit')) { crit = true; extra.push('全部会心'); }
     if (kinds.has('cut')) { this.p.barrier += 2; extra.push('バリア2回'); }
-    if (kinds.has('charge')) { this.p.skill = Math.min(99, this.p.skill + 40); this.party.forEach((m, i) => { if (i !== this.pi) m.skill = Math.min(99, (m.skill || 0) + 40); }); extra.push('必殺ゲージ+40%'); }
+    if (kinds.has('charge')) {
+      this.p.skill = Math.min(99, this.p.skill + 40);
+      this.party.forEach((m, i) => { if (i !== this.pi) { m.st = m.st || {}; m.st.skill = Math.min(99, (m.st.skill ?? m.st.p_skill ?? 0) + 40); m.st.p_skill = m.st.skill; } });
+      extra.push('必殺ゲージ+40%');
+    }
     const heal = kinds.has('hp') ? 0.15 : extra.length ? 0 : 0.08;
-    if (heal) { this.p.hp = Math.min(this.p.max, this.p.hp + this.p.max * heal); this.party.forEach((m, i) => { if (i !== this.pi && m.hp > 0) m.hp = Math.min(m.max, m.hp + m.max * heal); }); extra.push(`全員HP${Math.round(heal * 100)}%回復`); }
+    if (heal) {
+      this.p.hp = Math.min(this.p.max, this.p.hp + this.p.max * heal);
+      this.party.forEach((m, i) => { if (i !== this.pi && m.hp > 0) m.hp = Math.min(m.max, m.hp + m.max * heal); });
+      extra.push(`全員HP${Math.round(heal * 100)}%回復`);
+    }
     cutin(name, `チームスキル！ ${extra.join('・')}`, '#ffd43b', this.party.filter(m => m.hp > 0).map(m => slimeSVG(m.id, m.ch.stage)).join(''), 'ssr');
     if (SFX.rankCut) SFX.rankCut();
     this.log(`チームスキル「${name}」！${extra.length ? '（' + extra.join('・') + '）' : ''}`, 'player');
     const ec = FX.center($('#b-esprite'));
-    const shooters = [$('#b-psprite'), ...$('#b-support').querySelectorAll('.sup:not(.down) .sup-sprite')];
-    const alive = [this.party[this.pi], ...this.party.filter((m, i) => i !== this.pi && m.hp > 0)];
-    alive.forEach((m, k) => {
+    this.party.forEach((m, i) => {
+      if (m.hp <= 0) return;
       const d = Math.round(calcDamage(m.ch.L, TEAM_SKILL_POWER, m.ch.stats.atk, this.e.stats.def) * mult * (crit ? 1.5 : 1));
+      const el = document.querySelector(`#b-trio .tr-mem[data-i="${i}"]`);
       this.after(() => {
         if (this.state !== 'run') return;
-        this.proj(FX.center(shooters[k] || shooters[0]), ec, { color: m.ch.def.colors.main, size: 13, frames: 18, arc: -90,
+        replayAnim(el, 'sup-hop', 300);
+        this.proj(FX.center(el.querySelector('.tr-sprite')), ec, { color: m.ch.def.colors.main, size: 13, frames: 18, arc: -90,
           onHit: () => { if (this.state === 'run') { this.hitEnemy(d, { crit, big: true, colors: [m.ch.def.colors.main, '#ffd43b', '#fff'] }); FX.ring(ec.x, ec.y, m.ch.def.colors.main, 120, 24, 6); } } });
-      }, 500 + k * 260);
+      }, 500 + i * 260);
     });
     this.updateBars();
     this.renderParty();
   },
+
   // 2 階から 先: 難易度は 1 階で きめたので 聞かずに 始める
   dungeonAutoStart() {
     this.overlay(`<div class="ov-box">${dungeonBanner(this)}<div class="ov-title">${this.ed.floor + 1}階 ${this.ed.name}</div><div class="ov-sub">${this.ed.abilityDesc}</div></div>`);
@@ -254,98 +400,11 @@ Object.assign(Screens.battle, {
       <div class="ov-key"><kbd>Space</kbd>でダンジョンの入口へ</div></div>`);
   },
 
-  setupParty() {
-    const dg = this.dungeon, team = dungeonTeam(dg.party.map(m => m.id));
-    this.team = team;
-    this.teamAtk = 1 + team.atk + team.bond; this.teamCut = 1 - Math.min(0.5, team.cut); this.teamCrit = team.crit; this.teamCharge = 1 + team.charge;
-    this.party = dg.party.map(m => {
-      const ch = charInfo(m.id), max = Math.round(ch.stats.hp * BATTLE_HP_SCALE * (1 + team.hp));
-      return { id: m.id, ch, max, hp: m.hp == null ? max : Math.round(Math.min(1, m.hp) * max), skill: m.skill || 0, keys: 0 };
-    });
-    const lead = dg.lead || 0;
-    this.pi = this.party[lead] && this.party[lead].hp > 0 ? lead : Math.max(0, this.party.findIndex(m => m.hp > 0));
-    const m = this.party[this.pi];
-    this.ch = m.ch; this.p.hp = m.hp; this.p.max = m.max; this.p.skill = m.skill;
-    this.teamGauge = dg.teamGauge || 0;
-    this.renderParty();
-    this.renderSupport();
-  },
-
-  // パーティの 表示 (左上: 3 体の 顔と HP)
-  renderParty() {
-    let el = $('#b-party');
-    if (!this.party) { if (el) el.remove(); return; }
-    if (!el) { el = document.createElement('div'); el.id = 'b-party'; $('#arena').appendChild(el); }
-    this.party[this.pi].hp = this.p.hp; this.party[this.pi].skill = this.p.skill;
-    el.innerHTML = this.party.map((m, i) => `<div class="bp-mem ${i === this.pi ? 'on' : ''} ${m.hp <= 0 ? 'down' : ''}">
-      <kbd>${i + 1}</kbd><div class="bp-face">${slimeSVG(m.id, m.ch.stage)}</div>
-      <div class="bp-hp"><i style="width:${Math.max(0, m.hp / m.max * 100).toFixed(1)}%"></i></div></div>`).join('')
-      + `<div class="bp-side"><div class="bp-team ${this.teamGauge >= 100 ? 'ready' : ''}" id="bp-team"><span>チーム</span><b><i style="width:${this.teamGauge}%"></i></b><kbd>Enter</kbd></div>
-        <small class="bp-help"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>/<kbd>Tab</kbd> 交代</small></div>`;
-    // うしろの 2 体の HP も 合わせる
-    document.querySelectorAll('#b-support .sup').forEach(el => { const m = this.party[+el.dataset.i]; if (!m) return; el.classList.toggle('down', m.hp <= 0); const f = el.querySelector('.sup-hp i'); if (f) f.style.width = Math.max(0, m.hp / m.max * 100).toFixed(1) + '%'; });
-  },
-
-  // 交代する (前の キャラの HP と 必殺ゲージは そのまま 残る)
-  swap(i, force = false) {
-    if (!this.party || this.state !== 'run' && !force) return;
-    const m = this.party[i];
-    if (!m || i === this.pi || m.hp <= 0) { SFX.miss(); return; }
-    if (!force && performance.now() < this.swapAt) { SFX.miss(); return; }
-    this.swapAt = performance.now() + DUNGEON_SWAP_CD;
-    const cur = this.party[this.pi];
-    cur.hp = this.p.hp; cur.skill = this.p.skill;
-    this.pi = i;
-    this.ch = m.ch; this.p.hp = m.hp; this.p.max = m.max; this.p.skill = m.skill;
-    // キャラごとの 状態は 交代で 元に もどす (コンボは パーティで つづく)
-    this.p.shield = 0; this.p.barrier = 0; this.p.evade = 0; this.p.reflect = 0; this.p.boost = 1;
-    this.streak = 0; this.tempo = 0; this.tempoMult = 1; this.snow = 0; this.seg = 0; this.luck = 0; this.trioStreak = 0; this.forgiven = 0; this.forgiveUntil = 0;
-    this.wardUntil = 0; this.critUntil = 0; this.critAdd = 0; this.rageUntil = 0; this.regenUntil = 0; this.streakGuard = 0;
-    this.doubleUntil = 0; this.poisonBoostUntil = 0; this.drainUntil = 0; this.comboGuardUntil = 0; this.trioNext = false; this.segGuardUntil = 0;
-    $('#b-psprite').innerHTML = slimeSVG(m.id, m.ch.stage);
-    $('#b-pname').textContent = m.ch.name;
-    $('#b-plv').textContent = ` Lv.${m.ch.L}`;
-    $('#b-skillname').textContent = m.ch.skill.name;
-    $('#b-skill').style.setProperty('--cc', m.ch.def.colors.main);
-    replayAnim($('#b-player'), 'swap-in', 400);
-    SFX.select();
-    this.log(`${m.ch.name}に交代！`, 'player');
-    this.updateBars(true);
-    this.renderParty();
-    this.renderSupport();
-  },
-  swapNext() {
-    if (!this.party) return;
-    for (let k = 1; k < this.party.length; k++) { const i = (this.pi + k) % this.party.length; if (this.party[i].hp > 0) { this.swap(i); return; } }
-    SFX.miss();
-  },
-
-  // 前の キャラが 倒れた: 次の キャラが 出る。全員 倒れたら 負け
-  partyFall() {
-    this.party[this.pi].hp = 0;
-    const next = this.party.findIndex(m => m.hp > 0);
-    if (next < 0) { this.renderParty(); this.lose(); return; }
-    const name = this.ch.name;
-    this.p.hp = 0;
-    this.swap(next, true);
-    toast(`${name}が倒れた！ ${this.ch.name}が前に出た`, 2200);
-  },
-
-  // 控えの キャラは 少しずつ 回復
-  partyTick(dt) {
-    for (let i = 0; i < this.party.length; i++) {
-      const m = this.party[i];
-      if (i !== this.pi && m.hp > 0 && m.hp < m.max) m.hp = Math.min(m.max, m.hp + m.max * BENCH_REGEN * dt / 1000);
-    }
-    this._ptT = (this._ptT || 0) + dt;
-    if (this._ptT > 300) { this._ptT = 0; this.renderParty(); }
-  },
-
   // 階の 終わり
   dungeonFinish(won) {
     this.leave(); this.state = 'chend';
     const dg = this.dungeon, f = this.ed.floor, dk = this.dk, bd = this.bd;
-    this.party[this.pi].hp = Math.max(0, this.p.hp); this.party[this.pi].skill = this.p.skill;
+    this.stash(this.party[this.pi]); this.party[this.pi].hp = Math.max(0, this.p.hp);
     const secs = Math.max(1, this.elapsed / 1000);
     const ids = this.party.map(m => m.id);
     // 経験値: それぞれ 打った 分 + 突破すると 0.4 レベル分
@@ -371,7 +430,7 @@ Object.assign(Screens.battle, {
     Save.save();
     if (won && f + 1 < DUNGEON_FLOORS.length) {
       // 次の 階へ: HP を 持ちこして 少し 回復、倒れた キャラも 起きる
-      const party = this.party.map(m => ({ id: m.id, hp: m.hp > 0 ? Math.min(1, m.hp / m.max + DUNGEON_HEAL) : DUNGEON_REVIVE, skill: m.skill }));
+      const party = this.party.map(m => ({ id: m.id, hp: m.hp > 0 ? Math.min(1, m.hp / m.max + DUNGEON_HEAL) : DUNGEON_REVIVE, skill: (m.st && m.st.p_skill) || 0 }));
       this.nextDungeon = { floor: f + 1, party, lead: this.pi, teamGauge: this.teamGauge };
       this.state = 'between';
       const nf = DUNGEON_FLOORS[f + 1];

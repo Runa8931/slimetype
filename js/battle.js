@@ -21,6 +21,7 @@ Screens.battle = {
 
   // arg: ステージ番号、または { idx, rush (ボスラッシュの 途中経過), rule (今週の チャレンジの ルール) }
   enter(arg) {
+    if (typeof restoreSolo === 'function') restoreSolo(); // ダンジョンの 3 体の 表示を いったん 1 体に もどす
     const opt = arg && typeof arg === 'object' ? arg : { idx: arg };
     const idx = opt.idx;
     this.arg = opt; this.rush = opt.rush || null; this.rule = opt.rule || null;
@@ -80,7 +81,7 @@ Screens.battle = {
     $('#b-elv').textContent = ` Lv.${this.ed.lv}`;
     $('#b-skillname').textContent = ch2.skill.name;
     $('#b-skill').style.setProperty('--cc', ch2.def.colors.main);
-    if (!this.party) { for (const sel of ['#b-party', '#b-support']) { const x = $(sel); if (x) x.remove(); } } // ふつうの バトルでは パーティの 表示を 消す
+    if (!this.party) { for (const sel of ['#b-party', '#b-support', '#b-trio']) { const x = $(sel); if (x) x.remove(); } } // ふつうの バトルでは パーティの 表示を 消す
     $('#b-log').innerHTML = '';
     $('#b-tp .tp-roma').classList.remove('hidden-guide');
     $('#b-tp').classList.remove('fog', 'inked', 'blizzard', 'frozen', 'windy');
@@ -480,11 +481,6 @@ Screens.battle = {
       Settings.open({ title: 'ポーズ中', quit: { label: this.dungeon ? 'やめる（ダンジョンへ）' : this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', warn: this.dungeon ? 'ダンジョンはここで終わり（ここまでの階の記録とごほうびは残る）' : this.rush ? 'ボスラッシュはここで終わり（倒したボスの分のコインはもらえる）' : this.rule ? '今週のチャレンジのこの挑戦はここで終わり（ごほうびはもらえない）' : 'このバトルはここで終わり。経験値とコインはもらえない', fn: () => this.dungeon ? this.dungeonFinish(false) : this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
       return;
     }
-    // パーティ: Enter で チームスキル (ゲージ 満タンの とき)
-    if (this.party && e.key === 'Enter') { this.teamSkill(); return; }
-    // パーティ: 1・2・3 で 交代、Tab で 次の キャラへ (ダンジョンの お題に 数字は 出ない)
-    if (this.party && /^[123]$/.test(e.key)) { this.swap(+e.key - 1); return; }
-    if (this.party && e.key === 'Tab') { e.preventDefault(); this.swapNext(); return; }
     if (e.key.length !== 1) return;
 
     const key = e.key.toLowerCase();
@@ -535,7 +531,7 @@ Screens.battle = {
       if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.useSkill(); }
       SFX.key();
       if (r === 'done') wordFx($('#b-tp'));
-      if (r === 'done') { this.wordDone(); if (this.party) this.supportAttack(); } // パーティ: うしろの 2 体も 連携攻撃
+      if (r === 'done') { this.wordDone(); if (this.party) this.supportAttack(); } // パーティ: のこりの 2 体も 連携攻撃 → 攻撃の 中心が 次の キャラへ
     }
     this.updateCombo();
     this.updateBars();
@@ -1213,8 +1209,13 @@ Screens.battle = {
   },
 
   damagePlayer(dmg, kind) {
-    const pc = FX.center($('#b-psprite'));
     if (this.teamCut !== 1) dmg = Math.max(1, Math.round(dmg * this.teamCut)); // パーティの 相性 (受ける ダメージ を へらす)
+    // パーティ: 敵の 攻撃は 3 体の だれかに 当たる (ミス・どくは 中心の キャラ)
+    if (this.party && kind !== 'miss' && kind !== 'poison' && kind !== 'shock') {
+      const t = this.pickTarget();
+      if (t !== this.pi) { this.damageMember(t, dmg); return; }
+    }
+    const pc = FX.center($('#b-psprite'));
     this.p.hp -= dmg;
     if (kind === 'poison' || kind === 'shock' || kind === 'miss') {
       floatText(pc.x + 20, pc.y - 30, dmg, kind === 'poison' ? 'dmg poison' : 'dmg shock');

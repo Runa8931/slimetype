@@ -1823,3 +1823,24 @@ body.no-kb #p-kb { display: none; }
 .bp-team b i { display: block; height: 100%; background: linear-gradient(90deg, #ffd43b, #ff6bff); transition: width .2s; }
 .bp-team.ready { color: var(--gold); text-shadow: 0 0 8px rgba(255,210,63,.9); animation: new-blink 1s ease-in-out infinite; }
 .cutin .cut-svg svg + svg, .cutin svg + svg { margin-left: -20px; }
+
+/* ---------- ダンジョン: 3 体 いっしょに 戦う ---------- */
+#b-trio { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.tr-mem { position: absolute; bottom: 44px; width: 150px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.tr-mem.t0 { left: 2%; } .tr-mem.t1 { left: 15.5%; bottom: 64px; } .tr-mem.t2 { left: 29%; }
+.tr-info { width: 140px; padding: 5px 8px; border-radius: 10px; background: rgba(10,10,30,.7); border: 1px solid var(--panel-bd); font-size: 12px; }
+.tr-info b { font-weight: 800; } .tr-info small { color: var(--gold); margin-left: 4px; font-family: var(--pixel); }
+.tr-hp, .tr-sk { height: 7px; border-radius: 4px; background: rgba(0,0,0,.5); overflow: hidden; margin-top: 3px; }
+.tr-sk { height: 4px; }
+.tr-hp i { display: block; height: 100%; background: var(--green); transition: width .2s; }
+.tr-hp i.low { background: var(--red); }
+.tr-sk i { display: block; height: 100%; background: var(--blue); transition: width .2s; }
+.tr-sprite { width: 132px; height: 124px; position: relative; z-index: 1; }
+.tr-ring { position: absolute; bottom: -4px; width: 120px; height: 22px; border-radius: 50%; border: 3px solid transparent; z-index: 0; }
+.tr-mem.turn .tr-ring { border-color: var(--gold); box-shadow: 0 0 16px rgba(255,210,63,.8); animation: new-blink 1s ease-in-out infinite; }
+.tr-mem.turn .tr-info { border-color: var(--gold); }
+.tr-mem.down { opacity: .35; filter: grayscale(1); }
+#b-party { left: 50%; top: 8px; transform: translateX(-50%); }
+.bp-team small { color: var(--sub); font-weight: 600; }
+@media (max-width: 1100px) { .tr-mem { width: 120px; } .tr-sprite { width: 100px; height: 94px; } .tr-info { width: 112px; } .tr-mem.t1 { left: 14%; } .tr-mem.t2 { left: 27%; } }
+#b-party { left: 12px; top: 10px; transform: none; }
