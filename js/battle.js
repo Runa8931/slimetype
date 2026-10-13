@@ -80,7 +80,7 @@ Screens.battle = {
     $('#b-elv').textContent = ` Lv.${this.ed.lv}`;
     $('#b-skillname').textContent = ch2.skill.name;
     $('#b-skill').style.setProperty('--cc', ch2.def.colors.main);
-    if (!this.party) { const bp = $('#b-party'); if (bp) bp.remove(); } // ふつうの バトルでは パーティの 表示を 消す
+    if (!this.party) { for (const sel of ['#b-party', '#b-support']) { const x = $(sel); if (x) x.remove(); } } // ふつうの バトルでは パーティの 表示を 消す
     $('#b-log').innerHTML = '';
     $('#b-tp .tp-roma').classList.remove('hidden-guide');
     $('#b-tp').classList.remove('fog', 'inked', 'blizzard', 'frozen', 'windy');
@@ -100,6 +100,8 @@ Screens.battle = {
       <div class="ov-diff" id="b-diff"></div>
       <div class="ov-key"><kbd>A</kbd><kbd>D</kbd>で難易度　<kbd>Space</kbd>でバトル開始</div></div>`);
     this.renderDiff();
+    // ダンジョンの 2 階から 先は 難易度を 聞かずに すぐ 始める (dungeon.js)
+    if (this.dungeon && this.dungeon.floor > 0) this.dungeonAutoStart();
   },
 
   // バトル前に 難易度を えらぶ (1 / 2 / 3)
@@ -458,7 +460,11 @@ Screens.battle = {
       return;
     }
     // ボスラッシュの 戦いの 間 / チャレンジの 結果
-    if (this.state === 'between') { if (e.key === ' ') { if (this.dungeon) this.dungeonNext(); else this.betweenNext(); } return; }
+    if (this.state === 'between') {
+      if (e.key === ' ') { if (this.dungeon) this.dungeonNext(); else this.betweenNext(); }
+      if (this.dungeon && (e.key === 'Escape' || e.key.toLowerCase() === 'r')) this.dungeonRetire(); // ダンジョン: ここで やめる
+      return;
+    }
     if (this.state === 'chend') {
       if (e.key === ' ' || e.key === 'Escape') App.show(this.dungeon ? 'dungeon' : 'challenge');
       if (e.key.toLowerCase() === 'r' && this.rule) App.show('battle', { ...this.arg });
@@ -474,6 +480,8 @@ Screens.battle = {
       Settings.open({ title: 'ポーズ中', quit: { label: this.dungeon ? 'やめる（ダンジョンへ）' : this.rush || this.rule ? 'やめる（チャレンジへ）' : '逃げる（マップへ）', warn: this.dungeon ? 'ダンジョンはここで終わり（ここまでの階の記録とごほうびは残る）' : this.rush ? 'ボスラッシュはここで終わり（倒したボスの分のコインはもらえる）' : this.rule ? '今週のチャレンジのこの挑戦はここで終わり（ごほうびはもらえない）' : 'このバトルはここで終わり。経験値とコインはもらえない', fn: () => this.dungeon ? this.dungeonFinish(false) : this.rush ? this.challengeFinish(false) : App.show(this.backScreen()) }, onClose: () => this.resume() });
       return;
     }
+    // パーティ: Enter で チームスキル (ゲージ 満タンの とき)
+    if (this.party && e.key === 'Enter') { this.teamSkill(); return; }
     // パーティ: 1・2・3 で 交代、Tab で 次の キャラへ (ダンジョンの お題に 数字は 出ない)
     if (this.party && /^[123]$/.test(e.key)) { this.swap(+e.key - 1); return; }
     if (this.party && e.key === 'Tab') { e.preventDefault(); this.swapNext(); return; }
@@ -487,6 +495,7 @@ Screens.battle = {
       // ゆらりん: この ミスは なかったことに (コンボ・敵の ゲージ・ひっさつ ゲージは そのまま)
     } else if (r === 'miss') {
       this.miss++;
+      if (this.party) this.addTeamGauge(-TEAM_GAUGE_MISS);
       this.wordMiss = true;
       this.missMap[expected] = (this.missMap[expected] || 0) + 1;
       recordMiss(expected);
@@ -518,7 +527,7 @@ Screens.battle = {
     } else {
       this.correct++;
       recordHit(key, this.ch.id);
-      if (this.party) this.party[this.pi].keys++;
+      if (this.party) { this.party[this.pi].keys++; this.addTeamGauge(TEAM_GAUGE_KEY); }
       this.combo += comboStep(this, this.ch.trait);
       this.maxCombo = Math.max(this.maxCombo, this.combo);
       const before = this.p.skill;
@@ -526,7 +535,7 @@ Screens.battle = {
       if (before < 100 && this.p.skill >= 100) { SFX.charge(); this.useSkill(); }
       SFX.key();
       if (r === 'done') wordFx($('#b-tp'));
-      if (r === 'done') { this.wordDone(); }
+      if (r === 'done') { this.wordDone(); if (this.party) this.supportAttack(); } // パーティ: うしろの 2 体も 連携攻撃
     }
     this.updateCombo();
     this.updateBars();
@@ -575,6 +584,7 @@ Screens.battle = {
     SFX.word();
 
     const st = this.ch.stats;
+    this.lastWordKeys = keys; // パーティの 連携攻撃で つかう
     let dmg = calcDamage(this.ch.L, wordPower(keys), st.atk, this.e.stats.def);
     dmg *= this.comboMult();
     dmg *= this.p.boost;

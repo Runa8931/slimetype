@@ -1806,3 +1806,20 @@ body.no-kb #p-kb { display: none; }
 .dg-fsprite { width: 70px; height: 62px; }
 #dg-start.disabled { opacity: .5; }
 @media (max-width: 1100px) { .dg-wrap { grid-template-columns: 1fr; } }
+/* 3 体 同時: うしろの 2 体・チームゲージ */
+#b-support { position: absolute; left: 0; bottom: 0; width: 14%; height: 100%; z-index: 1; pointer-events: none; }
+.sup { position: absolute; width: 112px; text-align: center; }
+.sup.s0 { left: 8px; bottom: 170px; }
+.sup.s1 { left: 18px; bottom: 36px; }
+.sup-sprite { width: 112px; height: 104px; }
+.sup-hp { width: 80px; height: 6px; margin: -6px auto 0; border-radius: 3px; background: rgba(0,0,0,.5); overflow: hidden; }
+.sup-hp i { display: block; height: 100%; background: var(--green); }
+.sup.down { opacity: .3; filter: grayscale(1); }
+@keyframes sup-hop { 40% { transform: translate(14px, -16px) scale(1.08); } }
+.sup-hop { animation: sup-hop .3s ease-out; }
+.bp-side { display: grid; gap: 4px; margin-left: 4px; }
+.bp-team { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #fff; }
+.bp-team b { display: block; width: 120px; height: 8px; border-radius: 4px; background: rgba(0,0,0,.5); overflow: hidden; }
+.bp-team b i { display: block; height: 100%; background: linear-gradient(90deg, #ffd43b, #ff6bff); transition: width .2s; }
+.bp-team.ready { color: var(--gold); text-shadow: 0 0 8px rgba(255,210,63,.9); animation: new-blink 1s ease-in-out infinite; }
+.cutin .cut-svg svg + svg, .cutin svg + svg { margin-left: -20px; }

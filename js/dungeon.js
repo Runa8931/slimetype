@@ -104,22 +104,27 @@ Object.assign(ENEMY_SVG, {
 });
 
 // ---------------- 階と ボス ----------------
-// 同じ くらいの レベルの ふつうの ボスと くらべて HP 約 3.7 倍・攻撃 約 1.25 倍 (3 体で いどむ ので 手強く。2026-10-13)
+// 同じ くらいの レベルの ふつうの ボスと くらべて HP 約 4.8 倍・攻撃 約 1.25 倍 (3 体で いどむ ので 手強く。2026-10-13)
+// うしろの 2 体の 連携攻撃と チームスキルで パーティの 攻撃は 1 体の 約 1.7 倍 → たおすまで ふつうの ボスの 約 2.8 倍の 時間
 const DUNGEON_FLOORS = [
-  { id: 'd_octo', name: '大ダコ王オクトキング', lv: 40, bg: 'sea', ability: ['ink', 'charge'], power: 62, interval: 5000, hpMult: 3.5,
+  { id: 'd_octo', name: '大ダコ王オクトキング', lv: 40, bg: 'sea', ability: ['ink', 'charge'], power: 62, interval: 5000, hpMult: 4.5,
     abilityDesc: '墨でガイドを隠し、3回に1回強い攻撃', desc: '深い海の底のダンジョンを治める大ダコの王。8本の足で何でもつかむ。' },
-  { id: 'd_treant', name: '森の巨人トレントン', lv: 65, bg: 'rain', ability: ['armor', 'shell'], power: 72, interval: 5200, hpMult: 3.6,
+  { id: 'd_treant', name: '森の巨人トレントン', lv: 65, bg: 'rain', ability: ['armor', 'shell'], power: 72, interval: 5200, hpMult: 4.7,
     abilityDesc: 'かたい樹皮: コンボ30未満だとダメージ半減。ときどき殻にこもる', desc: '千年生きた大木の巨人。ちょっとやそっとの攻撃ではびくともしない。' },
-  { id: 'd_thunderbird', name: '雷鳥ライボルト', lv: 90, bg: 'sky', ability: ['thunder', 'wind', 'rage'], power: 88, interval: 4800, hpMult: 3.6,
+  { id: 'd_thunderbird', name: '雷鳥ライボルト', lv: 90, bg: 'sky', ability: ['thunder', 'wind', 'rage'], power: 88, interval: 4800, hpMult: 4.7,
     abilityDesc: '落雷の予告・文字がゆれる風・HP半分で速くなる', desc: '嵐の雲の上に巣をつくる金色の鳥。羽ばたくたびに雷が落ちる。' },
-  { id: 'd_serpent', name: '氷の大蛇ヨルムガント', lv: 110, bg: 'snow', ability: ['freeze', 'charge', 'rage'], power: 92, interval: 5000, hpMult: 3.8,
+  { id: 'd_serpent', name: '氷の大蛇ヨルムガント', lv: 110, bg: 'snow', ability: ['freeze', 'charge', 'rage'], power: 92, interval: 5000, hpMult: 4.9,
     abilityDesc: 'こごえさせる・3回に1回強い攻撃・HP半分で速くなる', desc: '氷の山をとりまくほど長い大蛇。吐く息で何でも凍らせる。' },
-  { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 74, interval: 5200, hpMult: 4,
+  { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 74, interval: 5200, hpMult: 5.2,
     abilityDesc: '本気になると闇でガイドを隠し、必殺ゲージを奪う。毒・落雷の予告', desc: 'ダンジョンのいちばん奥でねむる、すべての魔物の王。目がいくつあるのか、だれも知らない。' },
 ].map((f, i) => ({ ...f, floor: i, type: 'boss', boss: true, giant: true, base: { ...ENEMY_TYPES.boss }, abilities: f.ability, diff: 'hard', exp: 0 }));
 const DUNGEON_HEAL = 0.3, DUNGEON_REVIVE = 0.25, BENCH_REGEN = 0.004; // 階の 間の 回復 / 倒れた キャラ / 控えの 回復 (1 秒に 最大HP の 0.4%)
 const DUNGEON_SWAP_CD = 1500; // 交代の あと しばらく 交代 できない
 const DUNGEON_REWARD = i => ({ coins: 400 + i * 300, shards: 10 + i * 8 });
+const SUPPORT_RATE = 0.2;       // うしろの キャラの 連携攻撃 (1 体ぶん、お題の 威力の 2 割)
+const TEAM_GAUGE_KEY = 0.75;    // チームゲージ: 正しく 1 打つ ごとに (約 130 打で 満タン)
+const TEAM_GAUGE_MISS = 2;      // ミスで へる
+const TEAM_SKILL_POWER = 140;   // チームスキル: 3 体 それぞれの 威力
 
 // ---------------- 相性 ----------------
 const tset = ids => new Set(ids.map(id => CHARACTERS[id].type));
@@ -168,6 +173,87 @@ function dungeonParty() { return (Save.data.dungeonParty || []).filter(id => CHA
 
 // ---------------- バトルの 中の パーティ (battle.js に 足す) ----------------
 Object.assign(Screens.battle, {
+  // ---- 3 体 同時に 戦う: うしろの 2 体の 表示・連携攻撃・チームスキル ----
+  renderSupport() {
+    let el = $('#b-support');
+    if (!this.party) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.id = 'b-support'; $('#arena').appendChild(el); }
+    const bench = this.party.map((m, i) => ({ m, i })).filter(x => x.i !== this.pi);
+    el.innerHTML = bench.map(({ m, i }, k) => `<div class="sup s${k} ${m.hp <= 0 ? 'down' : ''}" data-i="${i}"><div class="sup-sprite">${slimeSVG(m.id, m.ch.stage)}</div>
+      <div class="sup-hp"><i style="width:${Math.max(0, m.hp / m.max * 100).toFixed(1)}%"></i></div></div>`).join('');
+  },
+  // お題を 打ち切った: うしろの 2 体も 少し 攻撃する
+  supportAttack() {
+    if (this.state !== 'run') return;
+    const ec = FX.center($('#b-esprite'));
+    $('#b-support').querySelectorAll('.sup:not(.down)').forEach((el, k) => {
+      const m = this.party[+el.dataset.i];
+      if (!m || m.hp <= 0) return;
+      const d = Math.max(1, Math.round(calcDamage(m.ch.L, wordPower(this.lastWordKeys || 10), m.ch.stats.atk, this.e.stats.def) * SUPPORT_RATE));
+      replayAnim(el, 'sup-hop', 300);
+      this.proj(FX.center(el.querySelector('.sup-sprite')), ec, { color: m.ch.def.colors.main, size: 7, frames: 14 + k * 4, arc: -60,
+        onHit: () => { if (this.state === 'run') this.hitEnemy(d, { colors: [m.ch.def.colors.main, '#fff'] }); } });
+    });
+  },
+  addTeamGauge(n) {
+    const before = this.teamGauge;
+    this.teamGauge = clamp(this.teamGauge + n, 0, 100);
+    if (before < 100 && this.teamGauge >= 100) { SFX.charge(); this.log('チームゲージが満タン！ Enter でチームスキル', 'player'); }
+    const f = $('#bp-team i'); if (f) f.style.width = this.teamGauge + '%';
+    const b = $('#bp-team'); if (b) b.classList.toggle('ready', this.teamGauge >= 100);
+  },
+  // チームスキル: 3 体 そろって 大技。相性に 合わせて 追加の 効果
+  teamSkill() {
+    if (this.state !== 'run') return;
+    if (this.teamGauge < 100) { SFX.miss(); return; }
+    this.teamGauge = 0; this.addTeamGauge(0);
+    const syn = activeSynergies(this.party.map(m => m.id));
+    const kinds = new Set(syn.flatMap(x => Object.keys(x.eff)));
+    const name = syn.length ? `トリプル${syn[0].name}` : 'トリプルアタック';
+    const extra = [];
+    let mult = 1, crit = false;
+    if (kinds.has('atk')) { mult = 1.5; extra.push('威力1.5倍'); }
+    if (kinds.has('crit')) { crit = true; extra.push('全部会心'); }
+    if (kinds.has('cut')) { this.p.barrier += 2; extra.push('バリア2回'); }
+    if (kinds.has('charge')) { this.p.skill = Math.min(99, this.p.skill + 40); this.party.forEach((m, i) => { if (i !== this.pi) m.skill = Math.min(99, (m.skill || 0) + 40); }); extra.push('必殺ゲージ+40%'); }
+    const heal = kinds.has('hp') ? 0.15 : extra.length ? 0 : 0.08;
+    if (heal) { this.p.hp = Math.min(this.p.max, this.p.hp + this.p.max * heal); this.party.forEach((m, i) => { if (i !== this.pi && m.hp > 0) m.hp = Math.min(m.max, m.hp + m.max * heal); }); extra.push(`全員HP${Math.round(heal * 100)}%回復`); }
+    cutin(name, `チームスキル！ ${extra.join('・')}`, '#ffd43b', this.party.filter(m => m.hp > 0).map(m => slimeSVG(m.id, m.ch.stage)).join(''), 'ssr');
+    if (SFX.rankCut) SFX.rankCut();
+    this.log(`チームスキル「${name}」！${extra.length ? '（' + extra.join('・') + '）' : ''}`, 'player');
+    const ec = FX.center($('#b-esprite'));
+    const shooters = [$('#b-psprite'), ...$('#b-support').querySelectorAll('.sup:not(.down) .sup-sprite')];
+    const alive = [this.party[this.pi], ...this.party.filter((m, i) => i !== this.pi && m.hp > 0)];
+    alive.forEach((m, k) => {
+      const d = Math.round(calcDamage(m.ch.L, TEAM_SKILL_POWER, m.ch.stats.atk, this.e.stats.def) * mult * (crit ? 1.5 : 1));
+      this.after(() => {
+        if (this.state !== 'run') return;
+        this.proj(FX.center(shooters[k] || shooters[0]), ec, { color: m.ch.def.colors.main, size: 13, frames: 18, arc: -90,
+          onHit: () => { if (this.state === 'run') { this.hitEnemy(d, { crit, big: true, colors: [m.ch.def.colors.main, '#ffd43b', '#fff'] }); FX.ring(ec.x, ec.y, m.ch.def.colors.main, 120, 24, 6); } } });
+      }, 500 + k * 260);
+    });
+    this.updateBars();
+    this.renderParty();
+  },
+  // 2 階から 先: 難易度は 1 階で きめたので 聞かずに 始める
+  dungeonAutoStart() {
+    this.overlay(`<div class="ov-box">${dungeonBanner(this)}<div class="ov-title">${this.ed.floor + 1}階 ${this.ed.name}</div><div class="ov-sub">${this.ed.abilityDesc}</div></div>`);
+    this.after(() => { if (this.state === 'ready') this.countdown(); }, 1400);
+  },
+  // 階と 階の 間で リタイア (ここまでの 記録と ごほうびは 残る)
+  dungeonRetire() {
+    const d = dungeonData(), bd = this.bd;
+    d.runs = (d.runs || 0) + 1;
+    Save.save();
+    this.nextDungeon = null;
+    this.state = 'chend';
+    SFX.select();
+    this.overlay(`<div class="ov-box"><div class="ov-challenge">🏰 ダンジョン（${bd.name}）</div>
+      <div class="ov-title">${this.ed.floor + 1}階まで突破して、リタイアした</div>
+      <div class="ov-sub">${bd.name}の最高記録: ${d.best[this.dk] || 0} / ${DUNGEON_FLOORS.length}階</div>
+      <div class="ov-key"><kbd>Space</kbd>でダンジョンの入口へ</div></div>`);
+  },
+
   setupParty() {
     const dg = this.dungeon, team = dungeonTeam(dg.party.map(m => m.id));
     this.team = team;
@@ -180,7 +266,9 @@ Object.assign(Screens.battle, {
     this.pi = this.party[lead] && this.party[lead].hp > 0 ? lead : Math.max(0, this.party.findIndex(m => m.hp > 0));
     const m = this.party[this.pi];
     this.ch = m.ch; this.p.hp = m.hp; this.p.max = m.max; this.p.skill = m.skill;
+    this.teamGauge = dg.teamGauge || 0;
     this.renderParty();
+    this.renderSupport();
   },
 
   // パーティの 表示 (左上: 3 体の 顔と HP)
@@ -192,7 +280,10 @@ Object.assign(Screens.battle, {
     el.innerHTML = this.party.map((m, i) => `<div class="bp-mem ${i === this.pi ? 'on' : ''} ${m.hp <= 0 ? 'down' : ''}">
       <kbd>${i + 1}</kbd><div class="bp-face">${slimeSVG(m.id, m.ch.stage)}</div>
       <div class="bp-hp"><i style="width:${Math.max(0, m.hp / m.max * 100).toFixed(1)}%"></i></div></div>`).join('')
-      + `<small class="bp-help"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>/<kbd>Tab</kbd> 交代</small>`;
+      + `<div class="bp-side"><div class="bp-team ${this.teamGauge >= 100 ? 'ready' : ''}" id="bp-team"><span>チーム</span><b><i style="width:${this.teamGauge}%"></i></b><kbd>Enter</kbd></div>
+        <small class="bp-help"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>/<kbd>Tab</kbd> 交代</small></div>`;
+    // うしろの 2 体の HP も 合わせる
+    document.querySelectorAll('#b-support .sup').forEach(el => { const m = this.party[+el.dataset.i]; if (!m) return; el.classList.toggle('down', m.hp <= 0); const f = el.querySelector('.sup-hp i'); if (f) f.style.width = Math.max(0, m.hp / m.max * 100).toFixed(1) + '%'; });
   },
 
   // 交代する (前の キャラの HP と 必殺ゲージは そのまま 残る)
@@ -221,6 +312,7 @@ Object.assign(Screens.battle, {
     this.log(`${m.ch.name}に交代！`, 'player');
     this.updateBars(true);
     this.renderParty();
+    this.renderSupport();
   },
   swapNext() {
     if (!this.party) return;
@@ -280,13 +372,17 @@ Object.assign(Screens.battle, {
     if (won && f + 1 < DUNGEON_FLOORS.length) {
       // 次の 階へ: HP を 持ちこして 少し 回復、倒れた キャラも 起きる
       const party = this.party.map(m => ({ id: m.id, hp: m.hp > 0 ? Math.min(1, m.hp / m.max + DUNGEON_HEAL) : DUNGEON_REVIVE, skill: m.skill }));
-      this.nextDungeon = { floor: f + 1, party, lead: this.pi };
+      this.nextDungeon = { floor: f + 1, party, lead: this.pi, teamGauge: this.teamGauge };
       this.state = 'between';
       const nf = DUNGEON_FLOORS[f + 1];
       this.overlay(`<div class="ov-box"><div class="ov-challenge">🏰 ダンジョン ${f + 1}階 突破！</div>
         <div class="ov-title">${this.ed.name}を倒した！</div>
         <div class="ov-sub">${lines.join('　')}${rw}<br>次は ${f + 2}階: <b>${nf.name}</b>（Lv.${nf.lv}）　HPが${Math.round(DUNGEON_HEAL * 100)}%回復、倒れた仲間も起きる</div>
-        <div class="ov-key"><kbd>Space</kbd>で次の階へ</div></div>`);
+        <div class="set-actions"><button class="btn big dg-go">▶ 続ける <kbd>Space</kbd></button><button class="btn ghost dg-retire">リタイア <kbd>Esc</kbd></button></div>
+        <div class="ov-sub"><small>リタイアしても、ここまでの記録とごほうびは残る</small></div></div>`);
+      const o = $('#b-overlay');
+      o.querySelector('.dg-go').onclick = () => this.dungeonNext();
+      o.querySelector('.dg-retire').onclick = () => this.dungeonRetire();
       return;
     }
     d.runs = (d.runs || 0) + 1;
