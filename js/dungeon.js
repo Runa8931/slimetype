@@ -104,18 +104,19 @@ Object.assign(ENEMY_SVG, {
 });
 
 // ---------------- 階と ボス ----------------
-// 同じ くらいの レベルの ふつうの ボスと くらべて HP 約 4.8 倍・攻撃 約 1.25 倍 (3 体で いどむ ので 手強く。2026-10-13)
-// うしろの 2 体の 連携攻撃と チームスキルで パーティの 攻撃は 1 体の 約 1.7 倍 → たおすまで ふつうの ボスの 約 2.8 倍の 時間
+// 同じ くらいの レベルの ふつうの ボスと くらべて HP 約 2.7 倍・攻撃 約 1.55 倍 (2026-10-13: 「1 体 3 分は 長い」と 言われ HP を 約 55% に、
+// その ぶん 攻撃を 1.25 倍 して 手強さは 残した)
+// 連携攻撃と チームスキルで パーティの 攻撃は 1 体の 約 1.7 倍 → たおすまで ふつうの ボスの 約 1.6 倍の 時間 (1 体 約 1 分半)
 const DUNGEON_FLOORS = [
-  { id: 'd_octo', name: '大ダコ王オクトキング', lv: 40, bg: 'sea', ability: ['ink', 'charge'], power: 62, interval: 5000, hpMult: 4.5,
+  { id: 'd_octo', name: '大ダコ王オクトキング', lv: 40, bg: 'sea', ability: ['ink', 'charge'], power: 78, interval: 5000, hpMult: 2.5,
     abilityDesc: '墨でガイドを隠し、3回に1回強い攻撃', desc: '深い海の底のダンジョンを治める大ダコの王。8本の足で何でもつかむ。' },
-  { id: 'd_treant', name: '森の巨人トレントン', lv: 65, bg: 'rain', ability: ['armor', 'shell'], power: 72, interval: 5200, hpMult: 4.7,
+  { id: 'd_treant', name: '森の巨人トレントン', lv: 65, bg: 'rain', ability: ['armor', 'shell'], power: 90, interval: 5200, hpMult: 2.6,
     abilityDesc: 'かたい樹皮: コンボ30未満だとダメージ半減。ときどき殻にこもる', desc: '千年生きた大木の巨人。ちょっとやそっとの攻撃ではびくともしない。' },
-  { id: 'd_thunderbird', name: '雷鳥ライボルト', lv: 90, bg: 'sky', ability: ['thunder', 'wind', 'rage'], power: 88, interval: 4800, hpMult: 4.7,
+  { id: 'd_thunderbird', name: '雷鳥ライボルト', lv: 90, bg: 'sky', ability: ['thunder', 'wind', 'rage'], power: 110, interval: 4800, hpMult: 2.6,
     abilityDesc: '落雷の予告・文字がゆれる風・HP半分で速くなる', desc: '嵐の雲の上に巣をつくる金色の鳥。羽ばたくたびに雷が落ちる。' },
-  { id: 'd_serpent', name: '氷の大蛇ヨルムガント', lv: 110, bg: 'snow', ability: ['freeze', 'charge', 'rage'], power: 92, interval: 5000, hpMult: 4.9,
+  { id: 'd_serpent', name: '氷の大蛇ヨルムガント', lv: 110, bg: 'snow', ability: ['freeze', 'charge', 'rage'], power: 115, interval: 5000, hpMult: 2.7,
     abilityDesc: 'こごえさせる・3回に1回強い攻撃・HP半分で速くなる', desc: '氷の山をとりまくほど長い大蛇。吐く息で何でも凍らせる。' },
-  { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 74, interval: 5200, hpMult: 5.2,
+  { id: 'd_chaos', name: '混沌の王カオスロード', lv: 124, bg: 'void', ability: ['demon', 'poison', 'thunder'], power: 92, interval: 5200, hpMult: 2.9,
     abilityDesc: '本気になると闇でガイドを隠し、必殺ゲージを奪う。毒・落雷の予告', desc: 'ダンジョンのいちばん奥でねむる、すべての魔物の王。目がいくつあるのか、だれも知らない。' },
 ].map((f, i) => ({ ...f, floor: i, type: 'boss', boss: true, giant: true, base: { ...ENEMY_TYPES.boss }, abilities: f.ability, diff: 'hard', exp: 0 }));
 const DUNGEON_HEAL = 0.3, DUNGEON_REVIVE = 0.25; // 階の 間の 回復 / 倒れた キャラ
@@ -380,8 +381,7 @@ Object.assign(Screens.battle, {
       this.party.forEach((m, i) => { if (i !== this.pi && m.hp > 0) m.hp = Math.min(m.max, m.hp + m.max * heal); });
       extra.push(`全員HP${Math.round(heal * 100)}%回復`);
     }
-    cutin(name, `チームスキル！ ${syn.length ? `相性: ${syn.map(x => x.name).join('・')}　` : ''}${extra.join('・')}`, '#ffd43b', this.party.filter(m => m.hp > 0).map(m => slimeSVG(m.id, m.ch.stage)).join(''), 'ssr');
-    if (SFX.rankCut) SFX.rankCut();
+    teamCutin(name, syn.map(x => x.name), extra, this.party.filter(m => m.hp > 0));
     this.log(`チームスキル「${name}」！${extra.length ? '（' + extra.join('・') + '）' : ''}`, 'player');
     const ec = FX.center($('#b-esprite'));
     this.party.forEach((m, i) => {
@@ -393,7 +393,7 @@ Object.assign(Screens.battle, {
         replayAnim(el, 'sup-hop', 300);
         this.proj(FX.center(el.querySelector('.tr-sprite')), ec, { color: m.ch.def.colors.main, size: 13, frames: 18, arc: -90,
           onHit: () => { if (this.state === 'run') { this.hitEnemy(d, { crit, big: true, colors: [m.ch.def.colors.main, '#ffd43b', '#fff'] }); FX.ring(ec.x, ec.y, m.ch.def.colors.main, 120, 24, 6); } } });
-      }, 500 + i * 260);
+      }, TEAM_CUT_MS + i * 260);
     });
     this.updateBars();
     this.renderParty();
@@ -478,6 +478,28 @@ Object.assign(Screens.battle, {
     this.enter({ enemy: DUNGEON_FLOORS[n.floor], dungeon: n });
   },
 });
+
+// ---------------- チームスキルの 演出 (ふつうの 必殺の カットインとは べつ) ----------------
+// 3 体が それぞれの 色の 帯に のって ななめに すべりこみ、まん中に「TEAM SKILL」と 技の 名前、下に 発動中の 相性
+const TEAM_CUT_MS = 1500;
+function teamCutin(name, synNames, extra, members) {
+  document.querySelectorAll('.team-cut').forEach(x => x.remove());
+  const el = document.createElement('div');
+  el.className = 'team-cut';
+  el.innerHTML = `<div class="tc-flash"></div><div class="tc-rays"></div>
+    <div class="tc-panels">${members.map((m, i) => `<div class="tc-panel" style="--c:${m.ch.def.colors.main};--d:${m.ch.def.colors.dark};--i:${i}">
+      <div class="tc-sprite">${slimeSVG(m.id, m.ch.stage)}</div><div class="tc-name">${m.ch.name}</div></div>`).join('')}</div>
+    <div class="tc-center"><div class="tc-label">TEAM SKILL</div><div class="tc-title">${name}</div>
+      ${synNames.length ? `<div class="tc-syns">${synNames.map(n => `<span>${n}</span>`).join('')}</div>` : ''}
+      ${extra.length ? `<div class="tc-extra">${extra.join('・')}</div>` : ''}</div>`;
+  document.body.appendChild(el);
+  // 音: 3 体ぶん の 音が 重なって 和音に なる
+  [523, 659, 784].forEach((f, i) => SFX.tone(f, 0.35, { type: 'triangle', vol: 0.05, delay: 0.12 * i }));
+  SFX.tone(1047, 0.6, { type: 'triangle', vol: 0.06, delay: 0.5, slide: 1568 });
+  if (SFX.rankCut) setTimeout(() => SFX.rankCut(), 450);
+  setTimeout(() => el.classList.add('out'), TEAM_CUT_MS + 300);
+  setTimeout(() => el.remove(), TEAM_CUT_MS + 800);
+}
 
 // バトル前の 見出し
 function dungeonBanner(b) {
