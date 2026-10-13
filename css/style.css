@@ -1844,3 +1844,5 @@ body.no-kb #p-kb { display: none; }
 .bp-team small { color: var(--sub); font-weight: 600; }
 @media (max-width: 1100px) { .tr-mem { width: 120px; } .tr-sprite { width: 100px; height: 94px; } .tr-info { width: 112px; } .tr-mem.t1 { left: 14%; } .tr-mem.t2 { left: 27%; } }
 #b-party { left: 12px; top: 10px; transform: none; }
+.dg-syncount { color: var(--gold); margin-left: 4px; }
+.dg-syns { max-height: 330px; overflow-y: auto; padding-right: 2px; }

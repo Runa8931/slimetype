@@ -152,7 +152,25 @@ const TEAM_SYNERGIES = [
   { id: 'luck', name: '一か八か', desc: '運試しと伝説', eff: { crit: 0.12 }, check: (t) => t.has('運試し') && t.has('伝説') },
   { id: 'starters', name: 'はじまりの仲間', desc: '最初の6体だけで組む', eff: { hp: 0.1, atk: 0.08 }, check: (t, ids) => ids.every(id => STARTERS.includes(id)) },
   { id: 'gachaborn', name: 'ガチャの申し子', desc: 'ガチャ限定キャラ3体', eff: { charge: 0.2 }, check: (t, ids) => ids.every(id => CHARACTERS[id].gacha) },
+  // ---- 広い 条件の 相性 (2026-10-13: 重なりやすく して 組み合わせの 幅を 広げる) ----
+  { id: 'balance', name: '攻・守・支', desc: '攻め・守り・支えが1体ずつ', eff: { atk: 0.06, cut: 0.06, charge: 0.1 }, check: (t, ids) => ['攻め', '守り', '支え'].every(g => ids.some(id => roleGroup(id) === g)) },
+  { id: 'assault', name: '猛攻', desc: '3体とも攻め', eff: { atk: 0.18 }, check: (t, ids) => ids.every(id => roleGroup(id) === '攻め') },
+  { id: 'castle', name: '不落の城', desc: '守りが2体以上', eff: { cut: 0.12 }, check: (t, ids) => ids.filter(id => roleGroup(id) === '守り').length >= 2 },
+  { id: 'healring', name: '癒やしの輪', desc: '支えが2体以上', eff: { hp: 0.12 }, check: (t, ids) => ids.filter(id => roleGroup(id) === '支え').length >= 2 },
+  { id: 'elements', name: '元素の嵐', desc: '水・炎・草・電気・風・氷・岩のうち3体', eff: { atk: 0.08 }, check: (t) => ['水', '炎', '草', '電気', '風', '氷', '岩'].filter(x => t.has(x)).length >= 3 },
+  { id: 'nightfolk', name: '夜の住人', desc: '影・月・毒・灯火のうち2体', eff: { crit: 0.08 }, check: (t) => ['影', '月', '毒', '灯火'].filter(x => t.has(x)).length >= 2 },
+  { id: 'evolved', name: '進化の力', desc: '3体とも最後まで進化（Lv.80以上）', eff: { atk: 0.1, hp: 0.1 }, check: (t, ids) => ids.every(id => charInfo(id).stage >= 4) },
+  { id: 'awakened', name: '覚醒の絆', desc: '3体とも覚醒★1以上', eff: { charge: 0.15 }, check: (t, ids) => ids.every(id => awakenOf(id) >= 1) },
+  { id: 'masters', name: '極みの集い', desc: '熟練度が極みのキャラが2体以上', eff: { crit: 0.1 }, check: (t, ids) => ids.filter(id => masteryLv(id) >= MASTERY_MAX).length >= 2 },
+  { id: 'sameage', name: '同期', desc: '3体のレベルの差が5以内', eff: { cut: 0.08 }, check: (t, ids) => { const ls = ids.map(id => charInfo(id).L); return Math.max(...ls) - Math.min(...ls) <= 5; } },
 ];
+// 役割の 系統 (攻め・守り・支え)
+const ROLE_GROUPS = {
+  攻め: ['攻撃型', '逆転型', '連撃型', 'ため打ち型', 'コンボ型', '連続型', 'ギャンブル型', 'ぎりぎり型', 'スピード型', '正確型'],
+  守り: ['防御型', '守り型', 'カウンター型', '吸収型', 'ため込み型'],
+  支え: ['回復型', 'テクニック型', 'じわじわ型', '連携型', 'バランス型', 'オールラウンド型'],
+};
+function roleGroup(id) { const r = CHARACTERS[id].role; return Object.keys(ROLE_GROUPS).find(g => ROLE_GROUPS[g].includes(r)) || '支え'; }
 const EFF_NAME = { atk: '攻撃', cut: '受けるダメージ', crit: '会心率', charge: '必殺ゲージのたまり', hp: 'HP' };
 function effText(eff) { return Object.entries(eff).map(([k, v]) => `${EFF_NAME[k]}${k === 'cut' ? '-' : '+'}${Math.round(v * 100)}%`).join('・'); }
 function activeSynergies(ids) { const t = tset(ids); return ids.length >= 2 ? TEAM_SYNERGIES.filter(s => s.check(t, ids)) : []; }
@@ -345,7 +363,7 @@ Object.assign(Screens.battle, {
     this.teamGauge = 0; this.addTeamGauge(0);
     const syn = activeSynergies(this.party.map(m => m.id));
     const kinds = new Set(syn.flatMap(x => Object.keys(x.eff)));
-    const name = syn.length ? `トリプル${syn[0].name}` : 'トリプルアタック';
+    const name = syn.length ? `トリプル${syn[0].name}${syn.length > 1 ? `＋${syn.length - 1}` : ''}` : 'トリプルアタック';
     const extra = [];
     let mult = 1, crit = false;
     if (kinds.has('atk')) { mult = 1.5; extra.push('威力1.5倍'); }
@@ -362,7 +380,7 @@ Object.assign(Screens.battle, {
       this.party.forEach((m, i) => { if (i !== this.pi && m.hp > 0) m.hp = Math.min(m.max, m.hp + m.max * heal); });
       extra.push(`全員HP${Math.round(heal * 100)}%回復`);
     }
-    cutin(name, `チームスキル！ ${extra.join('・')}`, '#ffd43b', this.party.filter(m => m.hp > 0).map(m => slimeSVG(m.id, m.ch.stage)).join(''), 'ssr');
+    cutin(name, `チームスキル！ ${syn.length ? `相性: ${syn.map(x => x.name).join('・')}　` : ''}${extra.join('・')}`, '#ffd43b', this.party.filter(m => m.hp > 0).map(m => slimeSVG(m.id, m.ch.stage)).join(''), 'ssr');
     if (SFX.rankCut) SFX.rankCut();
     this.log(`チームスキル「${name}」！${extra.length ? '（' + extra.join('・') + '）' : ''}`, 'player');
     const ec = FX.center($('#b-esprite'));
@@ -490,13 +508,13 @@ Screens.dungeon = {
       const id = party[i];
       if (!id) return `<div class="dg-slot empty"><kbd>${i + 1}</kbd><div class="dg-q">？</div><small>下からえらぶ</small></div>`;
       const c = charInfo(id);
-      return `<button class="dg-slot" data-id="${id}"><kbd>${i + 1}</kbd><div class="sprite">${slimeSVG(id, c.stage)}</div><b>${c.name}</b><small>Lv.${c.L}・${c.def.type}</small></button>`;
+      return `<button class="dg-slot" data-id="${id}"><kbd>${i + 1}</kbd><div class="sprite">${slimeSVG(id, c.stage)}</div><b>${c.name}</b><small>Lv.${c.L}・${c.def.type}・${roleGroup(id)}</small></button>`;
     }).join('');
     const bonds = pairsOf(party).map(([a, b]) => { const lv = bondLv(a, b), pts = bondPts(a, b), nx = BOND_STEPS[lv];
       return `<div class="dg-bond"><span>${CHARACTERS[a].names[0]} × ${CHARACTERS[b].names[0]}</span><b>絆 Lv.${lv}</b><small>${nx ? `${pts}/${nx}pt` : 'MAX'}</small></div>`; }).join('');
     $('#dg-info').innerHTML = `
-      <div class="dg-h">相性 <small>（キャラのタイプの組み合わせ）</small></div>
-      <div class="dg-syns">${TEAM_SYNERGIES.map(s => `<div class="dg-syn ${syn.includes(s) ? 'on' : ''}"><b>${s.name}</b><span>${s.desc}</span><small>${effText(s.eff)}</small></div>`).join('')}</div>
+      <div class="dg-h">相性 <b class="dg-syncount">${syn.length}個 発動中</b> <small>（タイプ・役割・育ち方の組み合わせ。条件に合うものは全部重なる）</small></div>
+      <div class="dg-syns">${[...TEAM_SYNERGIES].sort((a, b) => syn.includes(b) - syn.includes(a)).map(s => `<div class="dg-syn ${syn.includes(s) ? 'on' : ''}"><b>${s.name}</b><span>${s.desc}</span><small>${effText(s.eff)}</small></div>`).join('')}</div>
       <div class="dg-h">絆 <small>（同じパーティで階を突破すると深まる。1 Lvにつき攻撃+${BOND_ATK * 100}%）</small></div>
       <div class="dg-bonds">${bonds || '<small>3体えらぶと出る</small>'}</div>
       <div class="dg-h">このパーティの効果</div>
@@ -508,7 +526,7 @@ Screens.dungeon = {
     }).join('');
     $('#dg-chars').innerHTML = owned.map(id => {
       const c = charInfo(id), on = party.includes(id);
-      return `<button class="dg-char ${on ? 'on' : ''}" data-id="${id}" title="${c.name} Lv.${c.L}・${c.def.type}"><div class="sprite">${slimeSVG(id, c.stage)}</div><small>${c.def.type}</small>${on ? `<i>${party.indexOf(id) + 1}</i>` : ''}</button>`;
+      return `<button class="dg-char ${on ? 'on' : ''}" data-id="${id}" title="${c.name} Lv.${c.L}・${c.def.type}"><div class="sprite">${slimeSVG(id, c.stage)}</div><small>${c.def.type}・${roleGroup(id)}</small>${on ? `<i>${party.indexOf(id) + 1}</i>` : ''}</button>`;
     }).join('');
     $('#dg-start').innerHTML = `<kbd>Space</kbd> ${party.length === 3 ? `1階から挑む（${bd.name}）` : `あと${3 - party.length}体えらぶ`}`;
     $('#dg-start').classList.toggle('disabled', party.length < 3);
